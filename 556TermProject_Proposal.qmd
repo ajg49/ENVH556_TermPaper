@@ -1,0 +1,17 @@
+---
+title: "556TermProject_Proposal"
+authors: "Callan, Abbie, and Katie - ENV H 556"
+format: html
+editor: visual
+---
+
+## Setting up 
+
+```{r term project}
+
+
+
+
+
+`
+```
