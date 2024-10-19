@@ -61,8 +61,8 @@ pacman::p_load(knitr, kableExtra, tidyverse, egg, multcomp, modelr,
 
 #-----directory organization and read data-----
 
-# specify data path
-data_path <- file.path("Datasets")
+# specify data path, data will be added to your local working directory, should be the project folder
+data_path <- file.path(getwd())
 
 # specify the file name and path
 file_name <- "allseasonsR.rds"
@@ -84,3 +84,20 @@ if (file.exists(file_path)) {
 rm(url, file_name, file_path, data_path)
 
 ```
+
+## Introduction
+
+*Introduction to Mobile Monitoring Data set and variables*
+
+
+*specific aims/hypotheses*
+
+
+
+
+
+## Methods & Statistical Approach
+
+
+
+
