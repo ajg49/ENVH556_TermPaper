@@ -1,0 +1,86 @@
+---
+title: "556TermProject_Proposal"
+authors: "Callan, Abbie, and Katie - ENV H 556"
+format:
+  html:
+    df_print: "paged"
+    fig_caption: yes
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    self-contained: true #save images etc. in this file (vs folders)
+execute:
+  echo: true
+  cache: false
+  echo.comments: false
+  message: false
+  warning: false
+  
+---
+
+This document was rendered on `r format(Sys.time(), '%B %d, %Y')`.
+---
+
+## Setting up
+
+For our term project, we aim to assess the temporal variations of traffic-related air pollution (TRAP). Specifically, we will assess how air pollution levels vary across seasons, days of the week, or hours of the day. Our project will use data from the Mobile Monitoring Campaign, as described by [Blanco et al.](https://pubmed.ncbi.nlm.nih.gov/35917479/). 
+
+
+
+```{r setup, include=FALSE}
+
+#-----setup-----
+
+# clear work space of all objects and unload all extra (non-base) packages
+rm(list = ls(all = TRUE))
+if (!is.null(sessionInfo()$otherPkgs)) {
+    res <- suppressWarnings(
+        lapply(paste('package:', names(sessionInfo()$otherPkgs), sep=""),
+               detach, character.only=TRUE, unload=TRUE, force=TRUE))
+   
+}
+
+```
+
+```{r load.libraries.pacman, echo=FALSE, include=FALSE, eval=TRUE}
+
+#-----load libraries pacman-----
+
+# Load pacman into memory, installing as needed
+my_repo <- 'http://cran.r-project.org'
+if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
+
+# Load the other packages, installing as needed.
+pacman::p_load(knitr, kableExtra, tidyverse, egg, multcomp, modelr,
+               broom # tidy() # optional
+               )
+
+```
+
+```{r directory.organization.read.data, echo=FALSE, warning=FALSE}
+
+#-----directory organization and read data-----
+
+# specify data path
+data_path <- file.path("Datasets")
+
+# specify the file name and path
+file_name <- "allseasonsR.rds"
+file_path <- file.path(data_path, file_name)
+
+# Download the file if it is not already present
+if (!file.exists(file_path)) {
+    url <- paste("https://faculty.washington.edu/sheppard/envh556/Datasets", 
+                 file_name, sep = '/')
+    download.file(url = url, destfile = file_path)
+}
+
+# Output a warning message if the file cannot be found
+if (file.exists(file_path)) {
+    snapshot<-readRDS(file_path)
+} else warning(paste("Can't find", file_name, "!"))
+
+# remove temporary variables
+rm(url, file_name, file_path, data_path)
+
+```
