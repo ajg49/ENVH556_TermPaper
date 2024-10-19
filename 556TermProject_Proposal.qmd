@@ -88,11 +88,13 @@ rm(url, file_name, file_path, data_path)
 ## Introduction
 
 *Introduction to Mobile Monitoring Data set and variables*
-
+  The Mobile Monitoring dat set comes from a study of air pollution and its association with ageing. The study collected air samples from around the greater Seattle area (Washington, United States). A car, equipped with air quality monitoring and sampling equipment, drove along nine routes, stopping and taking ~ 309 samples across all nine routes. Each sample is a two-minute sample of air quality, including pollutant concentrations for nitrogen dioxide (NO2), PM2.5, particle number concentration (PNC), carbon dioxide (CO2), and black carbon (BC). These air sample data was used to associate with ageing outcomes in study participants. Our report will not look at any health outcomes, and will focus on characterizing the temporal patterns in the air pollution data. Over the course of a year, each site along the nine driving routes was visited about 25 times [Blanco et al., 2022].
 
 *specific aims/hypotheses*
 
-
+  The sampling design for the Mobile Monitoring data set included variability in the day time, week, and season that samples were taken for a particular site. This means that each sampling location has sampling data from different times throughout the day, different samples tghroiughout the week, and multiples throughout the year. Our report will utilize the multiple layers of temporal variation in sample collection to assess changes in air quality across a week and across a year. 
+  
+  We hypothesize that ___________________________________.
 
 
 
