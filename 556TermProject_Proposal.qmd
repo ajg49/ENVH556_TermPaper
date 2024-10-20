@@ -255,4 +255,75 @@ kable(stop_data_primary%>%
 # the count of each variable is different, but there are no NA values 
 
 ```
+``` {r}
+#---Q-Q plot---#
+
+#same QQ plots as above
+
+#using a qq plot to assess normality
+
+#plotting first on a native scale
+ggplot(stop_data_primary, aes(sample = median_value)) +
+  stat_qq() + 
+  stat_qq_line() +
+  labs(title = "Normal Q-Q Plot of TRAP",
+       x = "Theoretical Quantiles from a Std Normal Distribution",
+       y = "Concentration - native scale"
+       ) +
+  facet_wrap(~variable, scales = "free")
+
+#it all looks crazy. Not normal!
+
+#creating log transformed concentration variable. 
+stop_data_primary <- stop_data_primary %>% mutate(log_med_value = log(median_value), .after = median_value)
+
+#qq plots using log transformed values
+ggplot(stop_data_primary, aes(sample = log_med_value)) +
+  stat_qq() + 
+  stat_qq_line() +
+  labs(title = "Normal Q-Q Plot of TRAP",
+       x = "Theoretical Quantiles from a Std LogNormal Distribution",
+       y = "log(concentration)"
+       ) +
+  facet_wrap(~variable, scales = "free")
+
+#better, but not perfect. 
+
+#co2 still has a lot of divergence, as do No2 and ma200. The rest have some dirgence, but look ok
+
+```
+```{r}
+#histograms and density plots
+
+#histograms with smoother
+
+#native scale
+ggplot(stop_data_primary, aes(median_value)) +
+  geom_histogram(aes(y = ..density..), bins = 40, color = "lightblue", fill = "lightblue", alpha = 0.8) +
+  geom_density(color = "purple") +
+  facet_wrap(~variable, scales = "free") +
+  labs(title = "Distribution of TRAP",
+       x = "Concentration on native scale",
+       y = "density"
+       )
+#everything has a really long right tail  
+
+#log transformed
+ggplot(stop_data_primary, aes(log_med_value)) +
+  geom_histogram(aes(y = ..density..), bins = 40, color = "darkgreen", fill = "darkgreen", alpha = 0.4) +
+  geom_density(color = "green") +
+  facet_wrap(~variable, scales = "free") +
+  labs(title = "Distribution of TRAP (log transformed)",
+       x = "Concentration on log scale",
+       y = "density"
+       )
+
+#much more central, although there are still some long tails. Definitely should use log values for analysis. 
+
+```
+``` {r}
+
+
+
+```
 
