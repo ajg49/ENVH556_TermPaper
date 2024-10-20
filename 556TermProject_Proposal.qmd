@@ -88,15 +88,6 @@ rm(url, file_name, file_path, data_path)
 ```{r}
 #-----read data from a website--------
 
-# read in annual average air pollution concentrations from mobile monitoring
-# download it from the web and save locallyif the file does not already exist
-annual <- read.csv(file.path("https://zenodo.org/record/13761282/files/annual_data_and_predictions.csv?download=1"))
-                              
-mm_covariates <- read.csv(file.path("https://zenodo.org/records/13761282/files/dr0311_mobile_covariates.csv?download=1")) %>%
-  rename("location" = native_id)
-  
-# combine files
-annual <- left_join(annual, mm_covariates, by="location")
   
 ```
 
@@ -109,7 +100,7 @@ annual <- left_join(annual, mm_covariates, by="location")
   from around the greater Seattle area (Washington, United States). A car, equipped with air quality monitoring and sampling
   equipment, drove along nine routes, stopping and taking ~ 309 samples across all nine routes. Each sample is a two-minute sample
   of air quality, including pollutant concentrations for nitrogen dioxide (NO2), PM2.5, particle number concentration (PNC), carbon
-  dioxide (CO2), and black carbon (BC). These air sample data was used to associate with ageing outcomes in study participants. Our
+  dioxide (CO2), and black carbon (BC). This air sample data was used to associate with ageing outcomes in study participants. Our
   report will not look at any health outcomes, and will focus on characterizing the temporal patterns in the air pollution data. 
   Over the course of a year, each site along the nine driving routes was visited about 25 times [Blanco et al., 2022].
 
@@ -136,9 +127,12 @@ annual <- left_join(annual, mm_covariates, by="location")
 Table 1.0
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
 kable(annual%>%
   group_by(variable) %>%
   summarise(
+    n = length(value),  #every value is 309, can omit and summarize in text. 
+    nmiss = sum(is.na(value)), #no missing, can omit and summarize in text.
     GM = geoMean(value, na.rm = TRUE),
     GSD = geoSD(value, na.rm = TRUE),
     AM = mean(value, na.rm = TRUE),
@@ -149,8 +143,37 @@ kable(annual%>%
 ```{r}
 #---Q-Q plot---#
 
+#using a qq plot to assess normality
 
+#plotting first on a native scale
+ggplot(annual, aes(sample = value)) +
+  stat_qq() + 
+  stat_qq_line() +
+  labs(title = "Normal Q-Q Plot of TRAP",
+       x = "Theoretical Quantiles from a Std Normal Distribution",
+       y = "Concentration - native scale"
+       ) +
+  facet_wrap(~variable, scales = "free")
 
+#Co2 and PM2.5 look close to normal on the native scale, although there are some slight deviations at the tails. 
+#other trap have significant deviation, mostly in the upper quantiles
+
+#creating log transformed concentration variable. 
+annual <- annual %>% mutate(logvalue = log(value), .after = value)
+
+#qq plots using log transformed values
+ggplot(annual, aes(sample = logvalue)) +
+  stat_qq() + 
+  stat_qq_line() +
+  labs(title = "Normal Q-Q Plot of TRAP",
+       x = "Theoretical Quantiles from a Std LogNormal Distribution",
+       y = "log(concentration)"
+       ) +
+  facet_wrap(~variable, scales = "free")
+
+#CO2 nad PM2.5- also looks ok lognormal
+#ma200 - looks much better lognormal
+#No2, ns, pmdisc, pnc - still doesn't look normal, although the deviation is less severe than before transformation
 
 ```
 
