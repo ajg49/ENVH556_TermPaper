@@ -51,8 +51,7 @@ my_repo <- 'http://cran.r-project.org'
 if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
 
 # Load the other packages, installing as needed.
-pacman::p_load(knitr, kableExtra, tidyverse, egg, multcomp, modelr,
-               broom, EnvStats )
+pacman::p_load(knitr, kableExtra, tidyverse, lubridate, egg, multcomp, modelr, broom, EnvStats)
 
 ```
 #I think we can delete this whole chunk?? It isn't the right data. 
@@ -102,6 +101,8 @@ annual <- left_join(annual, mm_covariates, by="location")
 
 stop_data <- read.csv(file.path("https://zenodo.org/record/13761282/files/stop_data.csv?download=1"))
 stop_data <- left_join(stop_data, mm_covariates, by="location")
+
+glimpse(stop_data)
 
   
 ```
@@ -322,7 +323,25 @@ ggplot(stop_data_primary, aes(log_med_value)) +
 
 ```
 ``` {r}
+#creating a new season variable to explore time trends
 
+
+#changing the date variables from character to dates
+stop_data_primary$date <- as.Date(stop_data_primary$date)
+stop_data_primary$time <- as_datetime(stop_data_primary$time)
+
+glimpse(stop_data_primary)
+
+#creating a new season variable. Doing this roughly based off week of year, but we can make it more detailed later if we use this in our analysis
+seasons <- stop_data_primary %>%
+  mutate(season = case_when(
+    week(time) > 12 & week(time) < 26 ~ "Spring",
+    week(time) > 25 & week(time) < 39 ~ "Summer",
+    week(time) > 38 & week(time) < 51 ~ "Autumn",
+    week(time) < 12 | week(time) > 50 ~ "Winter"
+  ), .after = time)
+
+glimpse(seasons)
 
 
 ```
