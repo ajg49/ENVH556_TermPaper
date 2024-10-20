@@ -76,7 +76,7 @@ if (!file.exists(file_path)) {
 
 # Output a warning message if the file cannot be found
 if (file.exists(file_path)) {
-    snapshot<-readRDS(file_path)
+    annual<-readRDS(file_path)
 } else warning(paste("Can't find", file_name, "!"))
 
 # remove temporary variables
@@ -198,6 +198,8 @@ ggplot(annual, aes(logvalue)) +
        x = "Concentration on log scale",
        y = "density"
        )
+
+#think we should use the log transformed data. It's not perfectly normal, but it has improved the super long right tails on some of the pollutants. 
 
 ```
 
