@@ -88,6 +88,16 @@ rm(url, file_name, file_path, data_path)
 ```{r}
 #-----read data from a website--------
 
+# read in annual average air pollution concentrations from mobile monitoring
+# download it from the web and save locallyif the file does not already exist
+annual <- read.csv(file.path("https://zenodo.org/record/13761282/files/annual_data_and_predictions.csv?download=1"))
+                              
+mm_covariates <- read.csv(file.path("https://zenodo.org/records/13761282/files/dr0311_mobile_covariates.csv?download=1")) %>%
+  rename("location" = native_id)
+  
+# combine files
+annual <- left_join(annual, mm_covariates, by="location")
+
   
 ```
 
