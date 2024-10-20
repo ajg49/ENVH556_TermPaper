@@ -1,0 +1,157 @@
+---
+title: "556TermProject_Proposal"
+authors: "Callan, Abbie, and Katie - ENV H 556"
+format:
+  html:
+    df_print: "paged"
+    fig_caption: yes
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    self-contained: true #save images etc. in this file (vs folders)
+execute:
+  echo: true
+  cache: false
+  echo.comments: false
+  message: false
+  warning: false
+  
+---
+
+This document was rendered on `r format(Sys.time(), '%B %d, %Y')`.
+---
+
+## Setting up
+
+For our term project, we aim to assess the temporal variations of traffic-related air pollution (TRAP). Specifically, we will assess how air pollution levels vary across seasons, days of the week, or hours of the day. Our project will use data from the Mobile Monitoring Campaign, as described by [Blanco et al.](https://pubmed.ncbi.nlm.nih.gov/35917479/). 
+
+
+
+```{r setup, include=FALSE}
+
+#-----setup-----
+
+# clear work space of all objects and unload all extra (non-base) packages
+rm(list = ls(all = TRUE))
+if (!is.null(sessionInfo()$otherPkgs)) {
+    res <- suppressWarnings(
+        lapply(paste('package:', names(sessionInfo()$otherPkgs), sep=""),
+               detach, character.only=TRUE, unload=TRUE, force=TRUE))
+   
+}
+
+```
+
+```{r load.libraries.pacman, echo=FALSE, include=FALSE, eval=TRUE}
+
+#-----load libraries pacman-----
+
+# Load pacman into memory, installing as needed
+my_repo <- 'http://cran.r-project.org'
+if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
+
+# Load the other packages, installing as needed.
+pacman::p_load(knitr, kableExtra, tidyverse, egg, multcomp, modelr,
+               broom, EnvStats )
+
+```
+
+```{r directory.organization.read.data, echo=FALSE, warning=FALSE}
+
+#-----directory organization and read data-----
+
+# specify data path, data will be added to your local working directory, should be the project folder
+data_path <- file.path(getwd())
+
+# specify the file name and path
+file_name <- "allseasonsR.rds"
+file_path <- file.path(data_path, file_name)
+
+# Download the file if it is not already present
+if (!file.exists(file_path)) {
+    url <- paste("https://faculty.washington.edu/sheppard/envh556/Datasets", 
+                 file_name, sep = '/')
+    download.file(url = url, destfile = file_path)
+}
+
+# Output a warning message if the file cannot be found
+if (file.exists(file_path)) {
+    snapshot<-readRDS(file_path)
+} else warning(paste("Can't find", file_name, "!"))
+
+# remove temporary variables
+rm(url, file_name, file_path, data_path)
+
+```
+
+
+```{r}
+#-----read data from a website--------
+
+# read in annual average air pollution concentrations from mobile monitoring
+# download it from the web and save locallyif the file does not already exist
+annual <- read.csv(file.path("https://zenodo.org/record/13761282/files/annual_data_and_predictions.csv?download=1"))
+                              
+mm_covariates <- read.csv(file.path("https://zenodo.org/records/13761282/files/dr0311_mobile_covariates.csv?download=1")) %>%
+  rename("location" = native_id)
+  
+# combine files
+annual <- left_join(annual, mm_covariates, by="location")
+  
+```
+
+
+
+## Introduction
+
+*Introduction to Mobile Monitoring Data set and variables*
+  The Mobile Monitoring dat set comes from a study of air pollution and its association with ageing. The study collected air samples
+  from around the greater Seattle area (Washington, United States). A car, equipped with air quality monitoring and sampling
+  equipment, drove along nine routes, stopping and taking ~ 309 samples across all nine routes. Each sample is a two-minute sample
+  of air quality, including pollutant concentrations for nitrogen dioxide (NO2), PM2.5, particle number concentration (PNC), carbon
+  dioxide (CO2), and black carbon (BC). These air sample data was used to associate with ageing outcomes in study participants. Our
+  report will not look at any health outcomes, and will focus on characterizing the temporal patterns in the air pollution data. 
+  Over the course of a year, each site along the nine driving routes was visited about 25 times [Blanco et al., 2022].
+
+*specific aims/hypotheses*
+
+  The sampling design for the Mobile Monitoring data set included variability in the day time, week, and season that samples
+  were taken for a particular site. This means that each sampling location has sampling data from different times throughout 
+  the day, different samples tghroiughout the week, and multiples throughout the year. Our report will utilize the multiple 
+  layers of temporal variation in sample collection to assess changes in air quality across a week and across a year. 
+  
+  We hypothesize that ___________________________________.
+
+
+
+## Methods & Statistical Approach
+
+
+
+
+
+
+## Exploratory/ Introductory Analysis
+
+Table 1.0
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+kable(annual%>%
+  group_by(variable) %>%
+  summarise(
+    GM = geoMean(value, na.rm = TRUE),
+    GSD = geoSD(value, na.rm = TRUE),
+    AM = mean(value, na.rm = TRUE),
+    ASD = sd(value, na.rm = TRUE)),
+  digit = 1)
+
+```
+```{r}
+#---Q-Q plot---#
+
+
+
+
+```
+
+
