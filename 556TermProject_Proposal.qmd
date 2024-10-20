@@ -51,7 +51,7 @@ my_repo <- 'http://cran.r-project.org'
 if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
 
 # Load the other packages, installing as needed.
-pacman::p_load(knitr, kableExtra, tidyverse, lubridate, egg, multcomp, modelr, broom, EnvStats)
+pacman::p_load(knitr, kableExtra, tidyverse, lubridate, egg, multcomp, modelr, broom, EnvStats, Hmisc)
 
 ```
 #I think we can delete this whole chunk?? It isn't the right data. 
@@ -102,7 +102,7 @@ annual <- left_join(annual, mm_covariates, by="location")
 stop_data <- read.csv(file.path("https://zenodo.org/record/13761282/files/stop_data.csv?download=1"))
 stop_data <- left_join(stop_data, mm_covariates, by="location")
 
-glimpse(stop_data)
+head(stop_data) #it's 895 columns long!! going to have to eliminate some that aren't of interest
 
   
 ```
@@ -337,7 +337,10 @@ seasons <- stop_data_primary %>%
     week(time) > 25 & week(time) < 39 ~ "Summer",
     week(time) > 38 & week(time) < 51 ~ "Autumn",
     week(time) < 13 | week(time) > 50 ~ "Winter"
-  ), .after = time)
+  )) %>%
+  mutate(season = factor(season, levels = c("Spring", "Summer", "Autumn", "Winter")))
+
+head(seasons)
 
 #summarizing by season
 
@@ -349,7 +352,7 @@ kable(seasons%>%
     GSD = geoSD(median_value, na.rm = TRUE),
     AM = mean(median_value, na.rm = TRUE),
     ASD = sd(median_value, na.rm = TRUE)),
-  digit = 1)
+  digit = 1) %>% as.factor()
 
 #can run anova later (or even ancova if there are covariates we want to include), but there definitely look like seasonal differences
 
@@ -364,5 +367,8 @@ ggplot(seasons, aes(x = variable, y = median_value, fill = season)) +
 #pnc_screen wasn't measured in winter
 
 #table and plot are kind of rough. Can be improved for readability if we use them, but I was trying to get a sense of the data. 
+
+#most interesting for season difference seem to be ma200, neph_bscat, no2
+#Co2 is the least interesting for seasonal differences
 ```
 
