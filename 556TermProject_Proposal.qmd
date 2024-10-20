@@ -330,19 +330,39 @@ ggplot(stop_data_primary, aes(log_med_value)) +
 stop_data_primary$date <- as.Date(stop_data_primary$date)
 stop_data_primary$time <- as_datetime(stop_data_primary$time)
 
-glimpse(stop_data_primary)
-
 #creating a new season variable. Doing this roughly based off week of year, but we can make it more detailed later if we use this in our analysis
 seasons <- stop_data_primary %>%
   mutate(season = case_when(
     week(time) > 12 & week(time) < 26 ~ "Spring",
     week(time) > 25 & week(time) < 39 ~ "Summer",
     week(time) > 38 & week(time) < 51 ~ "Autumn",
-    week(time) < 12 | week(time) > 50 ~ "Winter"
+    week(time) < 13 | week(time) > 50 ~ "Winter"
   ), .after = time)
 
-glimpse(seasons)
+#summarizing by season
 
+kable(seasons%>%
+  group_by(variable, season) %>%
+  summarise(
+    n = sum(!is.na(median_value)),
+    GM = geoMean(median_value, na.rm = TRUE),
+    GSD = geoSD(median_value, na.rm = TRUE),
+    AM = mean(median_value, na.rm = TRUE),
+    ASD = sd(median_value, na.rm = TRUE)),
+  digit = 1)
 
+#can run anova later (or even ancova if there are covariates we want to include), but there definitely look like seasonal differences
+
+#making a bar plot to visualize better
+
+ggplot(seasons, aes(x = variable, y = median_value, fill = season)) +
+  geom_bar(stat = "summary", fun = "mean", position = "dodge") +
+  facet_wrap(~variable, scales = "free") +
+  labs(y = "mean seasonal concentration", x = "") + 
+  theme(axis.text.x = element_blank())
+
+#pnc_screen wasn't measured in winter
+
+#table and plot are kind of rough. Can be improved for readability if we use them, but I was trying to get a sense of the data. 
 ```
 
