@@ -176,5 +176,29 @@ ggplot(annual, aes(sample = logvalue)) +
 #No2, ns, pmdisc, pnc - still doesn't look normal, although the deviation is less severe than before transformation
 
 ```
+```{r}
+#histograms with smoother
+
+#native scale
+ggplot(annual, aes(value)) +
+  geom_histogram(aes(y = ..density..), bins = 40, color = "lightblue", fill = "lightblue", alpha = 0.8) +
+  geom_density(color = "purple") +
+  facet_wrap(~variable, scales = "free") +
+  labs(title = "Distribution of TRAP",
+       x = "Concentration on native scale",
+       y = "density"
+       )
+  
+#log transformed
+ggplot(annual, aes(logvalue)) +
+  geom_histogram(aes(y = ..density..), bins = 40, color = "darkgreen", fill = "darkgreen", alpha = 0.4) +
+  geom_density(color = "green") +
+  facet_wrap(~variable, scales = "free") +
+  labs(title = "Distribution of TRAP",
+       x = "Concentration on log scale",
+       y = "density"
+       )
+
+```
 
 
