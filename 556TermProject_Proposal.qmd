@@ -55,7 +55,7 @@ pacman::p_load(knitr, kableExtra, tidyverse, egg, multcomp, modelr,
                broom, EnvStats )
 
 ```
-
+#I think we can delete this whole chunk?? It isn't the right data. 
 ```{r directory.organization.read.data, echo=FALSE, warning=FALSE}
 
 #-----directory organization and read data-----
@@ -76,7 +76,7 @@ if (!file.exists(file_path)) {
 
 # Output a warning message if the file cannot be found
 if (file.exists(file_path)) {
-    annual<-readRDS(file_path)
+    snapshot<-readRDS(file_path)
 } else warning(paste("Can't find", file_name, "!"))
 
 # remove temporary variables
@@ -97,6 +97,11 @@ mm_covariates <- read.csv(file.path("https://zenodo.org/records/13761282/files/d
   
 # combine files
 annual <- left_join(annual, mm_covariates, by="location")
+
+#I don't think the annual dataset is enough for our project aims. Downloading individual stop data with collection times and joining to the covariates. 
+
+stop_data <- read.csv(file.path("https://zenodo.org/record/13761282/files/stop_data.csv?download=1"))
+stop_data <- left_join(stop_data, mm_covariates, by="location")
 
   
 ```
@@ -212,5 +217,42 @@ ggplot(annual, aes(logvalue)) +
 #think we should use the log transformed data. It's not perfectly normal, but it has improved the super long right tails on some of the pollutants. 
 
 ```
+``` {r}
+#repeating the above analysis with the individual stop data. 
+kable(stop_data%>%
+  group_by(variable) %>%
+  summarise(
+    n = length(median_value),   #using median value because it has been more extensively QC'd and was the summary measure used in the original study. 
+    nmiss = sum(is.na(median_value)), 
+    GM = geoMean(median_value, na.rm = TRUE),
+    GSD = geoSD(median_value, na.rm = TRUE),
+    AM = mean(median_value, na.rm = TRUE),
+    ASD = sd(median_value, na.rm = TRUE)),
+  digit = 1)
 
+#cannot compute GM for N02, but there are no missing values, and it can compute CM. Negative values?
+
+print(min(stop_data$median_value)) #Yes, there are negative values in the data set. Concentrations cannot be negative - need to investigate what happened here? Were they below LOD and became negative due to some calibration correction (subtracting off a certain value?)
+
+
+sub_zero <- stop_data %>% filter(median_value <= 0) #9 measurements below 0
+unique(stop_data$primary_instrument) # all of them were measured on a back-up instrument. Suggest that we drop backup instrument samples from the analysis
+
+stop_data_primary <- stop_data %>% filter(primary_instrument == "Primary")
+
+kable(stop_data_primary%>%
+  group_by(variable) %>%
+  summarise(
+    n = length(median_value),   #using median value because it has been more extensively QC'd and was the summary measure used in the original study. 
+    nmiss = sum(is.na(median_value)), 
+    GM = geoMean(median_value, na.rm = TRUE),
+    GSD = geoSD(median_value, na.rm = TRUE),
+    AM = mean(median_value, na.rm = TRUE),
+    ASD = sd(median_value, na.rm = TRUE)),
+  digit = 1)
+
+#much better
+# the count of each variable is different, but there are no NA values 
+
+```
 
