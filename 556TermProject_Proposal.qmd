@@ -90,20 +90,16 @@ Over the course of a year, each site along the nine driving routes was visited a
 
 *specific aims/hypotheses*
 
-  The sampling design for the Mobile Monitoring data set included variability in the day time, week, and season that samples
-  were taken for a particular site. This means that each sampling location has sampling data from different times throughout 
-  the day, different samples tghroiughout the week, and multiples throughout the year. Our report will utilize the multiple 
-  layers of temporal variation in sample collection to assess changes in air quality across a week and across a year. 
+  The sampling design for the Mobile Monitoring data set included variability in the day time, week, and season that samples were taken for a particular site. This means that each sampling location has sampling data spanning across distinct days, weeks, and months. Our report will utilize the multiple layers of temporal variation in samples to assess changes in air quality across days of the week and across seasons over the year. 
   
-  We hypothesize that ___________________________________.
-
+  We hypothesize that we will see higher levels of TRAP on weekdays during typical days (M-F). Further, we anticipate that TRAP concentrations will be lower in the summer due to reduced commuter traffic stemming from summer travels [(LA Times 1990)](https://www.latimes.com/archives/la-xpm-1990-09-04-mn-665-story.html). 
 
 
 ## Methods & Statistical Approach
 
+  We will describe TRAP by season (Fall, Winter, Spring, Summer) and by day of the week using descriptive summary statistics and figures to visualize the data distributions (e.g. box plots and histograms). 
 
-
-
+  We will use ANOVA models to compare the mean concentration of log-transformed air pollutants across (1) seasons (i.e. Fall, Winter, Spring, and Summer); and (2) days of the week. As part of our day-of-the-week assessment, we will additionally test whether TRAP is associated more broadly with day type (i.e. week day or weekend) using a land-use regression model adjusted for season and distance to major roadways, which we anticipate could be precision variables.
 
 
 ## Exploratory/ Introductory Analysis
