@@ -54,34 +54,6 @@ if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
 pacman::p_load(knitr, kableExtra, tidyverse, lubridate, egg, multcomp, modelr, broom, EnvStats, Hmisc)
 
 ```
-#I think we can delete this whole chunk?? It isn't the right data. 
-```{r directory.organization.read.data, echo=FALSE, warning=FALSE}
-
-#-----directory organization and read data-----
-
-# specify data path, data will be added to your local working directory, should be the project folder
-data_path <- file.path(getwd())
-
-# specify the file name and path
-file_name <- "allseasonsR.rds"
-file_path <- file.path(data_path, file_name)
-
-# Download the file if it is not already present
-if (!file.exists(file_path)) {
-    url <- paste("https://faculty.washington.edu/sheppard/envh556/Datasets", 
-                 file_name, sep = '/')
-    download.file(url = url, destfile = file_path)
-}
-
-# Output a warning message if the file cannot be found
-if (file.exists(file_path)) {
-    snapshot<-readRDS(file_path)
-} else warning(paste("Can't find", file_name, "!"))
-
-# remove temporary variables
-rm(url, file_name, file_path, data_path)
-
-```
 
 
 ```{r}
@@ -112,13 +84,9 @@ head(stop_data) #it's 895 columns long!! going to have to eliminate some that ar
 ## Introduction
 
 *Introduction to Mobile Monitoring Data set and variables*
-  The Mobile Monitoring dat set comes from a study of air pollution and its association with ageing. The study collected air samples
-  from around the greater Seattle area (Washington, United States). A car, equipped with air quality monitoring and sampling
-  equipment, drove along nine routes, stopping and taking ~ 309 samples across all nine routes. Each sample is a two-minute sample
-  of air quality, including pollutant concentrations for nitrogen dioxide (NO2), PM2.5, particle number concentration (PNC), carbon
-  dioxide (CO2), and black carbon (BC). This air sample data was used to associate with ageing outcomes in study participants. Our
-  report will not look at any health outcomes, and will focus on characterizing the temporal patterns in the air pollution data. 
-  Over the course of a year, each site along the nine driving routes was visited about 25 times [Blanco et al., 2022].
+  The Mobile Monitoring dat set comes from a study of air pollution and its association with aging. The study collected air samples from around the greater Seattle area (Washington, United States). A car, equipped with air quality monitoring and sampling equipment, drove along nine routes, stopping and taking ~ 309 samples across all nine routes. Each sample is a two-minute sample of air quality, including pollutant concentrations for nitrogen dioxide (NO2), PM2.5, particle number concentration (PNC), carbon dioxide (CO2), and black carbon (BC). This air sample data was used to associate with ageing outcomes in study participants. Our report will not look at any health outcomes, and will focus on characterizing the temporal patterns in the air pollution data. 
+  
+Over the course of a year, each site along the nine driving routes was visited about 25 times [Blanco et al., 2022].
 
 *specific aims/hypotheses*
 
