@@ -10,7 +10,7 @@ format:
     number_sections: true
     self-contained: true #save images etc. in this file (vs folders)
 execute:
-  echo: true
+  echo: false
   cache: false
   echo.comments: false
   message: false
@@ -56,7 +56,7 @@ pacman::p_load(knitr, kableExtra, tidyverse, lubridate, egg, multcomp, modelr, b
 ```
 
 
-```{r}
+```{r, echo=FALSE, include=FALSE}
 #-----read data from a website--------
 
 # read in annual average air pollution concentrations from mobile monitoring
@@ -304,7 +304,7 @@ seasons <- stop_data_primary %>%
   )) %>%
   mutate(season = factor(season, levels = c("Spring", "Summer", "Autumn", "Winter")))
 
-head(seasons)
+#head(seasons)
 
 #summarizing by season
 
