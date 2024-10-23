@@ -88,6 +88,9 @@ head(stop_data) #it's 895 columns long!! going to have to eliminate some that ar
   
 Over the course of a year, each site along the nine driving routes was visited about 25 times [Blanco et al., 2022].
 
+Specific Stop-level Data
+
+
 *specific aims/hypotheses*
 
   The sampling design for the Mobile Monitoring data set included variability in the day time, week, and season that samples were taken for a particular site. This means that each sampling location has sampling data spanning across distinct days, weeks, and months. Our report will utilize the multiple layers of temporal variation in samples to assess changes in air quality across days of the week and across seasons over the year. 
@@ -104,32 +107,33 @@ Over the course of a year, each site along the nine driving routes was visited a
 
 ## Exploratory/ Introductory Analysis
 
-Table 1.0
+Each variable has 309 observations with no missing data for any observations. 
+
+**Introduction to Sampling Location Annual Average Data**
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
 kable(annual%>%
   group_by(variable) %>%
   summarise(
-    n = length(value),  #every value is 309, can omit and summarize in text. 
-    nmiss = sum(is.na(value)), #no missing, can omit and summarize in text.
     GM = geoMean(value, na.rm = TRUE),
     GSD = geoSD(value, na.rm = TRUE),
     AM = mean(value, na.rm = TRUE),
     ASD = sd(value, na.rm = TRUE)),
-  digit = 1)
+  digit = 1,
+  caption = "Table 1.0: Summary Statistics for TRAP Variables") %>%
+  kable_styling()
 
 ```
 ```{r}
 #---Q-Q plot---#
 
-#using a qq plot to assess normality
 
 #plotting first on a native scale
 ggplot(annual, aes(sample = value)) +
   stat_qq() + 
   stat_qq_line() +
-  labs(title = "Normal Q-Q Plot of TRAP",
+  labs(title = "Figure 1a: Normal Q-Q Plot of TRAP",
        x = "Theoretical Quantiles from a Std Normal Distribution",
        y = "Concentration - native scale"
        ) +
@@ -145,7 +149,7 @@ annual <- annual %>% mutate(logvalue = log(value), .after = value)
 ggplot(annual, aes(sample = logvalue)) +
   stat_qq() + 
   stat_qq_line() +
-  labs(title = "Normal Q-Q Plot of TRAP",
+  labs(title = "Figure 1b: Normal Q-Q Plot of log(TRAP)",
        x = "Theoretical Quantiles from a Std LogNormal Distribution",
        y = "log(concentration)"
        ) +
@@ -156,6 +160,9 @@ ggplot(annual, aes(sample = logvalue)) +
 #No2, ns, pmdisc, pnc - still doesn't look normal, although the deviation is less severe than before transformation
 
 ```
+The Q-Q plots show that CO2 concentrations in the data are relatively normally distributed, however black carbon, NO2 and partical number concentrations all deviate from normal with high concentrations. The log transformed variables have visibly reduced deviations from a normal distribution. This leads us to conclude that all of the TRAP variables except CO2 benefit from a log transformation.
+
+
 ```{r}
 #histograms with smoother
 
@@ -164,7 +171,7 @@ ggplot(annual, aes(value)) +
   geom_histogram(aes(y = ..density..), bins = 40, color = "lightblue", fill = "lightblue", alpha = 0.8) +
   geom_density(color = "purple") +
   facet_wrap(~variable, scales = "free") +
-  labs(title = "Distribution of TRAP",
+  labs(title = "Figure 2a: Distribution of TRAP",
        x = "Concentration on native scale",
        y = "density"
        )
@@ -174,7 +181,7 @@ ggplot(annual, aes(logvalue)) +
   geom_histogram(aes(y = ..density..), bins = 40, color = "darkgreen", fill = "darkgreen", alpha = 0.4) +
   geom_density(color = "green") +
   facet_wrap(~variable, scales = "free") +
-  labs(title = "Distribution of TRAP",
+  labs(title = "Figure 2b: Distribution of log(TRAP)",
        x = "Concentration on log scale",
        y = "density"
        )
@@ -182,6 +189,12 @@ ggplot(annual, aes(logvalue)) +
 #think we should use the log transformed data. It's not perfectly normal, but it has improved the super long right tails on some of the pollutants. 
 
 ```
+The Histogram plots with smoother in Figures 2a and 2b also indicate a right tailed distribution or skew in most of the TRAP variables.
+
+
+**Introduction to Stop-Level Data**
+
+
 ``` {r}
 #repeating the above analysis with the individual stop data. 
 kable(stop_data%>%
@@ -196,6 +209,7 @@ kable(stop_data%>%
   digit = 1)
 
 #cannot compute GM for N02, but there are no missing values, and it can compute CM. Negative values?
+
 
 print(min(stop_data$median_value)) #Yes, there are negative values in the data set. Concentrations cannot be negative - need to investigate what happened here? Were they below LOD and became negative due to some calibration correction (subtracting off a certain value?)
 
@@ -214,14 +228,16 @@ kable(stop_data_primary%>%
     GSD = geoSD(median_value, na.rm = TRUE),
     AM = mean(median_value, na.rm = TRUE),
     ASD = sd(median_value, na.rm = TRUE)),
-  digit = 1)
+  digit = 1,
+  caption = "Table 2.0: Stop-Level Data Summary" )%>%
+  kable_styling()
 
 #much better
 # the count of each variable is different, but there are no NA values 
 
 ```
 ``` {r}
-#---Q-Q plot---#
+#---Q-Q plot of stop-level data---#
 
 #same QQ plots as above
 
@@ -231,7 +247,7 @@ kable(stop_data_primary%>%
 ggplot(stop_data_primary, aes(sample = median_value)) +
   stat_qq() + 
   stat_qq_line() +
-  labs(title = "Normal Q-Q Plot of TRAP",
+  labs(title = " Figure 3a: Normal Q-Q Plot of TRAP Stop-level data",
        x = "Theoretical Quantiles from a Std Normal Distribution",
        y = "Concentration - native scale"
        ) +
@@ -246,7 +262,7 @@ stop_data_primary <- stop_data_primary %>% mutate(log_med_value = log(median_val
 ggplot(stop_data_primary, aes(sample = log_med_value)) +
   stat_qq() + 
   stat_qq_line() +
-  labs(title = "Normal Q-Q Plot of TRAP",
+  labs(title = " Figure 3b: Normal Q-Q Plot of log(TRAP) Stop=-level data",
        x = "Theoretical Quantiles from a Std LogNormal Distribution",
        y = "log(concentration)"
        ) +
@@ -257,6 +273,11 @@ ggplot(stop_data_primary, aes(sample = log_med_value)) +
 #co2 still has a lot of divergence, as do No2 and ma200. The rest have some dirgence, but look ok
 
 ```
+
+
+The stop-level data shows similar results as the averaged annual data across sample locations. The data benefits from log transformations and this will likely be what we use in further analysis. CO2 has slightly less normal distribution at stop-level data compared to annual data. 
+
+
 ```{r}
 #histograms and density plots
 
@@ -267,7 +288,7 @@ ggplot(stop_data_primary, aes(median_value)) +
   geom_histogram(aes(y = ..density..), bins = 40, color = "lightblue", fill = "lightblue", alpha = 0.8) +
   geom_density(color = "purple") +
   facet_wrap(~variable, scales = "free") +
-  labs(title = "Distribution of TRAP",
+  labs(title = "Figure 4a: Distribution of TRAP Stop-level data",
        x = "Concentration on native scale",
        y = "density"
        )
@@ -278,7 +299,7 @@ ggplot(stop_data_primary, aes(log_med_value)) +
   geom_histogram(aes(y = ..density..), bins = 40, color = "darkgreen", fill = "darkgreen", alpha = 0.4) +
   geom_density(color = "green") +
   facet_wrap(~variable, scales = "free") +
-  labs(title = "Distribution of TRAP (log transformed)",
+  labs(title = "Figure 4b: Distribution of TRAP (log transformed) - stop-level data",
        x = "Concentration on log scale",
        y = "density"
        )
@@ -286,6 +307,19 @@ ggplot(stop_data_primary, aes(log_med_value)) +
 #much more central, although there are still some long tails. Definitely should use log values for analysis. 
 
 ```
+These histograms further the point of the Q-Q plot. In our introduction of this data int he term paper we will choose either the histograms or the Q-Q plots, and either the log-transformed or native scale variables to report. 
+
+**Seasonal Evaluation of the TRAP variables concentrations:**
+
+The stop-level data provided the date and week of the year that each sample was taken. To look at seasonal changes in the stop-level TRAP data, we need to separate the weeks of the year into four seasons. We did this by breaking up the roughly 52 weeks of the year into 4, ~14-week segments. 
+
+Weeks 1 - 13 of the year are coded as spring
+weeks 12 - 26 are coded as summer
+weeks 27 - 39 are coded as autumn
+and week 39 - 50 are coded as winter.
+
+
+
 ``` {r}
 #creating a new season variable to explore time trends
 
@@ -307,8 +341,12 @@ seasons <- stop_data_primary %>%
 #head(seasons)
 
 #summarizing by season
+seasons <- seasons %>%
+  mutate(variable = as.factor(variable))
 
-kable(seasons%>%
+describe(seasons$variable)
+
+kable(seasons %>%
   group_by(variable, season) %>%
   summarise(
     n = sum(!is.na(median_value)),
@@ -316,7 +354,9 @@ kable(seasons%>%
     GSD = geoSD(median_value, na.rm = TRUE),
     AM = mean(median_value, na.rm = TRUE),
     ASD = sd(median_value, na.rm = TRUE)),
-  digit = 1) %>% as.factor()
+  digit = 1,
+  caption = "Table 3.0: Seasonal Summary of stop-level TRAP variables") %>%
+  kable_styling()
 
 #can run anova later (or even ancova if there are covariates we want to include), but there definitely look like seasonal differences
 
@@ -335,4 +375,40 @@ ggplot(seasons, aes(x = variable, y = median_value, fill = season)) +
 #most interesting for season difference seem to be ma200, neph_bscat, no2
 #Co2 is the least interesting for seasonal differences
 ```
+
+**Weekday Stratification and Summary of TRAP variables**
+
+```{r}
+weekdays <- stop_data_primary %>%
+  mutate(week_day = weekdays(stop_data_primary$date ))
+
+weekdays <- weekdays %>%
+  mutate(week_day = as.factor(week_day))
+
+
+kable(weekdays %>%
+  group_by(variable, week_day) %>%
+  summarise(
+    n = sum(!is.na(median_value)),
+    GM = geoMean(median_value, na.rm = TRUE),
+    GSD = geoSD(median_value, na.rm = TRUE),
+    AM = mean(median_value, na.rm = TRUE),
+    ASD = sd(median_value, na.rm = TRUE)),
+  digit = 1,
+  caption = "Table 3.0: Weekly Summary of stop-level TRAP variables") %>%
+  kable_styling()
+
+ggplot(weekdays, aes(x = variable, y = median_value, fill = week_day)) +
+  geom_bar(stat = "summary", fun = "mean", position = "dodge") +
+  facet_wrap(~variable, scales = "free") +
+  labs(y = "mean Weekday concentration", x = "") + 
+  theme(axis.text.x = element_blank())
+
+```
+
+It looks like BC, PNC, NS, and NO2 may be lower on the weekends than the weekdays. This could point towards work week commuting contributions to TRAP concentrations. 
+
+
+
+This initial Summary of the annual averages and stop-level data from the Mobile Monitoring data set leads us to a few conclusions we will use to inform out term paper:
 
