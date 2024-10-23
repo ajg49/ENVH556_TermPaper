@@ -95,7 +95,7 @@ Specific Stop-level Data
 
   The sampling design for the Mobile Monitoring data set included variability in the day time, week, and season that samples were taken for a particular site. This means that each sampling location has sampling data spanning across distinct days, weeks, and months. Our report will utilize the multiple layers of temporal variation in samples to assess changes in air quality across days of the week and across seasons over the year. 
   
-  We hypothesize that we will see higher levels of TRAP on weekdays during typical days (M-F). Further, we anticipate that TRAP concentrations will be lower in the summer due to reduced commuter traffic stemming from summer travels [(LA Times 1990)](https://www.latimes.com/archives/la-xpm-1990-09-04-mn-665-story.html). 
+  We hypothesize that we will see higher levels of TRAP on weekdays during typical work days (M-F). Further, we anticipate that TRAP concentrations will be lower in the summer due to reduced commuter traffic stemming from summer travels [(LA Times 1990)](https://www.latimes.com/archives/la-xpm-1990-09-04-mn-665-story.html). 
 
 
 ## Methods & Statistical Approach
@@ -107,7 +107,7 @@ Specific Stop-level Data
 
 ## Exploratory/ Introductory Analysis
 
-Each variable has 309 observations with no missing data for any observations. 
+Each variable has 309 observations with no missing data for any observations (in the annual summary data). 
 
 **Introduction to Sampling Location Annual Average Data**
 
@@ -307,16 +307,16 @@ ggplot(stop_data_primary, aes(log_med_value)) +
 #much more central, although there are still some long tails. Definitely should use log values for analysis. 
 
 ```
-These histograms further the point of the Q-Q plot. In our introduction of this data int he term paper we will choose either the histograms or the Q-Q plots, and either the log-transformed or native scale variables to report. 
+These histograms further the point of the Q-Q plot. In our introduction of this data in the term paper we will choose either the histograms or the Q-Q plots, and either the log-transformed or native scale variables to report. 
 
 **Seasonal Evaluation of the TRAP variables concentrations:**
 
-The stop-level data provided the date and week of the year that each sample was taken. To look at seasonal changes in the stop-level TRAP data, we need to separate the weeks of the year into four seasons. We did this by breaking up the roughly 52 weeks of the year into 4, ~14-week segments. 
+The stop-level data provided the date and week of the year that each sample was taken. To look at seasonal changes in the stop-level TRAP data, we need to separate the weeks of the year into four seasons. We did this by breaking up the roughly 52 weeks of the year into 4, ~13-week segments. 
 
-Weeks 1 - 13 of the year are coded as spring
-weeks 12 - 26 are coded as summer
-weeks 27 - 39 are coded as autumn
-and week 39 - 50 are coded as winter.
+Weeks 13 - 25 of the year are coded as spring
+weeks 26 - 38 are coded as summer
+weeks 39 - 50 are coded as autumn
+and week 51,52 and 1-12 are coded as winter.
 
 
 
