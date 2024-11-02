@@ -23,9 +23,9 @@ This document was rendered on `r format(Sys.time(), '%B %d, %Y')`.
 
 ## Setting up
 
-For our term project, we aim to assess the temporal variations of traffic-related air pollution (TRAP). Specifically, we will assess how air pollution levels vary across seasons, days of the week, or hours of the day. Our project will use data from the Mobile Monitoring Campaign, as described by [Blanco et al.](https://pubmed.ncbi.nlm.nih.gov/35917479/). 
+For our term project, we aim to characterize the temporal variations of traffic-related air pollution (TRAP). Specifically, we will assess how air pollution levels vary across seasons, days of the week, or hours of the day. Our project will use data from the Mobile Monitoring Campaign, as described by [Blanco et al.](https://pubmed.ncbi.nlm.nih.gov/35917479/). 
 
-
+    
 
 ```{r setup, include=FALSE}
 
@@ -103,6 +103,26 @@ Specific Stop-level Data
   We will describe TRAP by season (Fall, Winter, Spring, Summer) and by day of the week using descriptive summary statistics and figures to visualize the data distributions (e.g. box plots and histograms). 
 
   We will use ANOVA models to compare the mean concentration of log-transformed air pollutants across (1) seasons (i.e. Fall, Winter, Spring, and Summer); and (2) days of the week. As part of our day-of-the-week assessment, we will additionally test whether TRAP is associated more broadly with day type (i.e. week day or weekend) using a land-use regression model adjusted for season and distance to major roadways, which we anticipate could be precision variables.
+
+*Statistical Approach for regression for association*
+
+1. We aim to create a best-fit model of NOx/TRAP pollutant to assess the association of NOx concentrations across days of the week. 
+
+    1b. We will characterize variation in NOx/TRAP across days of the week - within week day and between weekday
+
+2. We aim to create a best fit model of NOx TRAP pollutant to assess NOx concentrations across the four seasons of the year. 
+
+    2b. We will characterize variation in NOx/TRAP across season - within and between season variability
+
+*Statistical Approach for regression for Prediction*
+
+1. We aim to create a best-fit model of NOx/TRAP pollutant to predict NOx/TRAP concentrations for each season of the year. 
+
+    1b. We will use 10-fold cross validation to assess model performances and choose the best-fit model based on out-of-sample RMSE and MSE-based R squared. All models will have an interaction term for season. 
+
+2. We aim to create a best-fit model of NOx/TRAP pollutant to predict NOx/TRAP concentrations for the weekend and work days each week. 
+
+    2b. We will use 10-fold cross validation to assess model performances and choose the best-fit model based on out-of-sample RMSE and MSE-based R squared. All models will have an interaction term for weekend/workweek.
 
 
 ## Exploratory/ Introductory Analysis
@@ -309,7 +329,7 @@ ggplot(stop_data_primary, aes(log_med_value)) +
 ```
 These histograms further the point of the Q-Q plot. In our introduction of this data in the term paper we will choose either the histograms or the Q-Q plots, and either the log-transformed or native scale variables to report. 
 
-**Seasonal Evaluation of the TRAP variables concentrations:**
+# Seasonal Characterization of the TRAP variables concentrations:
 
 The stop-level data provided the date and week of the year that each sample was taken. To look at seasonal changes in the stop-level TRAP data, we need to separate the weeks of the year into four seasons. We did this by breaking up the roughly 52 weeks of the year into 4, ~13-week segments. 
 
@@ -318,7 +338,7 @@ weeks 26 - 38 are coded as summer
 weeks 39 - 50 are coded as autumn
 and week 51,52 and 1-12 are coded as winter.
 
-
+**Seasonal Stratification and summary of TRAP variables**
 
 ``` {r}
 #creating a new season variable to explore time trends
@@ -376,6 +396,11 @@ ggplot(seasons, aes(x = variable, y = median_value, fill = season)) +
 #Co2 is the least interesting for seasonal differences
 ```
 
+
+
+
+# Weekly Characterization of the TRAP variables concentrations:
+
 **Weekday Stratification and Summary of TRAP variables**
 
 ```{r}
@@ -411,4 +436,118 @@ It looks like BC, PNC, NS, and NO2 may be lower on the weekends than the weekday
 
 
 This initial Summary of the annual averages and stop-level data from the Mobile Monitoring data set leads us to a few conclusions we will use to inform out term paper:
+
+
+
+# Regression for Prediction: Seasonal Models
+
+1. create cross validation functions
+2. cross validation for out-of-sample statistics
+  for summer, fall, winter, and spring models
+3. select best-fit model 
+  for summer, fall, winter, and spring models
+  
+```{r, echo = FALSE, message = FALSE}
+##--- function sot be used---#
+
+# This is a function to get the MSE, RMSE, MSE-based R2
+get_MSE <- function(obs,pred) {
+    
+    obs_avg <- mean(obs)
+
+    MSE_obs <- mean((obs-obs_avg)^2)
+    
+    MSE_pred <- mean((obs - pred)^2)
+
+    result <- c(RMSE = sqrt(MSE_pred),
+                MSE_based_R2 = max(1 - MSE_pred / MSE_obs, 0) 
+                )
+    
+    return(result)
+}
+
+#-----define CV function-----
+
+do_CV <- function(data, id = "id", group = "group", formula) {
+  
+  lapply(unique(data[[group]]), function(this_group){
+    
+    CV_lm <- lm(formula, data = data[data[[group]] != this_group,])
+    
+    data[data[[group]] == this_group,] %>%
+      mutate(cvpreds = predict(CV_lm, newdata = .) %>% unname())
+    
+
+  }) %>% bind_rows() %>% arrange(.data[[id]])
+  
+}
+
+
+
+```
+
+```{r}
+#-----forward selection SUMMER-----#
+seasons <- seasons[seasons$variable == "no2",]
+
+seasons <- seasons%>%
+  mutate("ln_no2" = log(mean_value))
+
+summer <- seasons %>%
+  filter(season == "Summer")
+
+null <- lm(ln_no2 ~ 1, data = summer)
+
+summer <- summer %>%
+  filter(!is.na(ln_no2))
+
+covars_all <- str_subset(names(summer),"pop_|int_|open_|D2|A1_|A23_|m_to_a1")
+
+# B: now turn this into a formula for the full model in stepwise regression:
+full <- as.formula(paste("ln_no2 ~ ", paste(covars_all, collapse= "+")))
+
+# Using k=2 is comparable to standard AIC.
+# Using log(n), where n is the number of observations, is comparable to BIC.
+forwardreg_summer <- step(null, 
+                        scope = list(lower = null, upper = full), 
+                        trace = 0, 
+                        direction = "forward", 
+                        k = 0)
+
+covars_forward <- names(forwardreg_summer$coefficients) %>%
+  setdiff('(Intercept)')
+
+covars_forward
+
+```
+
+```{r}
+##--- cross validation for SUMMER---#
+#problems 
+ 
+temp <- do_CV(data = summer, id = "id", group = "cluster", formula = frml)
+
+# now check the results from the CV function
+# Summarize with get_MSE
+get_MSE(temp$ln_no2, temp$cvpreds)
+
+
+# get range for plot
+r <- temp %>% select(ln_no2, cvpreds) %>% range()
+
+# now look at the scatterplot, observations on the x axis as we typically do for
+# considering out-of-sample predictions
+ggplot(data = temp, aes(ln_no2, cvpreds)) +
+    geom_point(shape = "o", alpha = 0.8) +
+    lims(x= r, y = r) +
+    coord_fixed() +
+    geom_abline(intercept = 0, slope = 1, color = "blue") +
+    labs(title = "Fall model predictions vs. ln(NOx) \nCross-validated", 
+         x = "Observed ln(NOx) (ln(ppb))",
+         y = "Predicted ln(NOx) (ln(ppb))",
+         caption = "1:1 line is blue") + 
+    theme_bw()
+
+```
+
 
