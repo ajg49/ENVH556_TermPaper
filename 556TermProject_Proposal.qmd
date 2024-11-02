@@ -467,8 +467,19 @@ get_MSE <- function(obs,pred) {
 }
 
 #-----define CV function-----
+# Arguments:
+  # data is the data frame
+  # id is the unique variable for determining sort order of data frame
+  # group is the grouping variable (a variable in the data frame)
+  # formula is the formula to pass to lm
+  # the function returns the dataset with a new variable called cvpreds
+  # appended to the end; these are the out-of-sample predictions
 
-do_CV <- function(data, id = "id", group = "group", formula) {
+  # do for each cluster in the  dataset
+  # (Note the use of "[[ ]]" rather than "$" because group is input in the
+  # function call as a quoted variable)
+
+do_CV <- function(data = data, id = "id", group = "group", formula) {
   
   lapply(unique(data[[group]]), function(this_group){
     
@@ -522,32 +533,37 @@ covars_forward
 ```
 
 ```{r}
-##--- cross validation for SUMMER---#
-#problems 
- 
-temp <- do_CV(data = summer, id = "id", group = "cluster", formula = frml)
 
-# now check the results from the CV function
-# Summarize with get_MSE
-get_MSE(temp$ln_no2, temp$cvpreds)
+#-----model order and CV-----
 
-
-# get range for plot
-r <- temp %>% select(ln_no2, cvpreds) %>% range()
-
-# now look at the scatterplot, observations on the x axis as we typically do for
-# considering out-of-sample predictions
-ggplot(data = temp, aes(ln_no2, cvpreds)) +
-    geom_point(shape = "o", alpha = 0.8) +
-    lims(x= r, y = r) +
-    coord_fixed() +
-    geom_abline(intercept = 0, slope = 1, color = "blue") +
-    labs(title = "Fall model predictions vs. ln(NOx) \nCross-validated", 
-         x = "Observed ln(NOx) (ln(ppb))",
-         y = "Predicted ln(NOx) (ln(ppb))",
-         caption = "1:1 line is blue") + 
-    theme_bw()
+# apply along length of the vector of names from forward selection
+res <- lapply(seq_along(covars_forward), function(i){
+    
+    # define the formula, updated to add a term each time
+    fmla <- as.formula(
+        paste("ln_no2 ~ 1 + ", paste(covars_forward[seq_len(i)], collapse = "+"))) 
+    
+    # in-sample model and estimates
+    in_model <- lm(fmla, data = summer) 
+    
+    # out-of sample model and estimates
+    out_ests <- do_CV(data = summer, id = "stop_id", group = "location", fmla)
+    out_results <- get_MSE(out_ests$ln_nox, out_ests$cvpreds)
+    
+    # compile results
+    tibble(n_pred = i,
+           covar = covars_forward[i],
+           in_RMSE = sqrt(mean(in_model$residuals^2)),
+           in_R2 = summary(in_model)$r.squared,
+           out_RMSE = out_results[["RMSE"]],
+           out_R2 = out_results[["MSE_based_R2"]] 
+           )
+    
+    }) %>% 
+    bind_rows()
 
 ```
+
+
 
 
