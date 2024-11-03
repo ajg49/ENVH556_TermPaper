@@ -51,7 +51,8 @@ my_repo <- 'http://cran.r-project.org'
 if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
 
 # Load the other packages, installing as needed.
-pacman::p_load(knitr, kableExtra, tidyverse, lubridate, egg, multcomp, modelr, broom, EnvStats, Hmisc)
+pacman::p_load(knitr, kableExtra, tidyverse, lubridate, egg, multcomp, modelr, broom, EnvStats, Hmisc,
+               dplyr, tidyr, purrr, ggplot2, stringr)
 
 ```
 
@@ -532,7 +533,7 @@ covars_forward
 
 ```
 
-```{r}
+```{r, warning = FALSE, message = FALSE}
 
 #-----model order and CV-----
 
@@ -548,10 +549,10 @@ res <- lapply(seq_along(covars_forward), function(i){
     
     # out-of sample model and estimates
     out_ests <- do_CV(data = summer, id = "stop_id", group = "location", fmla)
-    out_results <- get_MSE(out_ests$ln_nox, out_ests$cvpreds)
+    out_results <- get_MSE(out_ests$ln_no2, out_ests$cvpreds)
     
     # compile results
-    tibble(n_pred = i,
+   tibble(n_pred = i,
            covar = covars_forward[i],
            in_RMSE = sqrt(mean(in_model$residuals^2)),
            in_R2 = summary(in_model)$r.squared,
@@ -562,8 +563,49 @@ res <- lapply(seq_along(covars_forward), function(i){
     }) %>% 
     bind_rows()
 
+head(re)
+
 ```
 
+```{r}
+#-----bias-var combined plots-----
+
+# Note that the out-of-sample R2 for a model with 31 terms is about .7; we can
+# find the RMSE using res$out_RMSE[31]:
+max(res$out_RMSE[1:31])
+min(res$out_RMSE[1:31])
+
+# This suggests limits for the R2 plot of ~.5-.7 to 1 and limits for the RMSE
+# plot of 0 - ~.5 or so
+
+y_lim <- 0.5
+
+# create temporary dataframe for plot
+temp <- res %>% 
+  
+  # make long dataframe
+  pivot_longer(cols = c(ends_with("_RMSE"), ends_with("_R2")), 
+               names_to = "Source_Estimate", 
+               values_to = "value" ) %>%
+  
+  # separate the "Source" column for in and out of sample
+  separate(col = Source_Estimate, into = c("Source", "Estimate") ) %>% 
+
+  # set high RMSE values to NA, then filter out these values before plotting
+  mutate(value = ifelse(Estimate == "RMSE" & value > y_lim, NA, value)) %>%
+  filter(!is.na(value))
+
+  geom_point(aes(x = n_pred, y = value, color = Source)) +
+  geom_line(aes(x = n_pred, y = value, color = Source)) +
+  xlab("Model Complexity (# of terms)") +
+  ylab("") +
+  scale_x_continuous(breaks = c(seq(0, 63, 5))) +
+  facet_wrap(~ Estimate, scales = "free_y", ncol = 1, strip.position = "right") +
+  theme_bw() 
+
+#show plot
+combined_plot
+```
 
 
 
