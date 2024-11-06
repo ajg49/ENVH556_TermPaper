@@ -85,11 +85,12 @@ head(stop_data) #it's 895 columns long!! going to have to eliminate some that ar
 ## Introduction
 
 *Introduction to Mobile Monitoring Data set and variables*
-  The Mobile Monitoring dat set comes from a study of air pollution and its association with aging. The study collected air samples from around the greater Seattle area (Washington, United States). A car, equipped with air quality monitoring and sampling equipment, drove along nine routes, stopping and taking ~ 309 samples across all nine routes. Each sample is a two-minute sample of air quality, including pollutant concentrations for nitrogen dioxide (NO2), PM2.5, particle number concentration (PNC), carbon dioxide (CO2), and black carbon (BC). This air sample data was used to associate with ageing outcomes in study participants. Our report will not look at any health outcomes, and will focus on characterizing the temporal patterns in the air pollution data. 
-  
-Over the course of a year, each site along the nine driving routes was visited about 25 times [Blanco et al., 2022].
 
-Specific Stop-level Data
+  The Mobile Monitoring data set comes from a study of air pollution and its association with aging. The study collected air samples from around the greater Seattle area (Washington, United States). A car, equipped with air quality monitoring and sampling equipment, drove along nine routes, stopping and taking ~ 309 samples across all nine routes over the course of one year. Each sample is a two-minute sample of air quality, including pollutant concentrations for nitrogen dioxide (NO2), PM2.5, particle number concentration (PNC), carbon dioxide (CO2), and black carbon (BC). 
+  
+The purpose of this analysis is to focus on characterizing the temporal patterns of air pollution. 
+
+
 
 
 *specific aims/hypotheses*
@@ -101,21 +102,14 @@ Specific Stop-level Data
 
 ## Methods & Statistical Approach
 
+**Descriptive Statistics**
+
   We will describe TRAP by season (Fall, Winter, Spring, Summer) and by day of the week using descriptive summary statistics and figures to visualize the data distributions (e.g. box plots and histograms). 
 
   We will use ANOVA models to compare the mean concentration of log-transformed air pollutants across (1) seasons (i.e. Fall, Winter, Spring, and Summer); and (2) days of the week. As part of our day-of-the-week assessment, we will additionally test whether TRAP is associated more broadly with day type (i.e. week day or weekend) using a land-use regression model adjusted for season and distance to major roadways, which we anticipate could be precision variables.
 
-*Statistical Approach for regression for association*
 
-1. We aim to create a best-fit model of NOx/TRAP pollutant to assess the association of NOx concentrations across days of the week. 
-
-    1b. We will characterize variation in NOx/TRAP across days of the week - within week day and between weekday
-
-2. We aim to create a best fit model of NOx TRAP pollutant to assess NOx concentrations across the four seasons of the year. 
-
-    2b. We will characterize variation in NOx/TRAP across season - within and between season variability
-
-*Statistical Approach for regression for Prediction*
+**Statistical Approach for Regression for Prediction**
 
 1. We aim to create a best-fit model of NOx/TRAP pollutant to predict NOx/TRAP concentrations for each season of the year. 
 
@@ -605,6 +599,21 @@ temp <- res %>%
 
 #show plot
 combined_plot
+```
+
+```{r appendix, results='hide'}
+
+#*Statistical Approach for regression for association*
+
+#1. We aim to create a best-fit model of NOx/TRAP pollutant to assess the association of NOx concentrations across days of the week. 
+
+#1b. We will characterize variation in NOx/TRAP across days of the week - within week day and between weekday
+
+#2. We aim to create a best fit model of NOx TRAP pollutant to assess NOx concentrations across the four seasons of the year. 
+
+#2b. We will characterize variation in NOx/TRAP across season - within and between season variability
+
+
 ```
 
 
