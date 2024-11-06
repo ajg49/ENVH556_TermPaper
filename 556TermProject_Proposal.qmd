@@ -1,5 +1,5 @@
 ---
-title: "556TermProject_Proposal"
+title: "Updated 556TermProject_Proposal"
 authors: "Callan, Abbie, and Katie - ENV H 556"
 format:
   html:
@@ -20,12 +20,6 @@ execute:
 
 This document was rendered on `r format(Sys.time(), '%B %d, %Y')`.
 ---
-
-## Setting up
-
-For our term project, we aim to characterize the temporal variations of traffic-related air pollution (TRAP). Specifically, we will assess how air pollution levels vary across seasons, days of the week, or hours of the day. Our project will use data from the Mobile Monitoring Campaign, as described by [Blanco et al.](https://pubmed.ncbi.nlm.nih.gov/35917479/). 
-
-    
 
 ```{r setup, include=FALSE}
 
@@ -86,39 +80,45 @@ head(stop_data) #it's 895 columns long!! going to have to eliminate some that ar
 
 *Introduction to Mobile Monitoring Data set and variables*
 
-  The Mobile Monitoring data set comes from a study of air pollution and its association with aging. The study collected air samples from around the greater Seattle area (Washington, United States). A car, equipped with air quality monitoring and sampling equipment, drove along nine routes, stopping and taking ~ 309 samples across all nine routes over the course of one year. Each sample is a two-minute sample of air quality, including pollutant concentrations for nitrogen dioxide (NO2), PM2.5, particle number concentration (PNC), carbon dioxide (CO2), and black carbon (BC). 
+  The Mobile Monitoring data set comes from a study on air pollution and its association with aging. The study collected air samples from around the greater Seattle area (Washington, United States). A car, equipped with air quality monitoring and sampling equipment, drove along nine routes, stopping and taking ~ 309 samples across all nine routes over the course of one year. Each sample is a two-minute sample of air quality, including pollutant concentrations for nitrogen dioxide (NO2), PM2.5, particle number concentration (PNC), carbon dioxide (CO2), and black carbon (BC). We selected PM2.5 to be the primary outcome variable based on its established association with adverse health outcomes, including acute and chronic cardiovascular and respiratory effects.
   
-The purpose of this analysis is to focus on characterizing the temporal patterns of air pollution. 
+*Specific Aims, Approach, and Hypotheses*
 
-
-
-
-*specific aims/hypotheses*
-
-  The sampling design for the Mobile Monitoring data set included variability in the day time, week, and season that samples were taken for a particular site. This means that each sampling location has sampling data spanning across distinct days, weeks, and months. Our report will utilize the multiple layers of temporal variation in samples to assess changes in air quality across days of the week and across seasons over the year. 
+The purpose of this analysis is to compare prediction models for traffic-related PM2.5 based on (1) season and (2) day of the week. 
   
-  We hypothesize that we will see higher levels of TRAP on weekdays during typical work days (M-F). Further, we anticipate that TRAP concentrations will be lower in the summer due to reduced commuter traffic stemming from summer travels [(LA Times 1990)](https://www.latimes.com/archives/la-xpm-1990-09-04-mn-665-story.html). 
+We will first develop a "general model" to be used in Aims 1 and 2. General model covariates will be selected based on their potential associations with the PM2.5 and either season or day of the week (i.e. confounders) or with PM2.5 alone (i.e. precision variables). The out-of-sample RMSE and R^2 estimates for the general model will be estimated using 10-fold cross-validation in randomly generated groups. 
+  
+We will extend the general model to build prediction models adjusting for season and day-of-the-week interactions. The specific aims and approaches for each model are outlined below:  
+  
+**Aim 1:** Predict average PM2.5 concentrations using a land-use regression model that incorporates seasonal interactions
+  Approach: We will add an interaction term for season to all covariates in our general model       (general model described below). 
+  Hypothesis: We hypothesize that model fit will improve based on the addition of seasonal          interaction terms. 
 
+**Aim 2:** Predict average PM2.5 concentrations using a land-use regression model that incorporates day-of-the-week interactions
+  Approach: We will add an interaction term for day of the week to all covariates in our general    model (general model described below).
+  Hypothesis: We hypothesize that model fit will improve based on the addition of day-of-the-week   interaction terms
+  
+**Aim 3:** Compare the out-of-sample performance of the prediction models in Aims 1 and 2
+  Approach: We will use 10-fold cross-validation in randomly generated groups to estimate the       out-of-sample RMSE and R^2 for each model. We will use these estimates to compare prediction      performance across models. 
+  Hypothesis: We hypothesize that the model adjusted for seasonality interactions will outperform   the model adjusted for day-of-the-week interactions. 
+ 
 
-## Methods & Statistical Approach
+Through characterizing and comparing these  prediction models for PM2.5, our analyses provide insight on the importance of various temporal trends related to PM2.5 concentrations. This offers the potential to improve future prediction models that inform public health interventions, surveillance, and environmental policies. 
+ 
 
-**Descriptive Statistics**
+**Group Member Roles**
 
-  We will describe TRAP by season (Fall, Winter, Spring, Summer) and by day of the week using descriptive summary statistics and figures to visualize the data distributions (e.g. box plots and histograms). 
+Statistical Analyses: all group members will contribute to the statistical analyses. Specific roles are detailed as follows: 
 
-  We will use ANOVA models to compare the mean concentration of log-transformed air pollutants across (1) seasons (i.e. Fall, Winter, Spring, and Summer); and (2) days of the week. As part of our day-of-the-week assessment, we will additionally test whether TRAP is associated more broadly with day type (i.e. week day or weekend) using a land-use regression model adjusted for season and distance to major roadways, which we anticipate could be precision variables.
+Modeling:
+- Callan: build general model and cross-validate; obtain RMSE and R2 estimates
+- Abbie: build season interaction model and cross-validate; obtain RMSE and R2 estimates
+- Katie: build day-of-week interaction model and cross-validate; obtain RMSE and R2 estimates
 
-
-**Statistical Approach for Regression for Prediction**
-
-1. We aim to create a best-fit model of NOx/TRAP pollutant to predict NOx/TRAP concentrations for each season of the year. 
-
-    1b. We will use 10-fold cross validation to assess model performances and choose the best-fit model based on out-of-sample RMSE and MSE-based R squared. All models will have an interaction term for season. 
-
-2. We aim to create a best-fit model of NOx/TRAP pollutant to predict NOx/TRAP concentrations for the weekend and work days each week. 
-
-    2b. We will use 10-fold cross validation to assess model performances and choose the best-fit model based on out-of-sample RMSE and MSE-based R squared. All models will have an interaction term for weekend/workweek.
-
+Report Drafting: all group members will contribute to the report drafting. 
+- Callan: write introduction and methods sections; assist with discussion section 
+- Abbie: 
+- Katie: 
 
 ## Exploratory/ Introductory Analysis
 
@@ -178,7 +178,7 @@ ggplot(annual, aes(sample = logvalue)) +
 The Q-Q plots show that CO2 concentrations in the data are relatively normally distributed, however black carbon, NO2 and partical number concentrations all deviate from normal with high concentrations. The log transformed variables have visibly reduced deviations from a normal distribution. This leads us to conclude that all of the TRAP variables except CO2 benefit from a log transformation.
 
 
-```{r}
+```{r histogram}
 #histograms with smoother
 
 #native scale
@@ -210,7 +210,7 @@ The Histogram plots with smoother in Figures 2a and 2b also indicate a right tai
 **Introduction to Stop-Level Data**
 
 
-``` {r}
+``` {r intro to stop level}
 #repeating the above analysis with the individual stop data. 
 kable(stop_data%>%
   group_by(variable) %>%
@@ -293,7 +293,7 @@ ggplot(stop_data_primary, aes(sample = log_med_value)) +
 The stop-level data shows similar results as the averaged annual data across sample locations. The data benefits from log transformations and this will likely be what we use in further analysis. CO2 has slightly less normal distribution at stop-level data compared to annual data. 
 
 
-```{r}
+```{r distribution}
 #histograms and density plots
 
 #histograms with smoother
@@ -335,7 +335,7 @@ and week 51,52 and 1-12 are coded as winter.
 
 **Seasonal Stratification and summary of TRAP variables**
 
-``` {r}
+``` {r seasonal strat}
 #creating a new season variable to explore time trends
 
 
@@ -398,7 +398,7 @@ ggplot(seasons, aes(x = variable, y = median_value, fill = season)) +
 
 **Weekday Stratification and Summary of TRAP variables**
 
-```{r}
+```{r weekdays}
 weekdays <- stop_data_primary %>%
   mutate(week_day = weekdays(stop_data_primary$date ))
 
@@ -492,7 +492,7 @@ do_CV <- function(data = data, id = "id", group = "group", formula) {
 
 ```
 
-```{r}
+```{r selection}
 #-----forward selection SUMMER-----#
 seasons <- seasons[seasons$variable == "no2",]
 
@@ -527,7 +527,7 @@ covars_forward
 
 ```
 
-```{r, warning = FALSE, message = FALSE}
+```{r forward select, warning = FALSE, message = FALSE}
 
 #-----model order and CV-----
 
@@ -561,7 +561,7 @@ head(re)
 
 ```
 
-```{r}
+```{r bias plots}
 #-----bias-var combined plots-----
 
 # Note that the out-of-sample R2 for a model with 31 terms is about .7; we can
@@ -612,6 +612,19 @@ combined_plot
 #2. We aim to create a best fit model of NOx TRAP pollutant to assess NOx concentrations across the four seasons of the year. 
 
 #2b. We will characterize variation in NOx/TRAP across season - within and between season variability
+
+
+## Methods & Statistical Approach
+
+#Descriptive statistics
+
+#  We will characterize the distribution of PM2.5 concentrations according to season (Fall, Winter, Spring, Summer) and day of the week using descriptive summary statistics, box plots and/or histograms. 
+
+ # We will use ANOVA models to compare the mean concentration of log-transformed air pollutants across (1) seasons (i.e. Fall, Winter, Spring, and Summer); and (2) days of the week. 
+  
+
+#As part of our day-of-the-week assessment, we will additionally test whether TRAP is associated more broadly with day type (i.e. week day or weekend) using a land-use regression model adjusted for season and distance to major roadways, which we anticipate could be precision variables.
+
 
 
 ```
