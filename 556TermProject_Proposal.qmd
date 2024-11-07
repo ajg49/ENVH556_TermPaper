@@ -117,8 +117,9 @@ Modeling:
 
 Report Drafting: all group members will contribute to the report drafting. 
 - Callan: write introduction and methods sections; assist with discussion section 
-- Abbie: 
-- Katie: 
+- Abbie: summarize results and discuss season interaction model performance in discussion section. 
+- Katie: summarize results for day of week model performance in discussion section. 
+
 
 ## Exploratory/ Introductory Analysis
 
