@@ -178,6 +178,7 @@ ggplot(annual, aes(sample = logvalue)) +
 ```
 The Q-Q plots show that CO2 concentrations in the data are relatively normally distributed, however black carbon, NO2 and partical number concentrations all deviate from normal with high concentrations. The log transformed variables have visibly reduced deviations from a normal distribution. This leads us to conclude that all of the TRAP variables except CO2 benefit from a log transformation.
 
+PM2.5 Our contaminant of focus, has very close to normal distribution on the log-transformed scale. 
 
 ```{r histogram}
 #histograms with smoother
@@ -288,6 +289,8 @@ ggplot(stop_data_primary, aes(sample = log_med_value)) +
 
 #co2 still has a lot of divergence, as do No2 and ma200. The rest have some dirgence, but look ok
 
+#neph_bscat is the variable for Pm2.5 is this data? Weird name.
+
 ```
 
 
@@ -334,6 +337,10 @@ weeks 26 - 38 are coded as summer
 weeks 39 - 50 are coded as autumn
 and week 51,52 and 1-12 are coded as winter.
 
+** Limitations of this approach. This is based only on diving the year into roughly equal portions based on numerical week. There is no distinct scientific or meteorological significance to the cutoff. Could look at other ways of defining season for more accuracy --- could use specific calendrical definitions, or could look at cut points based on temp or precip. Could also use social cutoffs (e.g. summer is when Seattle public school are out), as any seasonal differences could be a combination of both social and meteorological phenomena
+
+
+
 **Seasonal Stratification and summary of TRAP variables**
 
 ``` {r seasonal strat}
@@ -345,24 +352,26 @@ stop_data_primary$date <- as.Date(stop_data_primary$date)
 stop_data_primary$time <- as_datetime(stop_data_primary$time)
 
 #creating a new season variable. Doing this roughly based off week of year, but we can make it more detailed later if we use this in our analysis
-seasons <- stop_data_primary %>%
+
+# 11.10.24. I changed this to add a new column to our main df rather than create a new df, because it will be helpful to have the season and weekday variable in the same df - KW
+stop_data_primary <- stop_data_primary %>%
   mutate(season = case_when(
     week(time) > 12 & week(time) < 26 ~ "Spring",
     week(time) > 25 & week(time) < 39 ~ "Summer",
     week(time) > 38 & week(time) < 51 ~ "Autumn",
     week(time) < 13 | week(time) > 50 ~ "Winter"
-  )) %>%
+  ), .after = date) %>%
   mutate(season = factor(season, levels = c("Spring", "Summer", "Autumn", "Winter")))
 
 #head(seasons)
 
 #summarizing by season
-seasons <- seasons %>%
+stop_data_primary <- stop_data_primary %>%
   mutate(variable = as.factor(variable))
 
-describe(seasons$variable)
+describe(stop_data_primary$variable)
 
-kable(seasons %>%
+kable(stop_data_primary %>%
   group_by(variable, season) %>%
   summarise(
     n = sum(!is.na(median_value)),
@@ -378,7 +387,7 @@ kable(seasons %>%
 
 #making a bar plot to visualize better
 
-ggplot(seasons, aes(x = variable, y = median_value, fill = season)) +
+ggplot(stop_data_primary, aes(x = variable, y = median_value, fill = season)) +
   geom_bar(stat = "summary", fun = "mean", position = "dodge") +
   facet_wrap(~variable, scales = "free") +
   labs(y = "mean seasonal concentration", x = "") + 
@@ -391,7 +400,7 @@ ggplot(seasons, aes(x = variable, y = median_value, fill = season)) +
 #most interesting for season difference seem to be ma200, neph_bscat, no2
 #Co2 is the least interesting for seasonal differences
 ```
-
+PM2.5 (neph_bscat) is the highest in Autumn.
 
 
 
@@ -400,14 +409,21 @@ ggplot(seasons, aes(x = variable, y = median_value, fill = season)) +
 **Weekday Stratification and Summary of TRAP variables**
 
 ```{r weekdays}
-weekdays <- stop_data_primary %>%
-  mutate(week_day = weekdays(stop_data_primary$date ))
 
-weekdays <- weekdays %>%
+# 11.10.24. I changed this to add a new column to our main df rather than create a new df, because it will be helpful to have the season and weekday variable in the same df - KW
+stop_data_primary <- stop_data_primary %>%
+  mutate(week_day = weekdays(date), .after = date)
+
+stop_data_primary <- stop_data_primary %>%
   mutate(week_day = as.factor(week_day))
 
+#ordering the factors so that week days appear in order on the plot. Started with Monday so that the weekend days appear together. 
+stop_data_primary$week_day = factor(stop_data_primary$week_day, 
+                                      levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
 
-kable(weekdays %>%
+
+
+kable(stop_data_primary %>%
   group_by(variable, week_day) %>%
   summarise(
     n = sum(!is.na(median_value)),
@@ -419,7 +435,7 @@ kable(weekdays %>%
   caption = "Table 3.0: Weekly Summary of stop-level TRAP variables") %>%
   kable_styling()
 
-ggplot(weekdays, aes(x = variable, y = median_value, fill = week_day)) +
+ggplot(stop_data_primary, aes(x = variable, y = median_value, fill = week_day)) +
   geom_bar(stat = "summary", fun = "mean", position = "dodge") +
   facet_wrap(~variable, scales = "free") +
   labs(y = "mean Weekday concentration", x = "") + 
@@ -429,6 +445,7 @@ ggplot(weekdays, aes(x = variable, y = median_value, fill = week_day)) +
 
 It looks like BC, PNC, NS, and NO2 may be lower on the weekends than the weekdays. This could point towards work week commuting contributions to TRAP concentrations. 
 
+There is a strange spike in PM2.5 on Thursdays?
 
 
 This initial Summary of the annual averages and stop-level data from the Mobile Monitoring data set leads us to a few conclusions we will use to inform out term paper:
@@ -495,12 +512,12 @@ do_CV <- function(data = data, id = "id", group = "group", formula) {
 
 ```{r selection}
 #-----forward selection SUMMER-----#
-seasons <- seasons[seasons$variable == "no2",]
+no2_only <- stop_data_primary[stop_data_primary$variable == "no2",] #do we want to change this to pm2.5?? Also I changed the df name because the way it was before it was subsetting the the whole DF, so we were losing data. 
 
-seasons <- seasons%>%
-  mutate("ln_no2" = log(mean_value))
+no2_only <- no2_only %>%
+  mutate("ln_no2" = log(mean_value))   #I think that we should use median value (it's noted in the paper that it was more carefully QCd and used in their primary analysis), and we already have a variable for that created above.
 
-summer <- seasons %>%
+summer <- no2_only %>%
   filter(season == "Summer")
 
 null <- lm(ln_no2 ~ 1, data = summer)
@@ -526,6 +543,8 @@ covars_forward <- names(forwardreg_summer$coefficients) %>%
 
 covars_forward
 
+#forward selection is what we used the the lab, but she also said it wasn't how you would normally really do it. Do we want to try backwards selection or something else?
+
 ```
 
 ```{r forward select, warning = FALSE, message = FALSE}
@@ -533,7 +552,7 @@ covars_forward
 #-----model order and CV-----
 
 # apply along length of the vector of names from forward selection
-res <- lapply(seq_along(covars_forward), function(i){
+res1 <- lapply(seq_along(covars_forward), function(i){
     
     # define the formula, updated to add a term each time
     fmla <- as.formula(
@@ -543,7 +562,7 @@ res <- lapply(seq_along(covars_forward), function(i){
     in_model <- lm(fmla, data = summer) 
     
     # out-of sample model and estimates
-    out_ests <- do_CV(data = summer, id = "stop_id", group = "location", fmla)
+    out_ests <- do_CV(data = summer, id = "stop_id", group = "location", fmla) # I don't have a great sense of what the location variable represents in this data, but there probably is some spacial value to it. Also it's way more than 10 groups, and not random. 
     out_results <- get_MSE(out_ests$ln_no2, out_ests$cvpreds)
     
     # compile results
@@ -558,25 +577,24 @@ res <- lapply(seq_along(covars_forward), function(i){
     }) %>% 
     bind_rows()
 
-head(re)
+head(res1)
+
+#length(unique(stop_data_primary$location)). # There are 309 CV groups using this method. (basically each stop location is a group as I understand it.
 
 ```
 
-```{r bias plots}
+```{r bias.plots}
 #-----bias-var combined plots-----
 
-# Note that the out-of-sample R2 for a model with 31 terms is about .7; we can
-# find the RMSE using res$out_RMSE[31]:
-max(res$out_RMSE[1:31])
-min(res$out_RMSE[1:31])
 
-# This suggests limits for the R2 plot of ~.5-.7 to 1 and limits for the RMSE
-# plot of 0 - ~.5 or so
+#there are 23 terms in the model. 
+max(res1$out_RMSE[1:23])
+min(res1$out_RMSE[1:23])
 
-y_lim <- 0.5
+y_lim <- 0.8 #need to find what is actually useful for out data. Set at 0.8 for now just to include everything
 
 # create temporary dataframe for plot
-temp <- res %>% 
+temp <- res1 %>% 
   
   # make long dataframe
   pivot_longer(cols = c(ends_with("_RMSE"), ends_with("_R2")), 
@@ -588,8 +606,11 @@ temp <- res %>%
 
   # set high RMSE values to NA, then filter out these values before plotting
   mutate(value = ifelse(Estimate == "RMSE" & value > y_lim, NA, value)) %>%
-  filter(!is.na(value))
+  filter(!is.na(value)) 
 
+#plot looked to be missing some stuff, so I filled it in - KW
+
+combined_plot <- ggplot(data = temp) +
   geom_point(aes(x = n_pred, y = value, color = Source)) +
   geom_line(aes(x = n_pred, y = value, color = Source)) +
   xlab("Model Complexity (# of terms)") +
@@ -600,6 +621,37 @@ temp <- res %>%
 
 #show plot
 combined_plot
+```
+This is good to have as a template, but we should think about the CV groups as well as if we want season spefic or interaction model. 
+
+``` {r}
+#creating a new variable that differentiates workday from weekend
+
+stop_data_primary <- stop_data_primary %>% mutate(day_type = case_when(week_day == "Saturday" ~ "Weekend",
+                                                            week_day == "Sunday" ~ "Weekend",
+                                                            .default = "Workday"), .after = week_day)
+
+
+```
+
+```{r generate.random.cv.groups}
+#-----generate groups-----
+
+
+# set the seed to make reproducible
+set.seed(123)
+
+# create vector of CV groups
+  # first generate a vector with values 1:10 equal to the number of dataset rows
+  # then randomize (with argument replace = FALSE)
+CV_grp <- rep(1:10, length.out = nrow(stop_data_primary)) %>% 
+  sample(replace = FALSE)
+#Did this on the whole DF, which I think make sense if we use week_day or type_day as interaction terms in the model
+#would not make sense if we end up doing seperate models for the types of days. 
+
+# now append it to the fall data frame
+stop_data_primary <- mutate(stop_data_primary, rando_CV_grp = CV_grp)
+
 ```
 
 ```{r appendix, results='hide'}
