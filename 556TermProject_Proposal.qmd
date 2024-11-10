@@ -438,10 +438,41 @@ kable(stop_data_primary %>%
 ggplot(stop_data_primary, aes(x = variable, y = median_value, fill = week_day)) +
   geom_bar(stat = "summary", fun = "mean", position = "dodge") +
   facet_wrap(~variable, scales = "free") +
-  labs(y = "mean Weekday concentration", x = "") + 
+  labs(y = "mean Weekday concentration", x = "") + #is the mean of the median- KW
   theme(axis.text.x = element_blank())
 
 ```
+``` {r} 
+#KW
+#creating a new variable that differentiates workday from weekend
+
+stop_data_primary <- stop_data_primary %>% mutate(day_type = case_when(week_day == "Saturday" ~ "Weekend",
+                                                            week_day == "Sunday" ~ "Weekend",
+                                                            .default = "Workday"), .after = week_day)
+
+
+kable(stop_data_primary %>%
+  group_by(variable, day_type) %>%
+  summarise(
+    n = sum(!is.na(median_value)),
+    GM = geoMean(median_value, na.rm = TRUE),
+    GSD = geoSD(median_value, na.rm = TRUE),
+    AM = mean(median_value, na.rm = TRUE),
+    ASD = sd(median_value, na.rm = TRUE)),
+  digit = 1,
+  caption = "Table 3.1:  Summary of stop-level TRAP variables by day type") %>%
+  kable_styling()
+
+ggplot(stop_data_primary, aes(x = variable, y = median_value, fill = day_type)) +
+  geom_bar(stat = "summary", fun = "mean", position = "dodge") +
+  facet_wrap(~variable, scales = "free") +
+  labs(y = "mean median concentration", x = "") + #this is goofy sounding, but it is the mean of the median
+  theme(axis.text.x = element_blank())
+
+#based on this, the most interesting thing to look at might be the black carbon of the no2 (or maybe UFP, but that data is kind of ugly with all the different sensors)
+
+```
+
 
 It looks like BC, PNC, NS, and NO2 may be lower on the weekends than the weekdays. This could point towards work week commuting contributions to TRAP concentrations. 
 
@@ -511,21 +542,23 @@ do_CV <- function(data = data, id = "id", group = "group", formula) {
 ```
 
 ```{r selection}
-#-----forward selection SUMMER-----#
+#creating a df on only now (moved this to it's own chunk so it's easier to run on it own if we want to change later)
 no2_only <- stop_data_primary[stop_data_primary$variable == "no2",] #do we want to change this to pm2.5?? Also I changed the df name because the way it was before it was subsetting the the whole DF, so we were losing data. 
 
 no2_only <- no2_only %>%
-  mutate("ln_no2" = log(mean_value))   #I think that we should use median value (it's noted in the paper that it was more carefully QCd and used in their primary analysis), and we already have a variable for that created above.
+  mutate("ln_no2" = log(mean_value)) %>% filter(!is.na(ln_no2))  #I think that we should use median value (it's noted in the paper that it was more carefully QCd and used in their primary analysis), and we already have a variable for that created above.
+
+```
+
+```{r}
+#-----forward selection SUMMER-----#
 
 summer <- no2_only %>%
   filter(season == "Summer")
 
 null <- lm(ln_no2 ~ 1, data = summer)
 
-summer <- summer %>%
-  filter(!is.na(ln_no2))
-
-covars_all <- str_subset(names(summer),"pop_|int_|open_|D2|A1_|A23_|m_to_a1")
+covars_all <- str_subset(names(summer),"pop_|int_|open_|D2|A1_|A23_|m_to_a1") #there are quite a few additional types of covariates that we are filtering out with this approach KW
 
 # B: now turn this into a formula for the full model in stepwise regression:
 full <- as.formula(paste("ln_no2 ~ ", paste(covars_all, collapse= "+")))
@@ -562,7 +595,7 @@ res1 <- lapply(seq_along(covars_forward), function(i){
     in_model <- lm(fmla, data = summer) 
     
     # out-of sample model and estimates
-    out_ests <- do_CV(data = summer, id = "stop_id", group = "location", fmla) # I don't have a great sense of what the location variable represents in this data, but there probably is some spacial value to it. Also it's way more than 10 groups, and not random. 
+    out_ests <- do_CV(data = summer, id = "stop_id", group = "location", fmla) # I don't have a great sense of what the location variable represents in this data, but there probably is some spacial value to it. Also it's way more than 10 groups, and not random. KW
     out_results <- get_MSE(out_ests$ln_no2, out_ests$cvpreds)
     
     # compile results
@@ -624,19 +657,10 @@ combined_plot
 ```
 This is good to have as a template, but we should think about the CV groups as well as if we want season spefic or interaction model. 
 
-``` {r}
-#creating a new variable that differentiates workday from weekend
-
-stop_data_primary <- stop_data_primary %>% mutate(day_type = case_when(week_day == "Saturday" ~ "Weekend",
-                                                            week_day == "Sunday" ~ "Weekend",
-                                                            .default = "Workday"), .after = week_day)
 
 
-```
-
-```{r generate.random.cv.groups}
+```{r generate.random.cv.groups KW}
 #-----generate groups-----
-
 
 # set the seed to make reproducible
 set.seed(123)
@@ -644,15 +668,161 @@ set.seed(123)
 # create vector of CV groups
   # first generate a vector with values 1:10 equal to the number of dataset rows
   # then randomize (with argument replace = FALSE)
-CV_grp <- rep(1:10, length.out = nrow(stop_data_primary)) %>% 
+CV_grp <- rep(1:10, length.out = nrow(no2_only)) %>% 
   sample(replace = FALSE)
 #Did this on the whole DF, which I think make sense if we use week_day or type_day as interaction terms in the model
 #would not make sense if we end up doing seperate models for the types of days. 
 
 # now append it to the fall data frame
-stop_data_primary <- mutate(stop_data_primary, rando_CV_grp = CV_grp)
+no2_only <- mutate(no2_only, rando_CV_grp = CV_grp)
 
 ```
+
+```{r}
+#KW
+#repeating the above selection and  cross-validation using the random groups for week_day (still using No2, but can switch out for pM2.5 later)
+
+#-----forward selection using interaction-----#
+
+
+null <- lm(ln_no2 ~ 1*day_type, data = no2_only) #I don't actually know if you can define a null model like this for interaction terms (got this warning on the results: Warning: variable 'day_type' is absent, its contrast will be ignored)
+
+
+covars_all <- str_subset(names(no2_only),"pop_|int_|open_|D2|A1_|A23_|m_to_a1")
+
+# B: now turn this into a formula for the full model in stepwise regression:
+full <- as.formula(paste("ln_no2 ~ ", paste(covars_all, collapse= "+")))
+
+# Using k=2 is comparable to standard AIC.
+# Using log(n), where n is the number of observations, is comparable to BIC.
+forwardreg_day <- step(null, 
+                        scope = list(lower = null, upper = full), 
+                        trace = 0, 
+                        direction = "forward", 
+                        k = 0)
+
+covars_forward2 <- names(forwardreg_day$coefficients) %>%
+  setdiff('(Intercept)')
+
+covars_forward2 #different list than above when just run for summer
+
+#forward selection is what we used the the lab, but she also said it wasn't how you would normally really do it. Do we want to try backwards selection or something else?
+
+```
+
+```{r fit for weekdays, warning = FALSE, message = FALSE}
+
+#-----model order and CV-----
+
+# apply along length of the vector of names from forward selection
+res2 <- lapply(seq_along(covars_forward2), function(i){
+    
+    # define the formula, updated to add a term each time
+    fmla <- as.formula(
+        paste("ln_no2 ~ + ", paste(covars_forward2[seq_len(i)], collapse = "+"))) 
+    
+    # in-sample model and estimates
+    in_model <- lm(fmla, data = no2_only) 
+    
+    # out-of sample model and estimates
+    out_ests <- do_CV(data = no2_only, id = "location", group = "rando_CV_grp", fmla)  #changed the id to location, because that is the unique identifier for WHERE the stop is, which is what I think we want to be able to predict. STOP ID, is unique to the actual time that they stoped at that location each time around. Maybe I'm confused here, but it seems like we want to predict by location?
+    out_results <- get_MSE(out_ests$ln_no2, out_ests$cvpreds)
+    
+    # compile results
+   tibble(n_pred = i,
+           covar = covars_forward2[i],
+           in_RMSE = sqrt(mean(in_model$residuals^2)),
+           in_R2 = summary(in_model)$r.squared,
+           out_RMSE = out_results[["RMSE"]],
+           out_R2 = out_results[["MSE_based_R2"]] 
+           )
+    
+    }) %>% 
+    bind_rows()
+
+head(res2)
+
+
+
+```
+
+```{r bias.plots.weekday kw}
+#-----bias-var combined plots-----
+
+
+#there are 23 terms in the model. 
+max(res2$out_RMSE[1:23])
+min(res2$out_RMSE[1:23])
+
+y_lim <- 0.8
+
+# create temporary dataframe for plot
+temp2 <- res2 %>% 
+  
+  # make long dataframe
+  pivot_longer(cols = c(ends_with("_RMSE"), ends_with("_R2")), 
+               names_to = "Source_Estimate", 
+               values_to = "value" ) %>%
+  
+  # separate the "Source" column for in and out of sample
+  separate(col = Source_Estimate, into = c("Source", "Estimate") ) %>% 
+
+  # set high RMSE values to NA, then filter out these values before plotting
+  mutate(value = ifelse(Estimate == "RMSE" & value > y_lim, NA, value)) %>%
+  filter(!is.na(value)) 
+
+
+combined_plot2 <- ggplot(data = temp2) +
+  geom_point(aes(x = n_pred, y = value, color = Source)) +
+  geom_line(aes(x = n_pred, y = value, color = Source)) +
+  xlab("Model Complexity (# of terms)") +
+  ylab("") +
+  labs(title = "Bias-Variance TradeOff For Randomly Cross-Validated CV Groups",
+       subtitle = "Type of Day Model") +
+  scale_x_continuous(breaks = c(seq(0, 63, 5))) +
+  facet_wrap(~ Estimate, scales = "free_y", ncol = 1, strip.position = "right") +
+  theme_bw() 
+
+#show plot
+combined_plot2
+```
+
+```{r}
+#KW experimenting with backwards selection
+
+
+#-----backward selection-----#
+
+
+null <- lm(ln_no2 ~ 1, data = no2_only) 
+
+
+covars_all <- str_subset(names(no2_only),"pop_|int_|open_|D2|A1_|A23_|m_to_a1")
+
+# B: now turn this into a formula for the full model in stepwise regression:
+full <- as.formula(paste("ln_no2 ~ ", paste(covars_all, collapse= "+")))
+
+# Fit the full model
+full_model <- lm(full, data = no2_only)
+
+# Using k=2 is comparable to standard AIC. (which is the default here)
+
+backward_reg <- step(full_model, direction='backward', scope=formula(full_model), trace=0)
+
+covars_backward <- names(backward_reg$coefficients) %>%
+  setdiff('(Intercept)')
+
+covars_backward 
+
+backward_reg$anova
+
+backward_reg$coefficients
+
+# I don't really know much about how to interpret this. May not be that useful in its current state. 
+
+
+```
+
 
 ```{r appendix, results='hide'}
 
