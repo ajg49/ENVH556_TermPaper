@@ -851,6 +851,25 @@ backward_reg$coefficients
 
 
 ```
+```{r}
+
+season_summary <- stop_data_primary %>% group_by(season, location) %>% summarise(count = length(median_value))
+
+range(season_summary$count)
+
+day_summary <- stop_data_primary %>% group_by(day_type, location) %>% summarise(count = length(median_value))
+
+range(day_summary$count)
+
+weekday_summary <- stop_data_primary %>% group_by(week_day, location) %>% summarise(count = length(median_value))
+
+range(weekday_summary$count)
+
+
+
+
+
+```
 
 
 
