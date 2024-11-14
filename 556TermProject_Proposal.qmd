@@ -620,6 +620,11 @@ head(res1)
 #length(unique(stop_data_primary$location)). # There are 309 CV groups using this method. (basically each stop location is a group as I understand it.
 
 ```
+```{r}
+#add season interaction to best fit model?
+```
+
+
 
 ```{r bias.plots}
 #-----bias-var combined plots-----
