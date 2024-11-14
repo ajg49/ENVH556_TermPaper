@@ -344,8 +344,7 @@ and week 51,52 and 1-12 are coded as winter.
 **Seasonal Stratification and summary of TRAP variables**
 
 ``` {r seasonal strat}
-#creating a new season variable to explore time trends
-
+#creating a new season variable to explore time trends in pm2.5
 
 #changing the date variables from character to dates
 stop_data_primary$date <- as.Date(stop_data_primary$date)
@@ -365,11 +364,12 @@ stop_data_primary <- stop_data_primary %>%
 
 #head(seasons)
 
-#summarizing by season
-stop_data_primary <- stop_data_primary %>%
-  mutate(variable = as.factor(variable))
+#summarizing by season, focusing on pm.2.5
 
-describe(stop_data_primary$variable)
+stop_data_primary <- stop_data_primary %>%
+  mutate(variable = as.factor(variable)) 
+
+describe(stop_data_primary$variable) #should only be one variable, pm2.5
 
 kable(stop_data_primary %>%
   group_by(variable, season) %>%
@@ -400,7 +400,7 @@ ggplot(stop_data_primary, aes(x = variable, y = median_value, fill = season)) +
 #most interesting for season difference seem to be ma200, neph_bscat, no2
 #Co2 is the least interesting for seasonal differences
 ```
-PM2.5 (neph_bscat) is the highest in Autumn.
+PM2.5 (neph_bscat) is the highest in Autumn. (wild fires?)
 
 
 
@@ -412,10 +412,10 @@ PM2.5 (neph_bscat) is the highest in Autumn.
 
 # 11.10.24. I changed this to add a new column to our main df rather than create a new df, because it will be helpful to have the season and weekday variable in the same df - KW
 stop_data_primary <- stop_data_primary %>%
-  mutate(week_day = weekdays(date), .after = date)
+  mutate(week_day = weekdays(date), .after = date) 
 
 stop_data_primary <- stop_data_primary %>%
-  mutate(week_day = as.factor(week_day))
+  mutate(week_day = as.factor(week_day))  
 
 #ordering the factors so that week days appear in order on the plot. Started with Monday so that the weekend days appear together. 
 stop_data_primary$week_day = factor(stop_data_primary$week_day, 
@@ -492,7 +492,7 @@ This initial Summary of the annual averages and stop-level data from the Mobile 
   for summer, fall, winter, and spring models
   
 ```{r, echo = FALSE, message = FALSE}
-##--- function sot be used---#
+##--- functions to be used---#
 
 # This is a function to get the MSE, RMSE, MSE-based R2
 get_MSE <- function(obs,pred) {
@@ -543,22 +543,27 @@ do_CV <- function(data = data, id = "id", group = "group", formula) {
 
 ```{r selection}
 #creating a df on only now (moved this to it's own chunk so it's easier to run on it own if we want to change later)
-no2_only <- stop_data_primary[stop_data_primary$variable == "no2",] #do we want to change this to pm2.5?? Also I changed the df name because the way it was before it was subsetting the the whole DF, so we were losing data. 
+pm2.5_only <- stop_data_primary[stop_data_primary$variable == "neph_bscat",] #do we want to change this to pm2.5?? Also I changed the df name because the way it was before it was subsetting the the whole DF, so we were losing data. 
 
-no2_only <- no2_only %>%
-  mutate("ln_no2" = log(mean_value)) %>% filter(!is.na(ln_no2))  #I think that we should use median value (it's noted in the paper that it was more carefully QCd and used in their primary analysis), and we already have a variable for that created above.
+pm2.5_only <- pm2.5_only %>%
+  mutate("ln_pm" = log(mean_value)) %>% filter(!is.na(ln_pm))  #I think that we should use median value (it's noted in the paper that it was more carefully QCd and used in their primary analysis), and we already have a variable for that created above.
 
 ```
 
 ```{r}
-#-----forward selection SUMMER-----#
+#look at potential interaction with each covariable in the dataset
 
-summer <- no2_only %>%
-  filter(season == "Summer")
 
-null <- lm(ln_no2 ~ 1, data = summer)
+```
 
-covars_all <- str_subset(names(summer),"pop_|int_|open_|D2|A1_|A23_|m_to_a1") #there are quite a few additional types of covariates that we are filtering out with this approach KW
+
+```{r}
+#-----forward selection seasons-----#
+
+
+null <- lm(ln_pm ~ 1, data = pm2.5_only)
+
+covars_all <- str_subset(names(pm2.5_only),"pop_|int_|open_|D2|A1_|A23_|m_to_a1") #there are quite a few additional types of covariates that we are filtering out with this approach KW
 
 # B: now turn this into a formula for the full model in stepwise regression:
 full <- as.formula(paste("ln_no2 ~ ", paste(covars_all, collapse= "+")))
@@ -589,14 +594,14 @@ res1 <- lapply(seq_along(covars_forward), function(i){
     
     # define the formula, updated to add a term each time
     fmla <- as.formula(
-        paste("ln_no2 ~ 1 + ", paste(covars_forward[seq_len(i)], collapse = "+"))) 
+        paste("ln_pm ~ 1 + ", paste(covars_forward[seq_len(i)], collapse = "+"))) 
     
     # in-sample model and estimates
-    in_model <- lm(fmla, data = summer) 
+    in_model <- lm(fmla, data = pm2.5_only) 
     
     # out-of sample model and estimates
-    out_ests <- do_CV(data = summer, id = "stop_id", group = "location", fmla) # I don't have a great sense of what the location variable represents in this data, but there probably is some spacial value to it. Also it's way more than 10 groups, and not random. KW
-    out_results <- get_MSE(out_ests$ln_no2, out_ests$cvpreds)
+    out_ests <- do_CV(data = pm2.5_only, id = "stop_id", group = "location", fmla) # I don't have a great sense of what the location variable represents in this data, but there probably is some spacial value to it. Also it's way more than 10 groups, and not random. KW
+    out_results <- get_MSE(out_ests$ln_pm, out_ests$cvpreds)
     
     # compile results
    tibble(n_pred = i,
