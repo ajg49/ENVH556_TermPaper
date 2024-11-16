@@ -110,6 +110,17 @@ cal_nox <- cal_nox %>%
 
 #I made these cuts off very rough estimates based on data distribution. We probably want to fine tune our scientific rationale for doing so and readjust if warranted. KW
 
+#fixing the seaon variable because there were a lot of NA
+
+cal_nox <- cal_nox %>%
+  mutate(season = case_when(
+    week(date) > 12 & week(date) <= 25 ~ "Spring",
+    week(date) > 25 & week(date) <= 38 ~ "Summer",
+    week(date) > 38 & week(date) <= 50 ~ "Fall",
+    week(date) > 50 | week(date) <= 12 ~ "Winter"
+  )) %>%
+  mutate(season = factor(season, levels = c("Spring", "Summer", "Fall", "Winter")))
+
 ```
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
@@ -130,12 +141,30 @@ kable(cal_nox%>%
   kable_styling()
 
 #data is going to need a little cleaning. There are monitors with negative values recorded. 
+
+#filter out the negative values and repeat the table
+cal_nox_clean <- cal_nox %>% filter(sample_measurement > 0) #29,521 rows removed!!
+
+kable(cal_nox_clean%>%
+  group_by(parameter_name) %>%
+  summarise(
+    count = n(),
+    min = min(sample_measurement),
+    max = max(sample_measurement),
+    median = median(sample_measurement),
+    GM = geoMean(sample_measurement, na.rm = TRUE),
+    GSD = geoSD(sample_measurement, na.rm = TRUE),
+    AM = mean(sample_measurement, na.rm = TRUE),
+    ASD = sd(sample_measurement, na.rm = TRUE)),
+  digit = 2,
+  caption = "Table 1.0: Summary Statistics for TRAP Variables") %>%
+  kable_styling()
 ```
 ```{r histogram}
 #histograms with smoother
 
 #native scale
-ggplot(cal_nox, aes(sample_measurement)) +
+ggplot(cal_nox_clean, aes(sample_measurement)) +
   geom_histogram(aes(y = ..density..), bins = 40, color = "lightblue", fill = "lightblue", alpha = 0.8) +
   geom_density(color = "purple") +
   facet_wrap(~parameter_name, scales = "free") +
@@ -145,7 +174,7 @@ ggplot(cal_nox, aes(sample_measurement)) +
        )
   
 #log transformed
-ggplot(cal_nox, aes(log(sample_measurement))) +
+ggplot(cal_nox_clean, aes(log(sample_measurement))) +
   geom_histogram(aes(y = ..density..), bins = 40, color = "darkgreen", fill = "darkgreen", alpha = 0.4) +
   geom_density(color = "green") +
   facet_wrap(~parameter_name, scales = "free") +
@@ -155,7 +184,15 @@ ggplot(cal_nox, aes(log(sample_measurement))) +
        )
 
 #Log transformed is definitely better, but we need to deal with the negative values. 
-#can we just drop them and say we dropped them becaues they are scientifically impossible?
+#can we just drop them and say we dropped them because they are scientifically impossible?
+
+```
+```{r log transform, echo = F}
+
+#create a new variable called "log_conc" for the log transformed concentrations
+cal_nox_clean <- cal_nox_clean %>%
+  mutate(log_conc = log(sample_measurement)) %>%
+  relocate(log_conc, .after = sample_measurement)
 
 ```
 _______________________
