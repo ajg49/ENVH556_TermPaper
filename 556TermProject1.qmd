@@ -46,7 +46,7 @@ if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
 
 # Load the other packages, installing as needed.
 pacman::p_load(knitr, kableExtra, tidyverse, lubridate, egg, multcomp, modelr, broom, EnvStats, Hmisc,
-               dplyr, tidyr, purrr, ggplot2, stringr, sf)
+               dplyr, tidyr, purrr, ggplot2, stringr, sf, lme4, VCA)
 
 
 ```
@@ -84,17 +84,7 @@ cal_nox <- left_join(cal_nox, ca_covariates, by="native_id")
 unique(cal_nox$parameter_name)  
 ```
 
-```{r timetrends, echo = F}
 
-#looking at time distribution to see where we might want to make the time strata cuts
-
-cal_nox %>% filter(parameter_name == "Oxides of nitrogen (NOx)") %>% ggplot(aes(x = hour, y = sample_measurement)) +
-         geom_point()
-
-cal_nox %>% filter(parameter_name == "Oxides of nitrogen (NOx)") %>% ggplot(aes(x = as.factor(hour), y = sample_measurement)) +
-         geom_boxplot()
-
-```
 
 
 ```{r create.strata, echo =F, include = F}
@@ -124,7 +114,7 @@ cal_nox <- cal_nox %>%
 ```
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
-
+#Cal_NOx data set
 kable(cal_nox%>%
   group_by(parameter_name) %>%
   summarise(
@@ -137,7 +127,7 @@ kable(cal_nox%>%
     AM = mean(sample_measurement, na.rm = TRUE),
     ASD = sd(sample_measurement, na.rm = TRUE)),
   digit = 2,
-  caption = "Table 1.0: Summary Statistics for TRAP Variables") %>%
+  caption = "Table 1.0: Summary Statistics for Nitric Oxides (NOx)") %>%
   kable_styling()
 
 #data is going to need a little cleaning. There are monitors with negative values recorded. 
@@ -157,8 +147,10 @@ kable(cal_nox_clean%>%
     AM = mean(sample_measurement, na.rm = TRUE),
     ASD = sd(sample_measurement, na.rm = TRUE)),
   digit = 2,
-  caption = "Table 1.0: Summary Statistics for TRAP Variables") %>%
+  caption = "Table 1.0: Summary Statistics for Nitric Oxides (NOx)") %>%
   kable_styling()
+
+
 ```
 ```{r histogram}
 #histograms with smoother
@@ -168,7 +160,7 @@ ggplot(cal_nox_clean, aes(sample_measurement)) +
   geom_histogram(aes(y = ..density..), bins = 40, color = "lightblue", fill = "lightblue", alpha = 0.8) +
   geom_density(color = "purple") +
   facet_wrap(~parameter_name, scales = "free") +
-  labs(title = "Distribution of TRAP",
+  labs(title = "Distribution of NOx",
        x = "Concentration on native scale",
        y = "density"
        )
@@ -178,7 +170,7 @@ ggplot(cal_nox_clean, aes(log(sample_measurement))) +
   geom_histogram(aes(y = ..density..), bins = 40, color = "darkgreen", fill = "darkgreen", alpha = 0.4) +
   geom_density(color = "green") +
   facet_wrap(~parameter_name, scales = "free") +
-  labs(title = "Distribution of log(TRAP)",
+  labs(title = "Distribution of log(NOx)",
        x = "Concentration on log scale",
        y = "density"
        )
@@ -206,311 +198,206 @@ _______________________
 
 
 #plotting first on a native scale
-ggplot(annual, aes(sample = value)) +
+ggplot(cal_nox_clean, aes(sample = sample_measurement)) +
   stat_qq() + 
   stat_qq_line() +
-  labs(title = "Figure 1a: Normal Q-Q Plot of TRAP",
+  labs(title = "Figure 1: Normal Q-Q Plot of NOx",
        x = "Theoretical Quantiles from a Std Normal Distribution",
        y = "Concentration - native scale"
        ) +
-  facet_wrap(~variable, scales = "free")
-
-#Co2 and PM2.5 look close to normal on the native scale, although there are some slight deviations at the tails. 
-#other trap have significant deviation, mostly in the upper quantiles
-
-#creating log transformed concentration variable. 
-annual <- annual %>% mutate(logvalue = log(value), .after = value)
+  facet_wrap(~parameter_name, scales = "free")
 
 #qq plots using log transformed values
-ggplot(annual, aes(sample = logvalue)) +
+ggplot(cal_nox_clean, aes(sample = log_conc)) +
   stat_qq() + 
   stat_qq_line() +
-  labs(title = "Figure 1b: Normal Q-Q Plot of log(TRAP)",
-       x = "Theoretical Quantiles from a Std LogNormal Distribution",
-       y = "log(concentration)"
-       ) +
-  facet_wrap(~variable, scales = "free")
-
-#CO2 nad PM2.5- also looks ok lognormal
-#ma200 - looks much better lognormal
-#No2, ns, pmdisc, pnc - still doesn't look normal, although the deviation is less severe than before transformation
-
-```
-The Q-Q plots show that CO2 concentrations in the data are relatively normally distributed, however black carbon, NO2 and partical number concentrations all deviate from normal with high concentrations. The log transformed variables have visibly reduced deviations from a normal distribution. This leads us to conclude that all of the TRAP variables except CO2 benefit from a log transformation.
-
-
-
-**Introduction to Stop-Level Data**
-
-
-``` {r intro to stop level}
-#repeating the above analysis with the individual stop data. 
-kable(stop_data%>%
-  group_by(variable) %>%
-  summarise(
-    n = length(median_value),   #using median value because it has been more extensively QC'd and was the summary measure used in the original study. 
-    nmiss = sum(is.na(median_value)), 
-    GM = geoMean(median_value, na.rm = TRUE),
-    GSD = geoSD(median_value, na.rm = TRUE),
-    AM = mean(median_value, na.rm = TRUE),
-    ASD = sd(median_value, na.rm = TRUE)),
-  digit = 1)
-
-#cannot compute GM for N02, but there are no missing values, and it can compute CM. Negative values?
-
-
-print(min(stop_data$median_value)) #Yes, there are negative values in the data set. Concentrations cannot be negative - need to investigate what happened here? Were they below LOD and became negative due to some calibration correction (subtracting off a certain value?)
-
-
-sub_zero <- stop_data %>% filter(median_value <= 0) #9 measurements below 0
-unique(stop_data$primary_instrument) # all of them were measured on a back-up instrument. Suggest that we drop backup instrument samples from the analysis
-
-stop_data_primary <- stop_data %>% filter(primary_instrument == "Primary")
-
-kable(stop_data_primary%>%
-  group_by(variable) %>%
-  summarise(
-    n = length(median_value),   #using median value because it has been more extensively QC'd and was the summary measure used in the original study. 
-    nmiss = sum(is.na(median_value)), 
-    GM = geoMean(median_value, na.rm = TRUE),
-    GSD = geoSD(median_value, na.rm = TRUE),
-    AM = mean(median_value, na.rm = TRUE),
-    ASD = sd(median_value, na.rm = TRUE)),
-  digit = 1,
-  caption = "Table 2.0: Stop-Level Data Summary" )%>%
-  kable_styling()
-
-#much better
-# the count of each variable is different, but there are no NA values 
-
-```
-``` {r}
-#---Q-Q plot of stop-level data---#
-
-#same QQ plots as above
-
-#using a qq plot to assess normality
-
-#plotting first on a native scale
-ggplot(stop_data_primary, aes(sample = median_value)) +
-  stat_qq() + 
-  stat_qq_line() +
-  labs(title = " Figure 3a: Normal Q-Q Plot of TRAP Stop-level data",
+  labs(title = "Figure 1: Normal Q-Q Plot of NOx",
        x = "Theoretical Quantiles from a Std Normal Distribution",
        y = "Concentration - native scale"
        ) +
-  facet_wrap(~variable, scales = "free")
+  facet_wrap(~parameter_name, scales = "free")
 
-#it all looks crazy. Not normal!
-
-#creating log transformed concentration variable. 
-stop_data_primary <- stop_data_primary %>% mutate(log_med_value = log(median_value), .after = median_value)
-
-#qq plots using log transformed values
-ggplot(stop_data_primary, aes(sample = log_med_value)) +
-  stat_qq() + 
-  stat_qq_line() +
-  labs(title = " Figure 3b: Normal Q-Q Plot of log(TRAP) Stop=-level data",
-       x = "Theoretical Quantiles from a Std LogNormal Distribution",
-       y = "log(concentration)"
-       ) +
-  facet_wrap(~variable, scales = "free")
-
-#better, but not perfect. 
-
-#co2 still has a lot of divergence, as do No2 and ma200. The rest have some dirgence, but look ok
-
-#neph_bscat is the variable for Pm2.5 is this data? Weird name.
 
 ```
+The Q-Q plots show a huge benefit to log-transformation of the data, no matter which NOx parameter you choose to work with. WE do still see some much more attenuated deviations form the normal line, but overall the data distribution is clearly in need of this transformation before statistical tests or models are built. 
 
+# Seasonal Characterization of NOx concentrations:
 
-The stop-level data shows similar results as the averaged annual data across sample locations. The data benefits from log transformations and this will likely be what we use in further analysis. CO2 has slightly less normal distribution at stop-level data compared to annual data. 
+The data provided the date and week of the year that each sample was taken. To look at seasonal changes in the data, we need to separate the weeks of the year into four seasons. We did this by breaking up the roughly 52 weeks of the year into 4, ~13-week segments. 
 
+    Weeks 13 - 25 of the year are coded as spring
+    weeks 26 - 38 are coded as summer
+    weeks 39 - 50 are coded as autumn
+    and week 51,52 and 1-12 are coded as winter.
+    
+  ** Limitations of this approach. This is based only on diving the year into roughly equal portions based on numerical week. There is no distinct scientific or meteorological significance to the cutoff. Could look at other ways of defining season for more accuracy --- could use specific calendrical definitions, or could look at cut points based on temp or precip. Could also use social cutoffs (e.g. summer is when Seattle public school are out), as any seasonal differences could be a combination of both social and meteorological phenomena
 
-```{r distribution}
-#histograms and density plots
+  We also needed to take the hours of the day at which samples were collected and bin them into categories to assess whether time of day is a predictor of NOx concentrations. To do this we binned the 24 hours of the day into four categories:
 
-#histograms with smoother
+    hours > 4 & hours <= 9 are coded as Morning
+    hours > 9 & hours <= 16 are coded as Midday
+    hours > 16 & hours  <= 21 are coded as Evening
+    hours > 21 or hours  <= 4 are coded as Night
 
-#native scale
-ggplot(stop_data_primary, aes(median_value)) +
-  geom_histogram(aes(y = ..density..), bins = 40, color = "lightblue", fill = "lightblue", alpha = 0.8) +
-  geom_density(color = "purple") +
-  facet_wrap(~variable, scales = "free") +
-  labs(title = "Figure 4a: Distribution of TRAP Stop-level data",
-       x = "Concentration on native scale",
-       y = "density"
-       )
-#everything has a really long right tail  
+**Hourly and Day Time Summary of NOx**
 
-#log transformed
-ggplot(stop_data_primary, aes(log_med_value)) +
-  geom_histogram(aes(y = ..density..), bins = 40, color = "darkgreen", fill = "darkgreen", alpha = 0.4) +
-  geom_density(color = "green") +
-  facet_wrap(~variable, scales = "free") +
-  labs(title = "Figure 4b: Distribution of TRAP (log transformed) - stop-level data",
-       x = "Concentration on log scale",
-       y = "density"
-       )
+```{r timetrends, echo = F}
 
-#much more central, although there are still some long tails. Definitely should use log values for analysis. 
+#summarizing by time
 
-```
-These histograms further the point of the Q-Q plot. In our introduction of this data in the term paper we will choose either the histograms or the Q-Q plots, and either the log-transformed or native scale variables to report. 
+cal_nox_clean %>% filter(parameter_name == "Oxides of nitrogen (NOx)") %>% ggplot(aes(x = as.factor(hour), y = log_conc)) +
+         geom_boxplot() +
+  ggtitle( label = "Ln(NOx) Distributions by hour")
 
-# Seasonal Characterization of the TRAP variables concentrations:
+cal_nox_clean %>% filter(parameter_name == "Oxides of nitrogen (NOx)") %>% 
+  ggplot(aes(x = day_time, y = log_conc)) +
+         geom_boxplot() +
+  ggtitle( label = "Ln(NOx) Distributions by Day Time")
 
-The stop-level data provided the date and week of the year that each sample was taken. To look at seasonal changes in the stop-level TRAP data, we need to separate the weeks of the year into four seasons. We did this by breaking up the roughly 52 weeks of the year into 4, ~13-week segments. 
-
-Weeks 13 - 25 of the year are coded as spring
-weeks 26 - 38 are coded as summer
-weeks 39 - 50 are coded as autumn
-and week 51,52 and 1-12 are coded as winter.
-
-** Limitations of this approach. This is based only on diving the year into roughly equal portions based on numerical week. There is no distinct scientific or meteorological significance to the cutoff. Could look at other ways of defining season for more accuracy --- could use specific calendrical definitions, or could look at cut points based on temp or precip. Could also use social cutoffs (e.g. summer is when Seattle public school are out), as any seasonal differences could be a combination of both social and meteorological phenomena
-
-
-
-**Seasonal Stratification and summary of TRAP variables**
-
-``` {r seasonal strat}
-#creating a new season variable to explore time trends
-
-
-#changing the date variables from character to dates
-stop_data_primary$date <- as.Date(stop_data_primary$date)
-stop_data_primary$time <- as_datetime(stop_data_primary$time)
-
-#creating a new season variable. Doing this roughly based off week of year, but we can make it more detailed later if we use this in our analysis
-
-# 11.10.24. I changed this to add a new column to our main df rather than create a new df, because it will be helpful to have the season and weekday variable in the same df - KW
-stop_data_primary <- stop_data_primary %>%
-  mutate(season = case_when(
-    week(time) > 12 & week(time) < 26 ~ "Spring",
-    week(time) > 25 & week(time) < 39 ~ "Summer",
-    week(time) > 38 & week(time) < 51 ~ "Autumn",
-    week(time) < 13 | week(time) > 50 ~ "Winter"
-  ), .after = date) %>%
-  mutate(season = factor(season, levels = c("Spring", "Summer", "Autumn", "Winter")))
-
-#head(seasons)
-
-#summarizing by season
-stop_data_primary <- stop_data_primary %>%
-  mutate(variable = as.factor(variable))
-
-describe(stop_data_primary$variable)
-
-kable(stop_data_primary %>%
-  group_by(variable, season) %>%
+kable(cal_nox_clean %>%
+        filter(parameter_name ==  "Oxides of nitrogen (NOx)") %>%
+  group_by(day_time) %>%
   summarise(
-    n = sum(!is.na(median_value)),
-    GM = geoMean(median_value, na.rm = TRUE),
-    GSD = geoSD(median_value, na.rm = TRUE),
-    AM = mean(median_value, na.rm = TRUE),
-    ASD = sd(median_value, na.rm = TRUE)),
+    n = sum(!is.na(sample_measurement)),
+    AM = mean(sample_measurement, na.rm = TRUE),
+    ASD = sd(sample_measurement, na.rm = TRUE)),
   digit = 1,
-  caption = "Table 3.0: Seasonal Summary of stop-level TRAP variables") %>%
+  caption = "Table 3.0: Time of Day Summary of NOx - Native scale ") %>%
   kable_styling()
 
-#can run anova later (or even ancova if there are covariates we want to include), but there definitely look like seasonal differences
-
-#making a bar plot to visualize better
-
-ggplot(stop_data_primary, aes(x = variable, y = median_value, fill = season)) +
-  geom_bar(stat = "summary", fun = "mean", position = "dodge") +
-  facet_wrap(~variable, scales = "free") +
-  labs(y = "mean seasonal concentration", x = "") + 
-  theme(axis.text.x = element_blank())
-
-#pnc_screen wasn't measured in winter
-
-#table and plot are kind of rough. Can be improved for readability if we use them, but I was trying to get a sense of the data. 
-
-#most interesting for season difference seem to be ma200, neph_bscat, no2
-#Co2 is the least interesting for seasonal differences
 ```
-PM2.5 (neph_bscat) is the highest in Autumn.
 
+# Weekly Characterization of the NOx variables concentrations:
 
+**Weekday Stratification and Summary of NOx**
 
-# Weekly Characterization of the TRAP variables concentrations:
+```{r}
+#summary by day of the week
 
-**Weekday Stratification and Summary of TRAP variables**
+cal_nox_clean %>% filter(parameter_name == "Oxides of nitrogen (NOx)") %>% ggplot(aes(x = as.factor(dow), y = log_conc)) +
+         geom_boxplot() +
+  ggtitle( label = "Ln(NOx) Distributions by Day of the Week")
+
+kable(cal_nox_clean %>%
+        filter(parameter_name ==  "Oxides of nitrogen (NOx)") %>%
+  group_by(dow) %>%
+  summarise(
+    n = sum(!is.na(sample_measurement)),
+    AM = mean(sample_measurement, na.rm = TRUE),
+    ASD = sd(sample_measurement, na.rm = TRUE)),
+  digit = 1,
+  caption = "Table 3.0: Day of the Week Summary of NOX - Native Scale ") %>%
+  kable_styling()
+```
+
+**DAILY Summary of NOx**
 
 ```{r weekdays}
 
-# 11.10.24. I changed this to add a new column to our main df rather than create a new df, because it will be helpful to have the season and weekday variable in the same df - KW
-stop_data_primary <- stop_data_primary %>%
-  mutate(week_day = weekdays(date), .after = date)
+#summarizing by Day of the Week
+cal_nox_clean<- cal_nox_clean %>%
+  mutate(weekday2 = as.character(weekday) %>%
+           str_replace(pattern = "TRUE",
+                       replacement = "Weekday") %>%
+         str_replace(pattern = "FALSE",
+                     replacement = "Weekend"))
 
-stop_data_primary <- stop_data_primary %>%
-  mutate(week_day = as.factor(week_day))
+cal_nox_clean %>% filter(parameter_name == "Oxides of nitrogen (NOx)") %>% ggplot(aes(x = as.factor(weekday2), y = log_conc)) +
+         geom_boxplot() +
+  ggtitle( label = " Weekly Ln(NOx) Distributions")
 
-#ordering the factors so that week days appear in order on the plot. Started with Monday so that the weekend days appear together. 
-stop_data_primary$week_day = factor(stop_data_primary$week_day, 
-                                      levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
-
-
-
-kable(stop_data_primary %>%
-  group_by(variable, week_day) %>%
+kable(cal_nox_clean %>%
+        filter(parameter_name ==  "Oxides of nitrogen (NOx)") %>%
+  group_by(weekday2) %>%
   summarise(
-    n = sum(!is.na(median_value)),
-    GM = geoMean(median_value, na.rm = TRUE),
-    GSD = geoSD(median_value, na.rm = TRUE),
-    AM = mean(median_value, na.rm = TRUE),
-    ASD = sd(median_value, na.rm = TRUE)),
+    n = sum(!is.na(sample_measurement)),
+    AM = mean(sample_measurement, na.rm = TRUE),
+    ASD = sd(sample_measurement, na.rm = TRUE)),
   digit = 1,
-  caption = "Table 3.0: Weekly Summary of stop-level TRAP variables") %>%
+  caption = "Table 3.0: Week Summary of NOX - Native Scale ") %>%
   kable_styling()
 
-ggplot(stop_data_primary, aes(x = variable, y = median_value, fill = week_day)) +
-  geom_bar(stat = "summary", fun = "mean", position = "dodge") +
-  facet_wrap(~variable, scales = "free") +
-  labs(y = "mean Weekday concentration", x = "") + #is the mean of the median- KW
-  theme(axis.text.x = element_blank())
+```
+
+
+
+**Seasonal Stratification and Summary of NOx**
+
+``` {r seasonal strat}
+
+#summarizing by season
+#focusing on NOx - all species
+
+unique(cal_nox_clean$season)
+
+cal_nox_clean %>% filter(parameter_name == "Oxides of nitrogen (NOx)") %>% ggplot(aes(x = season, y = log_conc)) +
+         geom_boxplot()+
+  ggtitle( label = "NOx Distributions by Season")
+
+
+kable(cal_nox_clean %>%
+        filter(parameter_name ==  "Oxides of nitrogen (NOx)") %>%
+  group_by(season) %>%
+  summarise(
+    n = sum(!is.na(sample_measurement)),
+    AM = mean(sample_measurement, na.rm = TRUE),
+    ASD = sd(sample_measurement, na.rm = TRUE)),
+  digit = 1,
+  caption = "Table 3.0: Seasonal Summary of NOx - Native Scale ") %>%
+  kable_styling()
+#can we report an arithmetic mean on a log-transformed variable?
+
 
 ```
+
+
+
+
 ``` {r} 
-#KW
-#creating a new variable that differentiates workday from weekend
+# creating a formula with temporal variables
+cal_nox_clean <- cal_nox_clean %>%      #filter to only one species category
+  filter(parameter_name == "Oxides of nitrogen (NOx)")
 
-stop_data_primary <- stop_data_primary %>% mutate(day_type = case_when(week_day == "Saturday" ~ "Weekend",
-                                                            week_day == "Sunday" ~ "Weekend",
-                                                            .default = "Workday"), .after = week_day)
+Full <- as.formula(log_conc ~ day_time + dow + weekday2 + season )
 
-
-kable(stop_data_primary %>%
-  group_by(variable, day_type) %>%
-  summarise(
-    n = sum(!is.na(median_value)),
-    GM = geoMean(median_value, na.rm = TRUE),
-    GSD = geoSD(median_value, na.rm = TRUE),
-    AM = mean(median_value, na.rm = TRUE),
-    ASD = sd(median_value, na.rm = TRUE)),
-  digit = 1,
-  caption = "Table 3.1:  Summary of stop-level TRAP variables by day type") %>%
-  kable_styling()
-
-ggplot(stop_data_primary, aes(x = variable, y = median_value, fill = day_type)) +
-  geom_bar(stat = "summary", fun = "mean", position = "dodge") +
-  facet_wrap(~variable, scales = "free") +
-  labs(y = "mean median concentration", x = "") + #this is goofy sounding, but it is the mean of the median
-  theme(axis.text.x = element_blank())
-
-#based on this, the most interesting thing to look at might be the black carbon of the no2 (or maybe UFP, but that data is kind of ugly with all the different sensors)
 
 ```
 
 
-It looks like BC, PNC, NS, and NO2 may be lower on the weekends than the weekdays. This could point towards work week commuting contributions to TRAP concentrations. 
-
-There is a strange spike in PM2.5 on Thursdays?
 
 
-This initial Summary of the annual averages and stop-level data from the Mobile Monitoring data set leads us to a few conclusions we will use to inform out term paper:
+
+```{r}
+# linear regression model of full model
+
+full_temporal <- lm( Full, data = cal_nox_clean)
+
+#install.packages(slider)
+#library(slider)
+
+cal_nox_clean %>%
+  mutate(conc_smooth = slide_dbl(sample_measurement, median, before = 3, after = 4)) %>%
+  ggplot(aes(x = date, y = conc_smooth, color = season)) +
+         geom_line() +
+  facet_wrap(~season, scales = "free_x") +
+    ggtitle( label = "NOx concentrations ")
+
+
+```
+This plot allows you to see trends in the data without artificially stratifying the data by season, day, or hour.
+
+
+```{r}
+#---spatial distribution
+cal_nox_clean %>%
+  group_by(County) %>%
+  summarise(
+             n = sum(!is.na(County)))
+
+#26 total counties. use this as the clustering variable?
+
+```
+
 
 
 
@@ -572,42 +459,25 @@ do_CV <- function(data = data, id = "id", group = "group", formula) {
 
 ```
 
-```{r selection}
-#creating a df on only now (moved this to it's own chunk so it's easier to run on it own if we want to change later)
-no2_only <- stop_data_primary[stop_data_primary$variable == "no2",] #do we want to change this to pm2.5?? Also I changed the df name because the way it was before it was subsetting the the whole DF, so we were losing data. 
-
-no2_only <- no2_only %>%
-  mutate("ln_no2" = log(mean_value)) %>% filter(!is.na(ln_no2))  #I think that we should use median value (it's noted in the paper that it was more carefully QCd and used in their primary analysis), and we already have a variable for that created above.
-
-```
 
 ```{r}
-#-----forward selection SUMMER-----#
+#-----forward selection SUMMER-----# #fialed. Needs work.
+full_temporal
 
-summer <- no2_only %>%
-  filter(season == "Summer")
+# in-sample model and estimates
+    in_model <- full_temporal
+    
+    # out-of sample model and estimates
+    out_ests <- do_CV(data = cal_nox_clean, id = "date", group = "County", Full)
+   
+    out_results <- get_MSE(out_ests$log_conc, out_ests$cvpreds)
 
-null <- lm(ln_no2 ~ 1, data = summer)
-
-covars_all <- str_subset(names(summer),"pop_|int_|open_|D2|A1_|A23_|m_to_a1") #there are quite a few additional types of covariates that we are filtering out with this approach KW
-
-# B: now turn this into a formula for the full model in stepwise regression:
-full <- as.formula(paste("ln_no2 ~ ", paste(covars_all, collapse= "+")))
-
-# Using k=2 is comparable to standard AIC.
-# Using log(n), where n is the number of observations, is comparable to BIC.
-forwardreg_summer <- step(null, 
-                        scope = list(lower = null, upper = full), 
-                        trace = 0, 
-                        direction = "forward", 
-                        k = 0)
-
-covars_forward <- names(forwardreg_summer$coefficients) %>%
-  setdiff('(Intercept)')
-
-covars_forward
-
-#forward selection is what we used the the lab, but she also said it wasn't how you would normally really do it. Do we want to try backwards selection or something else?
+    tibble(
+           in_RMSE = sqrt(mean(in_model$residuals^2)),
+           in_R2 = summary(in_model)$r.squared,
+           out_RMSE = out_results[["RMSE"]],
+           out_R2 = out_results[["MSE_based_R2"]] 
+           )
 
 ```
 
