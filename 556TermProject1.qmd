@@ -372,22 +372,6 @@ Full <- as.formula(log_conc ~ day_time + dow + weekday2 + season )
 
 full_temporal <- lm( Full, data = cal_nox_clean)
 
-#install.packages(slider)
-#library(slider)
-
-cal_nox_clean %>%
-  mutate(conc_smooth = slide_dbl(sample_measurement, median, before = 3, after = 4)) %>%
-  ggplot(aes(x = date, y = conc_smooth, color = season)) +
-         geom_line() +
-  facet_wrap(~season, scales = "free_x") +
-    ggtitle( label = "NOx concentrations ")
-
-
-```
-This plot allows you to see trends in the data without artificially stratifying the data by season, day, or hour.
-
-
-```{r}
 #---spatial distribution
 cal_nox_clean %>%
   group_by(County) %>%
@@ -397,7 +381,7 @@ cal_nox_clean %>%
 #26 total counties. use this as the clustering variable?
 
 ```
-
+This plot allows you to see trends in the data without artificially stratifying the data by season, day, or hour.
 
 
 
@@ -410,76 +394,125 @@ cal_nox_clean %>%
   for summer, fall, winter, and spring models
   
 ```{r, echo = FALSE, message = FALSE}
-##--- function sot be used---#
 
-# This is a function to get the MSE, RMSE, MSE-based R2
-get_MSE <- function(obs,pred) {
-    
-    obs_avg <- mean(obs)
+#-----manual 510-fold CV---------------------------------------------------
+#--generate random groups--
 
-    MSE_obs <- mean((obs-obs_avg)^2)
-    
-    MSE_pred <- mean((obs - pred)^2)
+# set the seed to make reproducible
+set.seed(283)
 
-    result <- c(RMSE = sqrt(MSE_pred),
-                MSE_based_R2 = max(1 - MSE_pred / MSE_obs, 0) 
-                )
-    
-    return(result)
+# create vector of CV groups
+  # first generate a vector with values 1:10 equal to the number of dataset rows
+  # then randomize (with argument replace = FALSE)
+CV_grp <- rep(1:10, length.out = nrow(cal_nox_clean)) %>% 
+  sample(replace = FALSE)
+
+# now append it to the cal_nox_clean data frame
+cal_nox_clean <- mutate(cal_nox_clean, CV_grp = CV_grp)
+
+# create a numeric variable for CV predictions (using -999 as a placeholder)
+cv_pred <- cal_nox_clean %>% mutate(preds = -999)
+
+# loop over the 10 clusters
+for (i in 1:10){
+
+    # define the current cluster variable as a logical vector
+    is_cluster <- cv_pred$CV_grp == i
+
+    # fit the "common" model to the training set by omitting cluster i
+    CV_lm <- lm(Full, data = cv_pred, subset = !is_cluster)
+
+    # generate predictions using CV_lm
+    preds <- predict(CV_lm, cal_nox_clean)
+
+    # add results to cv_pred dataframe
+    cv_pred$preds[is_cluster] <- preds[is_cluster]
 }
 
-#-----define CV function-----
-# Arguments:
-  # data is the data frame
-  # id is the unique variable for determining sort order of data frame
-  # group is the grouping variable (a variable in the data frame)
-  # formula is the formula to pass to lm
-  # the function returns the dataset with a new variable called cvpreds
-  # appended to the end; these are the out-of-sample predictions
+# now calculate the MSE, RMSE, MSE-based R2
 
-  # do for each cluster in the  dataset
-  # (Note the use of "[[ ]]" rather than "$" because group is input in the
-  # function call as a quoted variable)
+# mean of observations
+log_conc_avg <- mean(cv_pred$log_conc)
 
-do_CV <- function(data = data, id = "id", group = "group", formula) {
-  
-  lapply(unique(data[[group]]), function(this_group){
-    
-    CV_lm <- lm(formula, data = data[data[[group]] != this_group,])
-    
-    data[data[[group]] == this_group,] %>%
-      mutate(cvpreds = predict(CV_lm, newdata = .) %>% unname())
-    
+# MSE of predictions
+MSE_pred <- mean((cv_pred$log_conc - cv_pred$preds)^2)
 
-  }) %>% bind_rows() %>% arrange(.data[[id]])
-  
-}
+# MSE of observations (for R2 denominator)
+MSE_obs <- mean((cv_pred$log_conc - log_conc_avg)^2)
 
+# print the results not rounded
+kable(rbind(paste("RMSE:  ", sqrt(MSE_pred)),
+paste("MSE-based R2:  ", max(1 - MSE_pred/MSE_obs, 0))),
+  caption = "10-fold CV with random groups") %>%
+  kable_styling()
 
 
 ```
 
 
 ```{r}
-#-----forward selection SUMMER-----# #fialed. Needs work.
-full_temporal
 
-# in-sample model and estimates
-    in_model <- full_temporal
-    
-    # out-of sample model and estimates
-    out_ests <- do_CV(data = cal_nox_clean, id = "date", group = "County", Full)
-   
-    out_results <- get_MSE(out_ests$log_conc, out_ests$cvpreds)
+#-----manual 10-fold CV---------------------------------------------------
 
-    tibble(
-           in_RMSE = sqrt(mean(in_model$residuals^2)),
-           in_R2 = summary(in_model)$r.squared,
-           out_RMSE = out_results[["RMSE"]],
-           out_R2 = out_results[["MSE_based_R2"]] 
-           )
+# with different formula  (not the full formula)
+no_daytime <-as.formula(log_conc ~ dow + weekday2 + season )
+
+#--generate random groups--
+
+# set the seed to make reproducible
+set.seed(400)
+
+# create vector of CV groups
+  # first generate a vector with values 1:10 equal to the number of dataset rows
+  # then randomize (with argument replace = FALSE)
+CV_grp <- rep(1:10, length.out = nrow(cal_nox_clean)) %>% 
+  sample(replace = FALSE)
+
+# now append it to the cal_nox_clean data frame
+cal_nox_clean <- mutate(cal_nox_clean, CV_grp = CV_grp)
+
+# create a numeric variable for CV predictions (using -999 as a placeholder)
+cv_pred <- cal_nox_clean %>% mutate(preds = -999)
+
+# loop over the 10 clusters
+for (i in 1:10){
+
+    # define the current cluster variable as a logical vector
+    is_cluster <- cv_pred$CV_grp == i
+
+    # fit the "common" model to the training set by omitting cluster i
+    CV_lm <- lm(no_daytime, data = cv_pred, subset = !is_cluster)
+
+    # generate predictions using CV_lm
+    preds <- predict(CV_lm, cal_nox_clean)
+
+    # add results to cv_pred dataframe
+    cv_pred$preds[is_cluster] <- preds[is_cluster]
+}
+
+# now calculate the MSE, RMSE, MSE-based R2
+
+# mean of observations
+log_conc_avg <- mean(cv_pred$log_conc)
+
+# MSE of predictions
+MSE_pred <- mean((cv_pred$log_conc - cv_pred$preds)^2)
+
+# MSE of observations (for R2 denominator)
+MSE_obs <- mean((cv_pred$log_conc - log_conc_avg)^2)
+
+# print the results not rounded
+kable(rbind(paste("RMSE:  ", sqrt(MSE_pred)),
+paste("MSE-based R2:  ", max(1 - MSE_pred/MSE_obs, 0))),
+  caption = "10-fold CV with random groups - Reduced Model") %>%
+  kable_styling()
+
 
 ```
+
+
+
+
 
 ```{r forward select, warning = FALSE, message = FALSE}
 
@@ -752,6 +785,7 @@ backward_reg$coefficients
 
 
 ```
+
 ```{r}
 
 season_summary <- stop_data_primary %>% group_by(season, location) %>% summarise(count = length(median_value))
