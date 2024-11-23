@@ -360,21 +360,16 @@ cal_nox_clean <- cal_nox_clean %>%      #filter to only one species category
   mutate(dow = as.factor(dow),
          weekday2 = as.factor(weekday2))
 
-Full <- as.formula(log_conc ~ day_time + dow + weekday2 + season )
-
-
-
+#CALLAN CHANGED: taking out dow and leaving just weekday2 to prevent overfitting. adding in a sensitivity analysis with dow below. 
+Full <- as.formula(log_conc ~ day_time + weekday2 + season )
 
 ```
 
 
-
-
-
 ```{r}
-# linear regression model of full model
+# linear regression model of full model (weekday2)
 
-full_temporal <- lm( Full, data = cal_nox_clean)
+full_temporal <- lm(Full, data = cal_nox_clean)
 
 #---spatial distribution---
 cal_nox_clean %>%
@@ -386,7 +381,6 @@ cal_nox_clean %>%
 
 ```
 This plot allows you to see trends in the data without artificially stratifying the data by season, day, or hour.
-
 
 
 # Regression for Prediction: Seasonal Models
@@ -453,8 +447,6 @@ paste("MSE-based R2:  ", round(max(1 - MSE_pred/MSE_obs, 0),3))),
 
 ```
 
-
-
 # ANOVA components of Variance analysis
 Now lets look to see what covariates explain the most temporal variation
 
@@ -479,11 +471,105 @@ kable(fit_MOM$aov.tab,
 ```
 
 
+# SENSITIVITY ANALYSIS: DAY OF THE WEEK 
+
+```{r full model sensitivity analysis}
+
+#creating a formula to check that the simpler version of weekday vs. weekend (rather than day of the week) is appropriate in our model: 
+
+Full2 <-as.formula(log_conc~day_time + dow + season)
+
+```
+
+```{r linear regression model for dow sensitivity analysis}
+#creating linear regression model for model with day of the week rather than weekend vs. weekday
+
+full_temporal2 <- lm(Full2, data = cal_nox_clean)
+
+```
+
+```{r comparison of dow vs. weekend or weekday models}
+
+#model with weekday2 covariate: 
+summary(full_temporal)
 
 
+#model with dow covariate: 
+summary(full_temporal2)
+
+#these appear reasonably comparable, though notably (and predictably) the day of the week model is more complex than the weekend/weekday model
+
+```
+
+```{r repeat cross-validation for sensitivity analysis}
+#cross validation (random 10-fold) with Full2 linear model (day of the week)
+
+# set the seed to make reproducible
+set.seed(283)
+
+# create vector of CV groups
+  # first generate a vector with values 1:10 equal to the number of dataset rows
+# then randomize (with argument replace = FALSE)
+CV_grp <- rep(1:10, length.out = nrow(cal_nox_clean)) %>% 
+  sample(replace = FALSE)
+
+# now append it to the cal_nox_clean data frame
+cal_nox_clean <- mutate(cal_nox_clean, CV_grp = CV_grp)
+
+# create a numeric variable for CV predictions (using -999 as a placeholder)
+cv_pred <- cal_nox_clean %>% mutate(preds = -999)
+
+# loop over the 10 clusters
+for (i in 1:10){
+
+    # define the current cluster variable as a logical vector
+    is_cluster <- cv_pred$CV_grp == i
+
+    # fit the "common" model to the training set by omitting cluster i
+    CV_lm <- lm(Full2, data = cv_pred, subset = !is_cluster)
+
+    # generate predictions using CV_lm
+    preds <- predict(CV_lm, cal_nox_clean)
+
+    # add results to cv_pred dataframe
+    cv_pred$preds[is_cluster] <- preds[is_cluster]
+}
+
+# calculate the MSE, RMSE, MSE-based R2
+
+# mean of observations
+log_conc_avg <- mean(cv_pred$log_conc)
+
+# MSE of predictions
+MSE_pred <- mean((cv_pred$log_conc - cv_pred$preds)^2)
+
+# MSE of observations (for R2 denominator)
+MSE_obs <- mean((cv_pred$log_conc - log_conc_avg)^2)
+
+# print the results not rounded
+kable(rbind(paste("RMSE:  ", round(sqrt(MSE_pred),3)),
+paste("MSE-based R2:  ", round(max(1 - MSE_pred/MSE_obs, 0),3))),
+  caption = "10-fold CV with random groups") %>%
+  kable_styling()
 
 
+```
+```{r anova for sensitivity analysis}
 
+#-----VCA implementation-----
+
+# different ways to estimate variance components
+fit_MOM <- anovaVCA(Full2, Data = as.data.frame(cal_nox_clean) )
+kable(fit_MOM$aov.tab,
+      caption = "Table of MOM ANOVA",
+      digits = 2) %>%
+  kable_styling()
+
+
+```
+
+
+```
 
 
 
