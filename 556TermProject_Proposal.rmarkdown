@@ -1,0 +1,650 @@
+---
+title: "Updated 556TermProject_Proposal"
+authors: "Callan, Abbie, and Katie - ENV H 556"
+format:
+  html:
+    df_print: "paged"
+    fig_caption: yes
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    self-contained: true #save images etc. in this file (vs folders)
+execute:
+  echo: false
+  cache: false
+  echo.comments: false
+  message: false
+  warning: false
+  
+---
+
+
+
+This document was rendered on `r format(Sys.time(), '%B %d, %Y')`.
+
+---
+
+
+```{r setup, include=FALSE}
+
+#-----setup-----
+
+# clear work space of all objects and unload all extra (non-base) packages
+rm(list = ls(all = TRUE))
+if (!is.null(sessionInfo()$otherPkgs)) {
+    res <- suppressWarnings(
+        lapply(paste('package:', names(sessionInfo()$otherPkgs), sep=""),
+               detach, character.only=TRUE, unload=TRUE, force=TRUE))
+   
+}
+
+```
+
+```{r load.libraries.pacman, echo=FALSE, include=FALSE, eval=TRUE}
+
+#-----load libraries pacman-----
+
+# Load pacman into memory, installing as needed
+my_repo <- 'http://cran.r-project.org'
+if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
+
+# Load the other packages, installing as needed.
+pacman::p_load(knitr, kableExtra, tidyverse, lubridate, egg, multcomp, modelr, broom, EnvStats, Hmisc,
+               dplyr, tidyr, purrr, ggplot2, stringr)
+
+```
+
+```{r, echo=FALSE, include=FALSE}
+#-----read data from a website--------
+
+# read in annual average air pollution concentrations from mobile monitoring
+# download it from the web and save locallyif the file does not already exist
+annual <- read.csv(file.path("https://zenodo.org/record/13761282/files/annual_data_and_predictions.csv?download=1"))
+                              
+mm_covariates <- read.csv(file.path("https://zenodo.org/records/13761282/files/dr0311_mobile_covariates.csv?download=1")) %>%
+  rename("location" = native_id)
+  
+# combine files
+annual <- left_join(annual, mm_covariates, by="location")
+
+#I don't think the annual dataset is enough for our project aims. Downloading individual stop data with collection times and joining to the covariates. 
+
+stop_data <- read.csv(file.path("https://zenodo.org/record/13761282/files/stop_data.csv?download=1"))
+stop_data <- left_join(stop_data, mm_covariates, by="location")
+
+head(stop_data) #it's 895 columns long!! going to have to eliminate some that aren't of interest
+
+  
+```
+
+
+
+
+## Introduction
+
+*Introduction to Mobile Monitoring Data set and variables*
+
+  The Mobile Monitoring data set comes from a study on air pollution and its association with aging. The study collected air samples from around the greater Seattle area (Washington, United States). A car, equipped with air quality monitoring and sampling equipment, drove along nine routes, stopping and taking ~ 309 samples across all nine routes over the course of one year. Each sample is a two-minute sample of air quality, including pollutant concentrations for nitrogen dioxide (NO2), PM2.5, particle number concentration (PNC), carbon dioxide (CO2), and black carbon (BC). We selected PM2.5 to be the primary outcome variable based on its established association with adverse health outcomes, including acute and chronic cardiovascular and respiratory effects.
+  
+*Specific Aims, Approach, and Hypotheses*
+
+The purpose of this analysis is to compare prediction models for traffic-related PM2.5 based on (1) season and (2) day of the week. 
+  
+We will first develop a "general model" to be used in Aims 1 and 2. General model covariates will be selected based on their potential associations with the PM2.5 and either season or day of the week (i.e. confounders) or with PM2.5 alone (i.e. precision variables). The out-of-sample RMSE and R^2 estimates for the general model will be estimated using 10-fold cross-validation in randomly generated groups. 
+  
+We will extend the general model to build prediction models adjusting for season and day-of-the-week interactions. The specific aims and approaches for each model are outlined below:  
+  
+**Aim 1:** Predict average PM2.5 concentrations using a land-use regression model that incorporates seasonal interactions
+  Approach: We will add an interaction term for season to all covariates in our general model       (general model described below). 
+  Hypothesis: We hypothesize that model fit will improve based on the addition of seasonal          interaction terms. 
+
+**Aim 2:** Predict average PM2.5 concentrations using a land-use regression model that incorporates day-of-the-week interactions
+  Approach: We will add an interaction term for day of the week to all covariates in our general    model (general model described below).
+  Hypothesis: We hypothesize that model fit will improve based on the addition of day-of-the-week   interaction terms
+  
+**Aim 3:** Compare the out-of-sample performance of the prediction models in Aims 1 and 2
+  Approach: We will use 10-fold cross-validation in randomly generated groups to estimate the       out-of-sample RMSE and R^2 for each model. We will use these estimates to compare prediction      performance across models. 
+  Hypothesis: We hypothesize that the model adjusted for seasonality interactions will outperform   the model adjusted for day-of-the-week interactions. 
+ 
+
+Through characterizing and comparing these  prediction models for PM2.5, our analyses provide insight on the importance of various temporal trends related to PM2.5 concentrations. This offers the potential to improve future prediction models that inform public health interventions, surveillance, and environmental policies. 
+ 
+
+**Group Member Roles**
+
+Statistical Analyses: all group members will contribute to the statistical analyses. Specific roles are detailed as follows: 
+
+Modeling:
+- Callan: build general model and cross-validate; obtain RMSE and R2 estimates
+- Abbie: build season interaction model and cross-validate; obtain RMSE and R2 estimates
+- Katie: build day-of-week interaction model and cross-validate; obtain RMSE and R2 estimates
+
+Report Drafting: all group members will contribute to the report drafting. 
+- Callan: write introduction and methods sections; assist with discussion section 
+- Abbie: 
+- Katie: 
+
+## Exploratory/ Introductory Analysis
+
+Each variable has 309 observations with no missing data for any observations (in the annual summary data). 
+
+**Introduction to Sampling Location Annual Average Data**
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+kable(annual%>%
+  group_by(variable) %>%
+  summarise(
+    GM = geoMean(value, na.rm = TRUE),
+    GSD = geoSD(value, na.rm = TRUE),
+    AM = mean(value, na.rm = TRUE),
+    ASD = sd(value, na.rm = TRUE)),
+  digit = 1,
+  caption = "Table 1.0: Summary Statistics for TRAP Variables") %>%
+  kable_styling()
+
+```
+
+```{r}
+#---Q-Q plot---#
+
+
+#plotting first on a native scale
+ggplot(annual, aes(sample = value)) +
+  stat_qq() + 
+  stat_qq_line() +
+  labs(title = "Figure 1a: Normal Q-Q Plot of TRAP",
+       x = "Theoretical Quantiles from a Std Normal Distribution",
+       y = "Concentration - native scale"
+       ) +
+  facet_wrap(~variable, scales = "free")
+
+#Co2 and PM2.5 look close to normal on the native scale, although there are some slight deviations at the tails. 
+#other trap have significant deviation, mostly in the upper quantiles
+
+#creating log transformed concentration variable. 
+annual <- annual %>% mutate(logvalue = log(value), .after = value)
+
+#qq plots using log transformed values
+ggplot(annual, aes(sample = logvalue)) +
+  stat_qq() + 
+  stat_qq_line() +
+  labs(title = "Figure 1b: Normal Q-Q Plot of log(TRAP)",
+       x = "Theoretical Quantiles from a Std LogNormal Distribution",
+       y = "log(concentration)"
+       ) +
+  facet_wrap(~variable, scales = "free")
+
+#CO2 nad PM2.5- also looks ok lognormal
+#ma200 - looks much better lognormal
+#No2, ns, pmdisc, pnc - still doesn't look normal, although the deviation is less severe than before transformation
+
+```
+
+The Q-Q plots show that CO2 concentrations in the data are relatively normally distributed, however black carbon, NO2 and partical number concentrations all deviate from normal with high concentrations. The log transformed variables have visibly reduced deviations from a normal distribution. This leads us to conclude that all of the TRAP variables except CO2 benefit from a log transformation.
+
+
+
+```{r histogram}
+#histograms with smoother
+
+#native scale
+ggplot(annual, aes(value)) +
+  geom_histogram(aes(y = ..density..), bins = 40, color = "lightblue", fill = "lightblue", alpha = 0.8) +
+  geom_density(color = "purple") +
+  facet_wrap(~variable, scales = "free") +
+  labs(title = "Figure 2a: Distribution of TRAP",
+       x = "Concentration on native scale",
+       y = "density"
+       )
+  
+#log transformed
+ggplot(annual, aes(logvalue)) +
+  geom_histogram(aes(y = ..density..), bins = 40, color = "darkgreen", fill = "darkgreen", alpha = 0.4) +
+  geom_density(color = "green") +
+  facet_wrap(~variable, scales = "free") +
+  labs(title = "Figure 2b: Distribution of log(TRAP)",
+       x = "Concentration on log scale",
+       y = "density"
+       )
+
+#think we should use the log transformed data. It's not perfectly normal, but it has improved the super long right tails on some of the pollutants. 
+
+```
+
+The Histogram plots with smoother in Figures 2a and 2b also indicate a right tailed distribution or skew in most of the TRAP variables.
+
+
+**Introduction to Stop-Level Data**
+
+
+
+``` {r intro to stop level}
+#repeating the above analysis with the individual stop data. 
+kable(stop_data%>%
+  group_by(variable) %>%
+  summarise(
+    n = length(median_value),   #using median value because it has been more extensively QC'd and was the summary measure used in the original study. 
+    nmiss = sum(is.na(median_value)), 
+    GM = geoMean(median_value, na.rm = TRUE),
+    GSD = geoSD(median_value, na.rm = TRUE),
+    AM = mean(median_value, na.rm = TRUE),
+    ASD = sd(median_value, na.rm = TRUE)),
+  digit = 1)
+
+#cannot compute GM for N02, but there are no missing values, and it can compute CM. Negative values?
+
+
+print(min(stop_data$median_value)) #Yes, there are negative values in the data set. Concentrations cannot be negative - need to investigate what happened here? Were they below LOD and became negative due to some calibration correction (subtracting off a certain value?)
+
+
+sub_zero <- stop_data %>% filter(median_value <= 0) #9 measurements below 0
+unique(stop_data$primary_instrument) # all of them were measured on a back-up instrument. Suggest that we drop backup instrument samples from the analysis
+
+stop_data_primary <- stop_data %>% filter(primary_instrument == "Primary")
+
+kable(stop_data_primary%>%
+  group_by(variable) %>%
+  summarise(
+    n = length(median_value),   #using median value because it has been more extensively QC'd and was the summary measure used in the original study. 
+    nmiss = sum(is.na(median_value)), 
+    GM = geoMean(median_value, na.rm = TRUE),
+    GSD = geoSD(median_value, na.rm = TRUE),
+    AM = mean(median_value, na.rm = TRUE),
+    ASD = sd(median_value, na.rm = TRUE)),
+  digit = 1,
+  caption = "Table 2.0: Stop-Level Data Summary" )%>%
+  kable_styling()
+
+#much better
+# the count of each variable is different, but there are no NA values 
+
+```
+
+``` {r}
+#---Q-Q plot of stop-level data---#
+
+#same QQ plots as above
+
+#using a qq plot to assess normality
+
+#plotting first on a native scale
+ggplot(stop_data_primary, aes(sample = median_value)) +
+  stat_qq() + 
+  stat_qq_line() +
+  labs(title = " Figure 3a: Normal Q-Q Plot of TRAP Stop-level data",
+       x = "Theoretical Quantiles from a Std Normal Distribution",
+       y = "Concentration - native scale"
+       ) +
+  facet_wrap(~variable, scales = "free")
+
+#it all looks crazy. Not normal!
+
+#creating log transformed concentration variable. 
+stop_data_primary <- stop_data_primary %>% mutate(log_med_value = log(median_value), .after = median_value)
+
+#qq plots using log transformed values
+ggplot(stop_data_primary, aes(sample = log_med_value)) +
+  stat_qq() + 
+  stat_qq_line() +
+  labs(title = " Figure 3b: Normal Q-Q Plot of log(TRAP) Stop=-level data",
+       x = "Theoretical Quantiles from a Std LogNormal Distribution",
+       y = "log(concentration)"
+       ) +
+  facet_wrap(~variable, scales = "free")
+
+#better, but not perfect. 
+
+#co2 still has a lot of divergence, as do No2 and ma200. The rest have some dirgence, but look ok
+
+```
+
+
+
+The stop-level data shows similar results as the averaged annual data across sample locations. The data benefits from log transformations and this will likely be what we use in further analysis. CO2 has slightly less normal distribution at stop-level data compared to annual data. 
+
+
+
+```{r distribution}
+#histograms and density plots
+
+#histograms with smoother
+
+#native scale
+ggplot(stop_data_primary, aes(median_value)) +
+  geom_histogram(aes(y = ..density..), bins = 40, color = "lightblue", fill = "lightblue", alpha = 0.8) +
+  geom_density(color = "purple") +
+  facet_wrap(~variable, scales = "free") +
+  labs(title = "Figure 4a: Distribution of TRAP Stop-level data",
+       x = "Concentration on native scale",
+       y = "density"
+       )
+#everything has a really long right tail  
+
+#log transformed
+ggplot(stop_data_primary, aes(log_med_value)) +
+  geom_histogram(aes(y = ..density..), bins = 40, color = "darkgreen", fill = "darkgreen", alpha = 0.4) +
+  geom_density(color = "green") +
+  facet_wrap(~variable, scales = "free") +
+  labs(title = "Figure 4b: Distribution of TRAP (log transformed) - stop-level data",
+       x = "Concentration on log scale",
+       y = "density"
+       )
+
+#much more central, although there are still some long tails. Definitely should use log values for analysis. 
+
+```
+
+These histograms further the point of the Q-Q plot. In our introduction of this data in the term paper we will choose either the histograms or the Q-Q plots, and either the log-transformed or native scale variables to report. 
+
+# Seasonal Characterization of the TRAP variables concentrations:
+
+The stop-level data provided the date and week of the year that each sample was taken. To look at seasonal changes in the stop-level TRAP data, we need to separate the weeks of the year into four seasons. We did this by breaking up the roughly 52 weeks of the year into 4, ~13-week segments. 
+
+Weeks 13 - 25 of the year are coded as spring
+weeks 26 - 38 are coded as summer
+weeks 39 - 50 are coded as autumn
+and week 51,52 and 1-12 are coded as winter.
+
+**Seasonal Stratification and summary of TRAP variables**
+
+
+``` {r seasonal strat}
+#creating a new season variable to explore time trends
+
+
+#changing the date variables from character to dates
+stop_data_primary$date <- as.Date(stop_data_primary$date)
+stop_data_primary$time <- as_datetime(stop_data_primary$time)
+
+#creating a new season variable. Doing this roughly based off week of year, but we can make it more detailed later if we use this in our analysis
+seasons <- stop_data_primary %>%
+  mutate(season = case_when(
+    week(time) > 12 & week(time) < 26 ~ "Spring",
+    week(time) > 25 & week(time) < 39 ~ "Summer",
+    week(time) > 38 & week(time) < 51 ~ "Autumn",
+    week(time) < 13 | week(time) > 50 ~ "Winter"
+  )) %>%
+  mutate(season = factor(season, levels = c("Spring", "Summer", "Autumn", "Winter")))
+
+#head(seasons)
+
+#summarizing by season
+seasons <- seasons %>%
+  mutate(variable = as.factor(variable))
+
+describe(seasons$variable)
+
+kable(seasons %>%
+  group_by(variable, season) %>%
+  summarise(
+    n = sum(!is.na(median_value)),
+    GM = geoMean(median_value, na.rm = TRUE),
+    GSD = geoSD(median_value, na.rm = TRUE),
+    AM = mean(median_value, na.rm = TRUE),
+    ASD = sd(median_value, na.rm = TRUE)),
+  digit = 1,
+  caption = "Table 3.0: Seasonal Summary of stop-level TRAP variables") %>%
+  kable_styling()
+
+#can run anova later (or even ancova if there are covariates we want to include), but there definitely look like seasonal differences
+
+#making a bar plot to visualize better
+
+ggplot(seasons, aes(x = variable, y = median_value, fill = season)) +
+  geom_bar(stat = "summary", fun = "mean", position = "dodge") +
+  facet_wrap(~variable, scales = "free") +
+  labs(y = "mean seasonal concentration", x = "") + 
+  theme(axis.text.x = element_blank())
+
+#pnc_screen wasn't measured in winter
+
+#table and plot are kind of rough. Can be improved for readability if we use them, but I was trying to get a sense of the data. 
+
+#most interesting for season difference seem to be ma200, neph_bscat, no2
+#Co2 is the least interesting for seasonal differences
+```
+
+
+
+
+
+# Weekly Characterization of the TRAP variables concentrations:
+
+**Weekday Stratification and Summary of TRAP variables**
+
+
+```{r weekdays}
+weekdays <- stop_data_primary %>%
+  mutate(week_day = weekdays(stop_data_primary$date ))
+
+weekdays <- weekdays %>%
+  mutate(week_day = as.factor(week_day))
+
+
+kable(weekdays %>%
+  group_by(variable, week_day) %>%
+  summarise(
+    n = sum(!is.na(median_value)),
+    GM = geoMean(median_value, na.rm = TRUE),
+    GSD = geoSD(median_value, na.rm = TRUE),
+    AM = mean(median_value, na.rm = TRUE),
+    ASD = sd(median_value, na.rm = TRUE)),
+  digit = 1,
+  caption = "Table 3.0: Weekly Summary of stop-level TRAP variables") %>%
+  kable_styling()
+
+ggplot(weekdays, aes(x = variable, y = median_value, fill = week_day)) +
+  geom_bar(stat = "summary", fun = "mean", position = "dodge") +
+  facet_wrap(~variable, scales = "free") +
+  labs(y = "mean Weekday concentration", x = "") + 
+  theme(axis.text.x = element_blank())
+
+```
+
+
+It looks like BC, PNC, NS, and NO2 may be lower on the weekends than the weekdays. This could point towards work week commuting contributions to TRAP concentrations. 
+
+
+
+This initial Summary of the annual averages and stop-level data from the Mobile Monitoring data set leads us to a few conclusions we will use to inform out term paper:
+
+
+
+# Regression for Prediction: Seasonal Models
+
+1. create cross validation functions
+2. cross validation for out-of-sample statistics
+  for summer, fall, winter, and spring models
+3. select best-fit model 
+  for summer, fall, winter, and spring models
+  
+
+```{r, echo = FALSE, message = FALSE}
+##--- function sot be used---#
+
+# This is a function to get the MSE, RMSE, MSE-based R2
+get_MSE <- function(obs,pred) {
+    
+    obs_avg <- mean(obs)
+
+    MSE_obs <- mean((obs-obs_avg)^2)
+    
+    MSE_pred <- mean((obs - pred)^2)
+
+    result <- c(RMSE = sqrt(MSE_pred),
+                MSE_based_R2 = max(1 - MSE_pred / MSE_obs, 0) 
+                )
+    
+    return(result)
+}
+
+#-----define CV function-----
+# Arguments:
+  # data is the data frame
+  # id is the unique variable for determining sort order of data frame
+  # group is the grouping variable (a variable in the data frame)
+  # formula is the formula to pass to lm
+  # the function returns the dataset with a new variable called cvpreds
+  # appended to the end; these are the out-of-sample predictions
+
+  # do for each cluster in the  dataset
+  # (Note the use of "[[ ]]" rather than "$" because group is input in the
+  # function call as a quoted variable)
+
+do_CV <- function(data = data, id = "id", group = "group", formula) {
+  
+  lapply(unique(data[[group]]), function(this_group){
+    
+    CV_lm <- lm(formula, data = data[data[[group]] != this_group,])
+    
+    data[data[[group]] == this_group,] %>%
+      mutate(cvpreds = predict(CV_lm, newdata = .) %>% unname())
+    
+
+  }) %>% bind_rows() %>% arrange(.data[[id]])
+  
+}
+
+
+
+```
+
+```{r selection}
+#-----forward selection SUMMER-----#
+seasons <- seasons[seasons$variable == "no2",]
+
+seasons <- seasons%>%
+  mutate("ln_no2" = log(mean_value))
+
+summer <- seasons %>%
+  filter(season == "Summer")
+
+null <- lm(ln_no2 ~ 1, data = summer)
+
+summer <- summer %>%
+  filter(!is.na(ln_no2))
+
+covars_all <- str_subset(names(summer),"pop_|int_|open_|D2|A1_|A23_|m_to_a1")
+
+# B: now turn this into a formula for the full model in stepwise regression:
+full <- as.formula(paste("ln_no2 ~ ", paste(covars_all, collapse= "+")))
+
+# Using k=2 is comparable to standard AIC.
+# Using log(n), where n is the number of observations, is comparable to BIC.
+forwardreg_summer <- step(null, 
+                        scope = list(lower = null, upper = full), 
+                        trace = 0, 
+                        direction = "forward", 
+                        k = 0)
+
+covars_forward <- names(forwardreg_summer$coefficients) %>%
+  setdiff('(Intercept)')
+
+covars_forward
+
+```
+
+```{r forward select, warning = FALSE, message = FALSE}
+
+#-----model order and CV-----
+
+# apply along length of the vector of names from forward selection
+res <- lapply(seq_along(covars_forward), function(i){
+    
+    # define the formula, updated to add a term each time
+    fmla <- as.formula(
+        paste("ln_no2 ~ 1 + ", paste(covars_forward[seq_len(i)], collapse = "+"))) 
+    
+    # in-sample model and estimates
+    in_model <- lm(fmla, data = summer) 
+    
+    # out-of sample model and estimates
+    out_ests <- do_CV(data = summer, id = "stop_id", group = "location", fmla)
+    out_results <- get_MSE(out_ests$ln_no2, out_ests$cvpreds)
+    
+    # compile results
+   tibble(n_pred = i,
+           covar = covars_forward[i],
+           in_RMSE = sqrt(mean(in_model$residuals^2)),
+           in_R2 = summary(in_model)$r.squared,
+           out_RMSE = out_results[["RMSE"]],
+           out_R2 = out_results[["MSE_based_R2"]] 
+           )
+    
+    }) %>% 
+    bind_rows()
+
+head(re)
+
+```
+
+```{r bias plots}
+#-----bias-var combined plots-----
+
+# Note that the out-of-sample R2 for a model with 31 terms is about .7; we can
+# find the RMSE using res$out_RMSE[31]:
+max(res$out_RMSE[1:31])
+min(res$out_RMSE[1:31])
+
+# This suggests limits for the R2 plot of ~.5-.7 to 1 and limits for the RMSE
+# plot of 0 - ~.5 or so
+
+y_lim <- 0.5
+
+# create temporary dataframe for plot
+temp <- res %>% 
+  
+  # make long dataframe
+  pivot_longer(cols = c(ends_with("_RMSE"), ends_with("_R2")), 
+               names_to = "Source_Estimate", 
+               values_to = "value" ) %>%
+  
+  # separate the "Source" column for in and out of sample
+  separate(col = Source_Estimate, into = c("Source", "Estimate") ) %>% 
+
+  # set high RMSE values to NA, then filter out these values before plotting
+  mutate(value = ifelse(Estimate == "RMSE" & value > y_lim, NA, value)) %>%
+  filter(!is.na(value))
+
+  geom_point(aes(x = n_pred, y = value, color = Source)) +
+  geom_line(aes(x = n_pred, y = value, color = Source)) +
+  xlab("Model Complexity (# of terms)") +
+  ylab("") +
+  scale_x_continuous(breaks = c(seq(0, 63, 5))) +
+  facet_wrap(~ Estimate, scales = "free_y", ncol = 1, strip.position = "right") +
+  theme_bw() 
+
+#show plot
+combined_plot
+```
+
+```{r appendix, results='hide'}
+
+#*Statistical Approach for regression for association*
+
+#1. We aim to create a best-fit model of NOx/TRAP pollutant to assess the association of NOx concentrations across days of the week. 
+
+#1b. We will characterize variation in NOx/TRAP across days of the week - within week day and between weekday
+
+#2. We aim to create a best fit model of NOx TRAP pollutant to assess NOx concentrations across the four seasons of the year. 
+
+#2b. We will characterize variation in NOx/TRAP across season - within and between season variability
+
+
+## Methods & Statistical Approach
+
+#Descriptive statistics
+
+#  We will characterize the distribution of PM2.5 concentrations according to season (Fall, Winter, Spring, Summer) and day of the week using descriptive summary statistics, box plots and/or histograms. 
+
+ # We will use ANOVA models to compare the mean concentration of log-transformed air pollutants across (1) seasons (i.e. Fall, Winter, Spring, and Summer); and (2) days of the week. 
+  
+
+#As part of our day-of-the-week assessment, we will additionally test whether TRAP is associated more broadly with day type (i.e. week day or weekend) using a land-use regression model adjusted for season and distance to major roadways, which we anticipate could be precision variables.
+
+
+
+```
+
