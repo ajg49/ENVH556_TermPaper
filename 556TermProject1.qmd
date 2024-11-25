@@ -100,7 +100,7 @@ cal_nox <- cal_nox %>%
 
 #I made these cuts off very rough estimates based on data distribution. We probably want to fine tune our scientific rationale for doing so and readjust if warranted. KW
 
-#fixing the seaon variable because there were a lot of NA
+#fixing the season variable because there were a lot of NA
 
 cal_nox <- cal_nox %>%
   mutate(season = case_when(
@@ -132,7 +132,7 @@ kable(cal_nox%>%
 
 #data is going to need a little cleaning. There are monitors with negative values recorded. 
 
-#filter out the negative values and repeat the table
+#filter out the negative values and repeat the table. Justify that it's scientifically impossible to have neg. values on native scale.
 cal_nox_clean <- cal_nox %>% filter(sample_measurement > 0) #29,521 rows removed!!
 
 kable(cal_nox_clean%>%
@@ -175,8 +175,7 @@ ggplot(cal_nox_clean, aes(log(sample_measurement))) +
        y = "density"
        )
 
-#Log transformed is definitely better, but we need to deal with the negative values. 
-#can we just drop them and say we dropped them because they are scientifically impossible?
+#Log transformed is definitely better.
 
 ```
 ```{r log transform, echo = F}
@@ -187,10 +186,6 @@ cal_nox_clean <- cal_nox_clean %>%
   relocate(log_conc, .after = sample_measurement)
 
 ```
-_______________________
-#All code below this line is from our old dataset.!!
-
-
 
 
 ```{r}
@@ -230,7 +225,7 @@ The data provided the date and week of the year that each sample was taken. To l
     weeks 39 - 50 are coded as autumn
     and week 51,52 and 1-12 are coded as winter.
     
-  ** Limitations of this approach. This is based only on diving the year into roughly equal portions based on numerical week. There is no distinct scientific or meteorological significance to the cutoff. Could look at other ways of defining season for more accuracy --- could use specific calendrical definitions, or could look at cut points based on temp or precip. Could also use social cutoffs (e.g. summer is when Seattle public school are out), as any seasonal differences could be a combination of both social and meteorological phenomena
+  ** Limitations of this approach. This is based only on diving the year into roughly equal portions based on numerical week. There is no distinct scientific or meteorological significance to the cutoff. Could look at other ways of defining season for more accuracy --- could use specific calendrical definitions, or could look at cut points based on temp or precip. Could also use social cutoffs (e.g. summer is when school is out), as any seasonal differences could be a combination of both social and meteorological phenomena.
 
   We also needed to take the hours of the day at which samples were collected and bin them into categories to assess whether time of day is a predictor of NOx concentrations. To do this we binned the 24 hours of the day into four categories:
 
@@ -274,7 +269,7 @@ kable(cal_nox_clean %>%
 ```{r}
 #summary by day of the week
 
-cal_nox_clean %>% filter(parameter_name == "Oxides of nitrogen (NOx)") %>% ggplot(aes(x = as.factor(dow), y = log_conc)) +
+cal_nox_clean %>% filter(parameter_name == "Oxides of nitrogen (NOx)") %>% ggplot(aes(x = dow, y = log_conc)) +
          geom_boxplot() +
   ggtitle( label = "Ln(NOx) Distributions by Day of the Week")
 
@@ -300,7 +295,7 @@ cal_nox_clean<- cal_nox_clean %>%
            str_replace(pattern = "TRUE",
                        replacement = "Weekday") %>%
          str_replace(pattern = "FALSE",
-                     replacement = "Weekend"))
+                     replacement = "Weekend"), .after = weekday)
 
 cal_nox_clean %>% filter(parameter_name == "Oxides of nitrogen (NOx)") %>% ggplot(aes(x = as.factor(weekday2), y = log_conc)) +
          geom_boxplot() +
@@ -346,6 +341,7 @@ kable(cal_nox_clean %>%
   caption = "Table 3.0: Seasonal Summary of NOx - Native Scale ") %>%
   kable_styling()
 #can we report an arithmetic mean on a log-transformed variable?
+# I think so - I think we call it the mean log concentration...
 
 
 ```
@@ -446,6 +442,7 @@ paste("MSE-based R2:  ", round(max(1 - MSE_pred/MSE_obs, 0),3))),
 
 
 ```
+#These are not very good performance statistics!! Do we want to try and figure out a different model with some geographic covariates?
 
 # ANOVA components of Variance analysis
 Now lets look to see what covariates explain the most temporal variation
