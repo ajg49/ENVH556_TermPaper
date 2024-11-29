@@ -21,6 +21,34 @@ execute:
 This document was rendered on `r format(Sys.time(), '%B %d, %Y')`.
 ---
 
+#Introduction and Purpose
+
+Nitrogen oxides (NOx) are gaseous compounds commonly found in air pollution. Although NOx are generated through both natural and anthropogenic sources, human activities account for the majority of ambient NOx concentrations [(EPA 2024;)](https://www.epa.gov/no2-pollution/basic-information-about-no2) [Zhang et al. 2003;](https://www.pnas.org/doi/10.1073/pnas.252763799) [(ATSDR 2002;](https://www.atsdr.cdc.gov/toxfaqs/tfacts175.pdf) [(EPA 1999)](https://www3.epa.gov/ttncatc1/dir1/fnoxdoc.pdf). Mobile vehicles are a major source of anthropogenic NOx, accounting for approximately half of all emissions related to human activities [(EPA 1999)](https://www3.epa.gov/ttncatc1/dir1/fnoxdoc.pdf). Power plants also contribute a substantial fraction (~20%) of the total estimated annual anthropogenic NOx emissions [(EPA 1999)](https://www3.epa.gov/ttncatc1/dir1/fnoxdoc.pdf).
+
+Traffic-related air pollutants (TRAP), such as NOx, can have diurnal and seasonal trends related to temporal vehicular traffic patterns [Blanco et al. (2023)](https://www.nature.com/articles/s41370-022-00470-5#MOESM1).
+
+
+#Methods 
+
+*Dataset Description*
+
+The California NOx dataset, first described by [Blanco et al. (2023)](https://www.nature.com/articles/s41370-022-00470-5#MOESM1), includes NOx concentration measurements collected from 69 California Air Quality System (AQS) sites in 2016. Measurements were collected every hour, enabling the evaluation of temporal trends in NOx concentrations across both short- and long-term timescales.
+
+
+*Overview of Statistical Approach* 
+
+
+-log transformed covariates based on distribution checking
+
+
+
+
+**
+
+
+#Results
+
+
 ```{r setup, include=FALSE}
 
 #-----setup-----
@@ -45,8 +73,7 @@ my_repo <- 'http://cran.r-project.org'
 if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
 
 # Load the other packages, installing as needed.
-pacman::p_load(knitr, kableExtra, tidyverse, lubridate, egg, multcomp, modelr, broom, EnvStats, Hmisc,
-               dplyr, tidyr, purrr, ggplot2, stringr, sf, lme4, VCA)
+pacman::p_load(knitr, kableExtra, tidyverse, lubridate, egg, multcomp, modelr, broom, EnvStats, Hmisc,dplyr, tidyr, purrr, ggplot2, stringr, sf, lme4, VCA)
 
 
 ```
@@ -82,8 +109,10 @@ ca_covariates <- st_as_sf(ca_covariates, coords = c("longitude", "latitude"))
 cal_nox <- left_join(cal_nox, ca_covariates, by="native_id")
 
 unique(cal_nox$parameter_name)  
-```
 
+#subset the cal nox dataset to only one parameter - NOx
+
+```
 
 
 
@@ -111,110 +140,129 @@ cal_nox <- cal_nox %>%
   )) %>%
   mutate(season = factor(season, levels = c("Spring", "Summer", "Fall", "Winter")))
 
+
+#summarizing by Day of the Week
+cal_nox<- cal_nox %>%
+  mutate(weekday2 = as.character(weekday) %>%
+           str_replace(pattern = "TRUE",
+                       replacement = "Weekday") %>%
+         str_replace(pattern = "FALSE",
+                     replacement = "Weekend"), .after = weekday)
+
+
 ```
 
-```{r, echo = FALSE, warning = FALSE, message = FALSE}
-#Cal_NOx data set
-kable(cal_nox%>%
-  group_by(parameter_name) %>%
-  summarise(
-    count = n(),
-    min = min(sample_measurement),
-    max = max(sample_measurement),
-    median = median(sample_measurement),
-    GM = geoMean(sample_measurement, na.rm = TRUE),
-    GSD = geoSD(sample_measurement, na.rm = TRUE),
-    AM = mean(sample_measurement, na.rm = TRUE),
-    ASD = sd(sample_measurement, na.rm = TRUE)),
-  digit = 2,
-  caption = "Table 1.0: Summary Statistics for Nitric Oxides (NOx)") %>%
-  kable_styling()
+```{r summarize Nox, echo = FALSE, warning = FALSE, message = FALSE}
+
 
 #data is going to need a little cleaning. There are monitors with negative values recorded. 
 
 #filter out the negative values and repeat the table. Justify that it's scientifically impossible to have neg. values on native scale.
+# this table is tratified by season, and another table is stratified by week day.
+
 cal_nox_clean <- cal_nox %>% filter(sample_measurement > 0) #29,521 rows removed!!
 
-kable(cal_nox_clean%>%
-  group_by(parameter_name) %>%
-  summarise(
-    count = n(),
-    min = min(sample_measurement),
-    max = max(sample_measurement),
-    median = median(sample_measurement),
-    GM = geoMean(sample_measurement, na.rm = TRUE),
-    GSD = geoSD(sample_measurement, na.rm = TRUE),
-    AM = mean(sample_measurement, na.rm = TRUE),
-    ASD = sd(sample_measurement, na.rm = TRUE)),
-  digit = 2,
-  caption = "Table 1.0: Summary Statistics for Nitric Oxides (NOx)") %>%
-  kable_styling()
-
-
-```
-```{r histogram}
-#histograms with smoother
-
-#native scale
-ggplot(cal_nox_clean, aes(sample_measurement)) +
-  geom_histogram(aes(y = ..density..), bins = 40, color = "lightblue", fill = "lightblue", alpha = 0.8) +
-  geom_density(color = "purple") +
-  facet_wrap(~parameter_name, scales = "free") +
-  labs(title = "Distribution of NOx",
-       x = "Concentration on native scale",
-       y = "density"
-       )
-  
-#log transformed
-ggplot(cal_nox_clean, aes(log(sample_measurement))) +
-  geom_histogram(aes(y = ..density..), bins = 40, color = "darkgreen", fill = "darkgreen", alpha = 0.4) +
-  geom_density(color = "green") +
-  facet_wrap(~parameter_name, scales = "free") +
-  labs(title = "Distribution of log(NOx)",
-       x = "Concentration on log scale",
-       y = "density"
-       )
-
-#Log transformed is definitely better.
-
-```
-```{r log transform, echo = F}
 
 #create a new variable called "log_conc" for the log transformed concentrations
 cal_nox_clean <- cal_nox_clean %>%
   mutate(log_conc = log(sample_measurement)) %>%
   relocate(log_conc, .after = sample_measurement)
 
+#we have negative numbers again, but because of the log transformation
+
+kable(cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",] %>%
+  group_by(season) %>%
+  summarise(
+    count = n(),
+    min = min(sample_measurement),
+    max = max(sample_measurement),
+    median = median(sample_measurement),
+    GM = geoMean(sample_measurement, na.rm = TRUE),
+    GSD = geoSD(sample_measurement, na.rm = TRUE),
+    AM = mean(sample_measurement, na.rm = TRUE),
+    ASD = sd(sample_measurement, na.rm = TRUE)),
+  digit = 2,
+  caption = "Table 1.0: Summary Statistics for Nitric Oxides (NOx) by Season") %>%
+  kable_styling()
+
+kable(cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",] %>%
+  group_by(dow) %>%
+  summarise(
+    count = n(),
+    min = min(sample_measurement),
+    max = max(sample_measurement),
+    median = median(sample_measurement),
+    GM = geoMean(sample_measurement, na.rm = TRUE),
+    GSD = geoSD(sample_measurement, na.rm = TRUE),
+    AM = mean(sample_measurement, na.rm = TRUE),
+    ASD = sd(sample_measurement, na.rm = TRUE)),
+  digit = 2,
+  caption = "Table 2.0: Summary Statistics for Nitric Oxides (NOx) by Week day") %>%
+  kable_styling()
+
+
+
 ```
 
+#Break up the histograms by season, look at NOx distribution by seasons, day of the week, etc.
 
-```{r}
-#---Q-Q plot---#
+```{r histogram}
+
+#---------------------- Stratified by season----------------------------------#
+#native scale
+#histograms with smoother
+cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",] %>%
+ggplot(aes(sample_measurement)) +
+  geom_histogram(aes(y = ..density..), bins = 40, color = "lightblue", fill = "lightblue", alpha = 0.8) +
+  geom_density(color = "purple") +
+  facet_wrap(~season, scales = "free") +
+  labs(title = "Distribution of NOx by Season",
+       x = "Concentration on native scale",
+       y = "density"
+       )
+  
+#log transformed
+cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",] %>%
+ggplot( aes(log(sample_measurement))) +
+  geom_histogram(aes(y = ..density..), bins = 40, color = "darkgreen", fill = "darkgreen", alpha = 0.4) +
+  geom_density(color = "green") +
+  facet_wrap(~season, scales = "free") +
+  labs(title = "Distribution of log(NOx) by Season",
+       x = "Concentration on log scale",
+       y = "density"
+       )
+
+#Log transformed is definitely better.
 
 
-#plotting first on a native scale
-ggplot(cal_nox_clean, aes(sample = sample_measurement)) +
-  stat_qq() + 
-  stat_qq_line() +
-  labs(title = "Figure 1: Normal Q-Q Plot of NOx",
-       x = "Theoretical Quantiles from a Std Normal Distribution",
-       y = "Concentration - native scale"
-       ) +
-  facet_wrap(~parameter_name, scales = "free")
+#---------stratified by day of the week ---------------------------------------#
+#histograms with smoother
+cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",] %>%
+ggplot(aes(sample_measurement)) +
+  geom_histogram(aes(y = ..density..), bins = 40, color = "lightblue", fill = "lightblue", alpha = 0.8) +
+  geom_density(color = "purple") +
+  facet_wrap(~dow, scales = "free") +
+  labs(title = "Distribution of NOx by Day of the Week",
+       x = "Concentration on native scale",
+       y = "density"
+       )
+  
+#log transformed
+cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",] %>%
+ggplot( aes(log(sample_measurement))) +
+  geom_histogram(aes(y = ..density..), bins = 40, color = "darkgreen", fill = "darkgreen", alpha = 0.4) +
+  geom_density(color = "green") +
+  facet_wrap(~dow, scales = "free") +
+  labs(title = "Distribution of log(NOx) by Day of the week",
+       x = "Concentration on log scale",
+       y = "density"
+       )
 
-#qq plots using log transformed values
-ggplot(cal_nox_clean, aes(sample = log_conc)) +
-  stat_qq() + 
-  stat_qq_line() +
-  labs(title = "Figure 1: Normal Q-Q Plot of NOx",
-       x = "Theoretical Quantiles from a Std Normal Distribution",
-       y = "Concentration - native scale"
-       ) +
-  facet_wrap(~parameter_name, scales = "free")
+
 
 
 ```
-The Q-Q plots show a huge benefit to log-transformation of the data, no matter which NOx parameter you choose to work with. WE do still see some much more attenuated deviations form the normal line, but overall the data distribution is clearly in need of this transformation before statistical tests or models are built. 
+
 
 # Seasonal Characterization of NOx concentrations:
 
@@ -227,124 +275,292 @@ The data provided the date and week of the year that each sample was taken. To l
     
   ** Limitations of this approach. This is based only on diving the year into roughly equal portions based on numerical week. There is no distinct scientific or meteorological significance to the cutoff. Could look at other ways of defining season for more accuracy --- could use specific calendrical definitions, or could look at cut points based on temp or precip. Could also use social cutoffs (e.g. summer is when school is out), as any seasonal differences could be a combination of both social and meteorological phenomena.
 
-  We also needed to take the hours of the day at which samples were collected and bin them into categories to assess whether time of day is a predictor of NOx concentrations. To do this we binned the 24 hours of the day into four categories:
+  We are also interested in a day of the week prediction model, comparing NOx concnetrations across the days of the week. We created a variable called "dow" which indicates the days of the week that the sample was taken on.
+  
+  We chose to use these two strata to investigate a temporal component to NOx concentrations in the state of california because these two models portray two different kinds of temporal fluctuation on very different time scales and because the strata for these variables is relatively balanced. By looking at prediction models stratified by season, we can investigate whether seasonal weather changes or tempurature averages could play a role in NOx concentrations, and by looking at days of the week, we can see if more short-term activities have an impact of NOx concentrations. 
 
-    hours > 4 & hours <= 9 are coded as Morning
-    hours > 9 & hours <= 16 are coded as Midday
-    hours > 16 & hours  <= 21 are coded as Evening
-    hours > 21 or hours  <= 4 are coded as Night
+**Week day Summary of NOx**
 
-**Hourly and Day Time Summary of NOx**
+```{r weeklytrends, echo = F}
 
-```{r timetrends, echo = F}
+#plotting by time
 
-#summarizing by time
-
-cal_nox_clean %>% filter(parameter_name == "Oxides of nitrogen (NOx)") %>% ggplot(aes(x = as.factor(hour), y = log_conc)) +
+cal_nox_clean %>% filter(parameter_name == "Oxides of nitrogen (NOx)") %>% ggplot(aes(x = as.factor(dow), y = log_conc)) +
          geom_boxplot() +
-  ggtitle( label = "Ln(NOx) Distributions by hour")
-
-cal_nox_clean %>% filter(parameter_name == "Oxides of nitrogen (NOx)") %>% 
-  ggplot(aes(x = day_time, y = log_conc)) +
-         geom_boxplot() +
-  ggtitle( label = "Ln(NOx) Distributions by Day Time")
-
-kable(cal_nox_clean %>%
-        filter(parameter_name ==  "Oxides of nitrogen (NOx)") %>%
-  group_by(day_time) %>%
-  summarise(
-    n = sum(!is.na(sample_measurement)),
-    AM = mean(sample_measurement, na.rm = TRUE),
-    ASD = sd(sample_measurement, na.rm = TRUE)),
-  digit = 1,
-  caption = "Table 3.0: Time of Day Summary of NOx - Native scale ") %>%
-  kable_styling()
+  ggtitle( label = "Ln(NOx) Distributions Across the Days of the Week") +
+  xlab("Day of the week") +
+  ylab("log(NOx) log(ppm)")
 
 ```
 
-# Weekly Characterization of the NOx variables concentrations:
+# Season Specific Prediction Models
 
-**Weekday Stratification and Summary of NOx**
-
-```{r}
-#summary by day of the week
-
-cal_nox_clean %>% filter(parameter_name == "Oxides of nitrogen (NOx)") %>% ggplot(aes(x = dow, y = log_conc)) +
-         geom_boxplot() +
-  ggtitle( label = "Ln(NOx) Distributions by Day of the Week")
-
-kable(cal_nox_clean %>%
-        filter(parameter_name ==  "Oxides of nitrogen (NOx)") %>%
-  group_by(dow) %>%
-  summarise(
-    n = sum(!is.na(sample_measurement)),
-    AM = mean(sample_measurement, na.rm = TRUE),
-    ASD = sd(sample_measurement, na.rm = TRUE)),
-  digit = 1,
-  caption = "Table 3.0: Day of the Week Summary of NOX - Native Scale ") %>%
-  kable_styling()
-```
-
-**DAILY Summary of NOx**
-
-```{r weekdays}
-
-#summarizing by Day of the Week
-cal_nox_clean<- cal_nox_clean %>%
-  mutate(weekday2 = as.character(weekday) %>%
-           str_replace(pattern = "TRUE",
-                       replacement = "Weekday") %>%
-         str_replace(pattern = "FALSE",
-                     replacement = "Weekend"), .after = weekday)
-
-cal_nox_clean %>% filter(parameter_name == "Oxides of nitrogen (NOx)") %>% ggplot(aes(x = as.factor(weekday2), y = log_conc)) +
-         geom_boxplot() +
-  ggtitle( label = " Weekly Ln(NOx) Distributions")
-
-kable(cal_nox_clean %>%
-        filter(parameter_name ==  "Oxides of nitrogen (NOx)") %>%
-  group_by(weekday2) %>%
-  summarise(
-    n = sum(!is.na(sample_measurement)),
-    AM = mean(sample_measurement, na.rm = TRUE),
-    ASD = sd(sample_measurement, na.rm = TRUE)),
-  digit = 1,
-  caption = "Table 3.0: Week Summary of NOX - Native Scale ") %>%
-  kable_styling()
-
-```
-
-
-
-**Seasonal Stratification and Summary of NOx**
+**Seasonal Stratification of NOx for season-specific model generation**
 
 ``` {r seasonal strat}
 
-#summarizing by season
-#focusing on NOx - all species
-
-unique(cal_nox_clean$season)
-
-cal_nox_clean %>% filter(parameter_name == "Oxides of nitrogen (NOx)") %>% ggplot(aes(x = season, y = log_conc)) +
-         geom_boxplot()+
-  ggtitle( label = "NOx Distributions by Season")
-
-
-kable(cal_nox_clean %>%
-        filter(parameter_name ==  "Oxides of nitrogen (NOx)") %>%
-  group_by(season) %>%
-  summarise(
-    n = sum(!is.na(sample_measurement)),
-    AM = mean(sample_measurement, na.rm = TRUE),
-    ASD = sd(sample_measurement, na.rm = TRUE)),
-  digit = 1,
-  caption = "Table 3.0: Seasonal Summary of NOx - Native Scale ") %>%
-  kable_styling()
-#can we report an arithmetic mean on a log-transformed variable?
-# I think so - I think we call it the mean log concentration...
+summer <- cal_nox_clean[cal_nox_clean$season == "Summer",]
+fall <- cal_nox_clean[cal_nox_clean$season == "Fall",]
+winter <- cal_nox_clean[cal_nox_clean$season == "Winter",]
+spring <- cal_nox_clean[cal_nox_clean$season == "Spring",]
 
 
 ```
+
+
+**Model Prediction Functions**
+
+```{r define get_MSE}
+#-----define get_MSE function-----
+
+# This is a function to get the MSE, RMSE, MSE-based R2
+get_MSE <- function(obs,pred) {
+    # obs is the outcome variable
+    # pred is the prediction from a model
+     
+    # mean of obs
+    obs_avg <- mean(obs)
+    
+    # MSE of obs (for R2 denominator)
+    MSE_obs <- mean((obs-obs_avg)^2)
+    
+    # MSE of predictions
+    MSE_pred <- mean((obs - pred)^2)
+    
+    # compile output
+    result <- c(RMSE = sqrt(MSE_pred),
+                MSE_based_R2 = max(1 - MSE_pred / MSE_obs, 0) 
+                )
+    
+    # explicit return (optional)
+    return(result)
+}
+
+```
+
+
+
+```{r define.CV.function}
+#-----define CV function-----
+
+do_CV <- function(data, id = "id", group = "group", formula) {
+ 
+  lapply(unique(data[[group]]), function(this_group){
+    
+    # fit the "common" model to the training set (without this group)
+    CV_lm <- lm(formula, data = data[data[[group]] != this_group,])
+    
+    # generate predictions for this group using training model
+    data[data[[group]] == this_group,] %>%
+      mutate(cvpreds = predict(CV_lm, newdata = .) %>% unname())
+    
+    # recombine data from all clusters and sort by ID column
+    # note use of ".data[[ ]]" to return the value of variable id
+  }) %>% bind_rows() %>% arrange(.data[[id]])
+  
+  # return the dataset (the last-evaluated object is always returned by default)
+}
+
+```
+
+**General Model Selection** 
+
+Callan adding: here I am using forward selection to pick covariates for the "general model" that we can use across all seasons. 
+
+```{r cv}
+#-----generate cross validation group for all analyses-----
+
+# set the seed to make reproducible
+set.seed(123)
+
+# create vector of CV groups
+  # first generate a vector with values 1:10 equal to the number of dataset rows
+  # then randomize (with argument replace = FALSE)
+CV_grp <- rep(1:10, length.out = nrow(cal_nox_clean)) %>% 
+  sample(replace = FALSE)
+
+
+# now append it to the cal_nox_clean data frame
+cal_nox_clean <- mutate(cal_nox_clean, rando_CV_grp = CV_grp)
+
+```
+
+
+CALLAN NOTE: I cannot get the below code to run and I'm not sure why.
+```{r model selection}
+#-----forward selection for full general model covariates-----
+
+cal_nox_clean <- cal_nox_clean %>% 
+  dplyr::select(-m_to_6oil, -m_to_oil, -m_to_main_cityhall, -m_to_local_cityhall)
+
+
+# Null model: intercept only
+null <- lm(log_conc ~ 1, data = cal_nox_clean)
+
+# find covariates using string matching
+covars_all <- str_subset(names(cal_nox_clean), "pop_|int_|open_|D2|A1_|A23_|m_to_")
+
+# create the formula for the full model
+full_formula <- as.formula(paste("log_conc ~ ", paste(covars_all, collapse = "+")))
+
+# Run the forward stepwise regression using AIC (k = 2)
+forwardreg_generalmod <- step(null, 
+                              scope = list(lower = null, upper = full_formula), 
+                              trace = 0, 
+                              direction = "forward", 
+                              k = 2)  # k = 2 for AIC (comparable to BIC with log(n) for large datasets)
+
+
+covars_forward2 <- names(forwardreg_generalmod$coefficients) %>%
+  setdiff('(Intercept)')
+
+covars_forward2 #different list than above when just run for summer
+
+#
+
+```
+
+**General Model Cross-Validation Group** 
+
+Callan adding: Per Lianne's feedback, I am making one cross validation group across the full dataset for use in prediction validation. 
+
+
+
+
+
+
+
+
+**Summer -  Model Selection **
+
+Using bias-variance trade off and ranked forward selection. We created random clusters on which do do cross validation.
+
+```{r}
+
+#------remove variables with NA's--------------
+summer <- summer %>% 
+  dplyr::select(-m_to_6oil, -m_to_oil, -m_to_main_cityhall, -m_to_local_cityhall)
+
+#describe(summer)
+#need to remove NA's
+```
+
+```{r cv}
+#-----generate groups-----
+
+# set the seed to make reproducible
+set.seed(123)
+
+# create vector of CV groups
+  # first generate a vector with values 1:10 equal to the number of dataset rows
+  # then randomize (with argument replace = FALSE)
+CV_grp <- rep(1:10, length.out = nrow(summer)) %>% 
+  sample(replace = FALSE)
+#Did this on the whole DF, which I think make sense if we use week_day or type_day as interaction terms in the model
+#would not make sense if we end up doing seperate models for the types of days. 
+
+# now append it to the summer data frame
+summer <- mutate(summer, rando_CV_grp = CV_grp)
+
+#-----forward selection using interaction-----#
+null <- lm(log_conc ~ 1, data = summer)
+
+covars_all <- str_subset(names(summer),"pop_|int_|open_|D2|A1_|A23_|m_to_")
+
+# B: now turn this into a formula for the full model in stepwise regression:
+full <- as.formula(paste("log_conc ~ ", paste(covars_all, collapse= "+")))
+
+# Using k=2 is comparable to standard AIC.
+# Using log(n), where n is the number of observations, is comparable to BIC.
+# remove NA's from teh dataset first
+forwardreg_summer <- step(null, 
+                        scope = list(lower = null, upper = full), 
+                        trace = 0, 
+                        direction = "forward", 
+                        k = 2) #made K = 2 for true AIC calculation
+
+covars_forward2 <- names(forwardreg_day$coefficients) %>%
+  setdiff('(Intercept)')
+
+covars_forward2 #different list than above when just run for summer
+
+#forward selection is what we used the the lab, but she also said it wasn't how you would normally really do it. Do we want to try backwards selection or something else?
+
+```
+
+#cross validation for each model and plotting bias/variance tradeoff
+```{r}
+#-----model order and CV-----
+
+# apply along length of the vector of names from forward selection
+res1 <- lapply(seq_along(covars_forward), function(i){
+    
+    # define the formula, updated to add a term each time
+    fmla <- as.formula(
+        paste("log_conc ~ 1 + ", paste(covars_forward[seq_len(i)], collapse = "+"))) 
+    
+    # in-sample model and estimates
+    in_model <- lm(fmla, data = summer) 
+    
+    # out-of sample model and estimates
+    out_ests <- do_CV(data = summer, id = "stop_id", group = "location", fmla) # I don't have a great sense of what the location variable represents in this data, but there probably is some spacial value to it. Also it's way more than 10 groups, and not random. KW
+    out_results <- get_MSE(out_ests$ln_no2, out_ests$cvpreds)
+    
+    # compile results
+   tibble(n_pred = i,
+           covar = covars_forward[i],
+           in_RMSE = sqrt(mean(in_model$residuals^2)),
+           in_R2 = summary(in_model)$r.squared,
+           out_RMSE = out_results[["RMSE"]],
+           out_R2 = out_results[["MSE_based_R2"]] 
+           )
+    
+    }) %>% 
+    bind_rows()
+
+head(res1)
+
+#-----bias-var combined plots-----
+
+
+#there are 23 terms in the model. 
+max(res2$out_RMSE[1:23])
+min(res2$out_RMSE[1:23])
+
+y_lim <- 0.8
+
+# create temporary dataframe for plot
+temp2 <- res2 %>% 
+  
+  # make long dataframe
+  pivot_longer(cols = c(ends_with("_RMSE"), ends_with("_R2")), 
+               names_to = "Source_Estimate", 
+               values_to = "value" ) %>%
+  
+  # separate the "Source" column for in and out of sample
+  separate(col = Source_Estimate, into = c("Source", "Estimate") ) %>% 
+
+  # set high RMSE values to NA, then filter out these values before plotting
+  mutate(value = ifelse(Estimate == "RMSE" & value > y_lim, NA, value)) %>%
+  filter(!is.na(value)) 
+
+
+combined_plot2 <- ggplot(data = temp2) +
+  geom_point(aes(x = n_pred, y = value, color = Source)) +
+  geom_line(aes(x = n_pred, y = value, color = Source)) +
+  xlab("Model Complexity (# of terms)") +
+  ylab("") +
+  labs(title = "Bias-Variance TradeOff For Randomly Cross-Validated CV Groups from Summer Data",
+       subtitle = "Type of Day Model") +
+  scale_x_continuous(breaks = c(seq(0, 63, 5))) +
+  facet_wrap(~ Estimate, scales = "free_y", ncol = 1, strip.position = "right") +
+  theme_bw() 
+
+#show plot
+combined_plot2
+```
+
+^ from the plot and functions above we pick a summer model. repeat for fall, winter, and spring?
 
 
 
@@ -360,6 +576,7 @@ cal_nox_clean <- cal_nox_clean %>%      #filter to only one species category
 Full <- as.formula(log_conc ~ day_time + weekday2 + season )
 
 ```
+
 
 
 ```{r}
@@ -412,7 +629,7 @@ set.seed(283)
 CV_grp <- rep(1:10, length.out = nrow(cal_nox_clean)) %>% 
   sample(replace = FALSE)
 
-# now append it to the cal_nox_clean data frame
+#\ now append it to the cal_nox_clean data frame
 cal_nox_clean <- mutate(cal_nox_clean, CV_grp = CV_grp)
 
 # create a numeric variable for CV predictions (using -999 as a placeholder)
@@ -605,6 +822,21 @@ paste("MSE-based R2:  ", round(max(1 - MSE_pred/MSE_obs, 0),3))),
 
 
 ```
+
+
+# Discussion and Conclusion
+
+
+
+
+
+# Works Cited 
+
+
+
+
+
+
 
 ## Appendix 
 
