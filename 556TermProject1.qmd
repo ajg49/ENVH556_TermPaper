@@ -373,6 +373,17 @@ cal_nox_clean %>%
   summarise(
              n = sum(!is.na(County)))
 
+cal_nox_clean %>%
+  group_by(County) %>%
+  summarise(
+             n = sum(!is.na(County)))
+
+
+cal_nox_clean %>%
+  group_by(County) %>%
+  summarise(
+             n = length(unique(native_id)))
+
 #26 total counties. use this as the clustering variable? Code below makes random clusters but this could be a clustering variable
 
 ```
