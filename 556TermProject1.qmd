@@ -106,9 +106,10 @@ ca_covariates <- read_rds(file.path("https://zenodo.org/records/14166411/files/s
 ca_covariates <- st_as_sf(ca_covariates, coords = c("longitude", "latitude"))
 
 #glimpse(ca_covariates) #too long!
+
+#going to do the attaching later because it creates such a huge df
   
-# combine files
-cal_nox_covars <- left_join(cal_nox, ca_covariates, by="native_id")
+
 
  
 
@@ -151,6 +152,11 @@ cal_nox<- cal_nox %>%
                      replacement = "Weekend"), .after = weekday)
 
 
+```
+#Attaching covariates to the data with all the temporal variables added. Use this if needed for model selection
+```{r, add.covars}
+# combine files
+cal_nox_covars <- left_join(cal_nox, ca_covariates, by="native_id")
 ```
 
 # Useless chunk
@@ -321,14 +327,15 @@ sample_df$date <- as_datetime(sample_df$date) #make sure the date column stays i
 
 #now writing it as function that will be easy to use
 
-random_sample <- function(data, size) {  #specify the data frame and the number of samples to take from each monitor
+random_sample <- function(data, size, seed) {  #specify the data frame and the number of samples to take from each monitor
+  data$native_id_fact <- factor(data$native_id)
   monitors <- length(unique(data$native_id)) # number of monitors in the data
   
   # Initialize a dataframe to store the sample that has the same columns as the original data and enough rows for the desired sampling
   sample_df <- data.frame(matrix(NA, nrow = size * monitors, ncol = ncol(data)))
   colnames(sample_df) <- colnames(data)
   
-  set.seed(72) # seed for reproducibility
+  set.seed(seed) # seed for reproducibility
   # Initialize a row index for sample_df
   row_index <- 1
   
@@ -347,7 +354,7 @@ random_sample <- function(data, size) {  #specify the data frame and the number 
   return(sample_df)
 }
 
-test <- random_sample(nox_only, 28)
+test <- random_sample(nox_only, 28, 72)
 
 #comparing test and sample_df to make sure they are the same
 
@@ -378,6 +385,39 @@ min(check) #0
 #The function works. 
 
 
+```
+#taking a bunch of random samples for the gold standard data
+```{r}
+
+
+# Initialize the gold_standard data frame
+gold_standard <- data.frame()
+
+n_reps <- 30  # number of random df simulations to run
+
+for (i in 1:n_reps) {
+  seed <- i * 3  # generating a different seed for each simulation
+  sampled_data <- random_sample(nox_only, 28, seed)
+  annual_avg_data <- annual_avg(sampled_data)
+  
+  # Add seed and rep_number columns
+  annual_avg_data$seed <- seed
+  annual_avg_data$rep_number <- i
+  
+  # Append to gold_standard
+  gold_standard <- rbind(gold_standard, annual_avg_data)
+}
+
+
+#graphing the distribution of annual averages
+
+ggplot(gold_standard, aes(x = native_id, y = annual_avg)) +
+  geom_point()
+
+ggplot(gold_standard, aes(x = native_id, y = annual_avg)) +
+  geom_boxplot()
+
+#Kinda crazy how much variability there is using unrestricted random samples
 ```
 
 #Break up the histograms by season, look at NOx distribution by seasons, day of the week, etc.
