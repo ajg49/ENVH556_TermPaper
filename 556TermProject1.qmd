@@ -407,7 +407,9 @@ for (i in 1:n_reps) {
   # Append to gold_standard
   gold_standard <- rbind(gold_standard, annual_avg_data)
 }
-
+```
+#summarizing the data from the random samples
+```{r}
 
 #graphing the distribution of annual averages
 
@@ -418,6 +420,49 @@ ggplot(gold_standard, aes(x = native_id, y = annual_avg)) +
   geom_boxplot()
 
 #Kinda crazy how much variability there is using unrestricted random samples
+
+
+long_term_gold <- annual_avg(nox_only)
+
+lt_gold_sum <- long_term_gold %>% summarise(min = min(annual_avg), 
+                                            Q25 = quantile(annual_avg, probs = 0.25), 
+                                            Q50 = quantile(annual_avg, probs = 0.5),
+                                            Q75 = quantile(annual_avg, probs = 0.75),
+                                            max = max(annual_avg),
+                                            SD = sd(annual_avg)
+                                            )
+lt_gold_sum #This matches the number reported in Blanco supplement S5
+
+gold_std_sum <- gold_standard %>% summarise(min = min(annual_avg), 
+                                            Q25 = quantile(annual_avg, probs = 0.25), 
+                                            Q50 = quantile(annual_avg, probs = 0.5),
+                                            Q75 = quantile(annual_avg, probs = 0.75),
+                                            max = max(annual_avg),
+                                            SD = sd(annual_avg)
+                                            )
+gold_std_sum #this would not be expected to match Blanco because we used different seeds
+
+```
+#writing a function for calculating summary statistics of an annual average df. 
+```{r}
+#function to make summary stats easier
+sum_stats <- function(data) {
+  summary <- data %>% summarise(min = min(annual_avg), 
+                                            Q25 = quantile(annual_avg, probs = 0.25), 
+                                            Q50 = quantile(annual_avg, probs = 0.5),
+                                            Q75 = quantile(annual_avg, probs = 0.75),
+                                            max = max(annual_avg),
+                                            SD = sd(annual_avg)
+                                            )
+  return(summary)
+  
+}
+
+#testing
+sum_stats(gold_standard)
+
+#yay!!
+
 ```
 
 #Break up the histograms by season, look at NOx distribution by seasons, day of the week, etc.
