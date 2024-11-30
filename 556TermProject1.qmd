@@ -108,7 +108,7 @@ ca_covariates <- st_as_sf(ca_covariates, coords = c("longitude", "latitude"))
 #glimpse(ca_covariates) #too long!
   
 # combine files
-#cal_nox <- left_join(cal_nox, ca_covariates, by="native_id")
+cal_nox_covars <- left_join(cal_nox, ca_covariates, by="native_id")
 
  
 
