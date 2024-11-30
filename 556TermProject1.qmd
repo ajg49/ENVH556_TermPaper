@@ -98,6 +98,8 @@ glimpse(cal_nox)
 summary(cal_nox)
 
 length(unique(cal_nox$native_id)) #73 locations
+
+unique(cal_nox$parameter_name) #3 different measurements NO, NO2, NOX
                               
 ca_covariates <- read_rds(file.path("https://zenodo.org/records/14166411/files/site_covariates.rda?download=1")) 
 
@@ -106,11 +108,10 @@ ca_covariates <- st_as_sf(ca_covariates, coords = c("longitude", "latitude"))
 #glimpse(ca_covariates) #too long!
   
 # combine files
-cal_nox <- left_join(cal_nox, ca_covariates, by="native_id")
+#cal_nox <- left_join(cal_nox, ca_covariates, by="native_id")
 
-unique(cal_nox$parameter_name)  
+ 
 
-#subset the cal nox dataset to only one parameter - NOx
 
 ```
 
@@ -152,14 +153,15 @@ cal_nox<- cal_nox %>%
 
 ```
 
-```{r summarize Nox, echo = FALSE, warning = FALSE, message = FALSE}
-
-
+# Useless chunk
+This section of code shouldn't be run. Cleaning the data in a different way. Leaving it just in case there is something we want to grab out of it in the future.
+```{r, useless, echo = F, include = F, message = F, eval = F}
 #data is going to need a little cleaning. There are monitors with negative values recorded. 
 
 #filter out the negative values and repeat the table. Justify that it's scientifically impossible to have neg. values on native scale.
 # this table is tratified by season, and another table is stratified by week day.
 
+#per lianne, we don't want to just ditch the negative values
 cal_nox_clean <- cal_nox %>% filter(sample_measurement > 0) #29,521 rows removed!!
 
 
@@ -199,7 +201,181 @@ kable(cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",]
   digit = 2,
   caption = "Table 2.0: Summary Statistics for Nitric Oxides (NOx) by Week day") %>%
   kable_styling()
+```
 
+#Cleaning the data according to the criteria in Blanco paper
+```{r, cleaning.data}
+#cleaning the data for sampling per the Blanco et al. paper
+
+#create a df that is only NOX
+
+nox_only <- cal_nox %>% filter(parameter_name == "Oxides of nitrogen (NOx)")
+
+length(unique(nox_only$native_id)) #There are 69 monitors here, so we lost a couple when we filtered it to NOX only (there were 73 monitors when NO and NO2 were also included). 
+
+#determining missingness
+lapply(nox_only, function(i){ 
+   tibble( 
+          # sum missing
+          n_miss = sum(is.na(i)), 
+          
+          # percent missing
+          perc_miss = round(n_miss/length(i) * 100, 1)
+          )
+   }) %>% 
+   # bind list
+   bind_rows(.id = "variable")
+# There are no NA values, but not sure if there is a complete record for each monitor
+
+#calculate the total number of expected measurements per monitor
+
+#check the range of the data
+min(nox_only$date)
+max(nox_only$date)
+#The data ranges from "2016-01-01 00:00:00 PST" to "2016-12-31 23:00:00 PST"
+
+#confirm 2016 is a leap year
+leap_year(2016) # it is, and there are 366 DOY
+
+#expected number of measurements per monitor: 366 days * 24 measurements/day
+meas <- 366 *24 #expect 8784 measurements/monitor if there are no gaps for the year
+
+meas_summary <- nox_only %>% 
+  group_by(native_id) %>% 
+  summarise(
+    count = n(), 
+    pct_total = n()/meas*100, 
+    pct_pos = sum(sample_measurement > 0)/n()*100)
+
+min(meas_summary$pct_total) #77.8% of the year
+max(meas_summary$pct_total) #96.9% of the year
+
+#all of this meets the first criteria in the Blanco paper, which is to have reading >66% of the year
+
+#second criteria from Blanco: data gaps <= 45 days long
+
+# Initialize a dataframe
+max_gap <- data.frame(native_id=unique(nox_only$native_id), max_gap=NA)
+
+# Loop over the monitors to calculate the maximum gap in measurements in days
+for(i in 1:nrow(max_gap)){
+  data.i <- subset(nox_only, native_id == max_gap$native_id[i])
+  data.i <- data.i[order(data.i$doy), ]  # Ensure data is sorted by 'doy'
+  
+  gaps <- diff(data.i$doy)  # Calculate the differences between consecutive days
+  max_gap$max_gap[i] <- max(gaps, na.rm = TRUE)  # Store the maximum gap
+}
+
+max(max_gap$max_gap) #maximum number of consecutive days w/o measurements is 36
+
+#based on blanco criteria there is no need to eliminate any monitors
+
+#Third Blanco criteria is that the monitor sampled for 40% of the time during the two week period used in "common design" sampling models. Will implement this later if we choose to do a 2 weeks sampling window. 
+
+#Fourth Blanco critera is the monitor is >0 60% of the time. 
+
+min(meas_summary$pct_pos) #70.6%
+max(meas_summary$pct_pos) #100%
+
+#no need to eliminate any monitors based on this criteria. 
+
+#No monitors were eliminated based on this cleaning. 
+
+
+```
+#Function to do random sampling from the data
+```{r}
+
+
+
+#per Blanco, we will pick 28 samples per monitor. The Gold Standard sample, will be distributed across the whole year. We will then do temporally restricted samples to see how they compare
+
+#create factor to make subsetting in the loop easier for resample
+nox_only$native_id_fact <- factor(nox_only$native_id)
+
+size = 28 #per Blanco, the number of samples taken from each monitor
+monitors = length(unique(nox_only$native_id)) #number of monitors in the data
+
+# Initialize a dataframe to store the sample that is the same columns as the original nox_only df and enough rows for the desired sampling
+sample_df <- data.frame(matrix(NA, nrow = size*monitors, ncol = ncol(nox_only)))
+colnames(sample_df) <- colnames(nox_only)
+
+set.seed(72) #seed for reproducability
+# Initialize a row index for sample_df
+row_index <- 1
+
+for(i in 1:monitors) {
+  data.i <- subset(nox_only, native_id_fact == unique(nox_only$native_id_fact)[i])
+  sample_indices <- sample(1:nrow(data.i), size, replace = FALSE) # Take 'size' random samples from each monitor
+  
+  for(j in sample_indices) {
+    sample_df[row_index, ] <- data.i[j, ]
+    row_index <- row_index + 1
+  }
+}
+sample_df$date <- as_datetime(sample_df$date) #make sure the date column stays in the right format in the new df. 
+
+#head(sample_df) #Worked!
+
+#Parameter name was a factor, so it only saved the number and not the name, but who cares (in the original df as imported before filtering 1 = NO2, 2 = NO, 3 = NOX)
+
+#now writing it as function that will be easy to use
+
+random_sample <- function(data, size) {  #specify the data frame and the number of samples to take from each monitor
+  monitors <- length(unique(data$native_id)) # number of monitors in the data
+  
+  # Initialize a dataframe to store the sample that has the same columns as the original data and enough rows for the desired sampling
+  sample_df <- data.frame(matrix(NA, nrow = size * monitors, ncol = ncol(data)))
+  colnames(sample_df) <- colnames(data)
+  
+  set.seed(72) # seed for reproducibility
+  # Initialize a row index for sample_df
+  row_index <- 1
+  
+  for(i in 1:monitors) {
+    data.i <- subset(data, native_id == unique(data$native_id)[i])
+    sample_indices <- sample(1:nrow(data.i), size, replace = FALSE) # Take 'size' random samples from each monitor
+    
+    for(j in sample_indices) {
+      sample_df[row_index, ] <- data.i[j, ]
+      row_index <- row_index + 1
+    }
+  }
+  
+  sample_df$date <- as_datetime(sample_df$date) # make sure the date column stays in the right format in the new df.
+  
+  return(sample_df)
+}
+
+test <- random_sample(nox_only, 28)
+
+#comparing test and sample_df to make sure they are the same
+
+check = sample_df$sample_measurement - test$sample_measurement
+max(check) #0
+min(check) #0
+#The function works. 
+
+```
+
+#Writing a function to aggregate data to the annual level
+```{r}
+
+#function to take the annual average concentration of any dataframe
+annual_avg <- function(data) {
+  annual <- data %>% group_by(native_id) %>% summarise(annual_avg = mean(sample_measurement))
+  return(annual)
+}
+
+#testing the function does what i want to to
+test1 <- test %>% group_by(native_id) %>% summarise(annual_avg = mean(sample_measurement))
+
+test2 <- annual_avg(test)
+
+check = test1$annual_avg - test2$annual_avg
+max(check) #0
+min(check) #0
+#The function works. 
 
 
 ```
@@ -211,7 +387,7 @@ kable(cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",]
 #---------------------- Stratified by season----------------------------------#
 #native scale
 #histograms with smoother
-cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",] %>%
+nox_only %>%
 ggplot(aes(sample_measurement)) +
   geom_histogram(aes(y = ..density..), bins = 40, color = "lightblue", fill = "lightblue", alpha = 0.8) +
   geom_density(color = "purple") +
@@ -220,8 +396,26 @@ ggplot(aes(sample_measurement)) +
        x = "Concentration on native scale",
        y = "density"
        )
+
+#---------stratified by day of the week ---------------------------------------#
+#histograms with smoother
+nox_only %>%
+ggplot(aes(sample_measurement)) +
+  geom_histogram(aes(y = ..density..), bins = 40, color = "lightblue", fill = "lightblue", alpha = 0.8) +
+  geom_density(color = "purple") +
+  facet_wrap(~dow, scales = "free") +
+  labs(title = "Distribution of NOx by Day of the Week",
+       x = "Concentration on native scale",
+       y = "density"
+       )
+
+
+```
+
+```{r, eval = F}
+#This code won't run unless you run the code above that creates the "useless" cal_nox_clean df. We are not filtering away negative values and log transforming, so this isn't necessary, even though the data does look more normal on the log scale before aggregation. 
   
-#log transformed
+#log transformed by season
 cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",] %>%
 ggplot( aes(log(sample_measurement))) +
   geom_histogram(aes(y = ..density..), bins = 40, color = "darkgreen", fill = "darkgreen", alpha = 0.4) +
@@ -232,22 +426,9 @@ ggplot( aes(log(sample_measurement))) +
        y = "density"
        )
 
-#Log transformed is definitely better.
 
-
-#---------stratified by day of the week ---------------------------------------#
-#histograms with smoother
-cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",] %>%
-ggplot(aes(sample_measurement)) +
-  geom_histogram(aes(y = ..density..), bins = 40, color = "lightblue", fill = "lightblue", alpha = 0.8) +
-  geom_density(color = "purple") +
-  facet_wrap(~dow, scales = "free") +
-  labs(title = "Distribution of NOx by Day of the Week",
-       x = "Concentration on native scale",
-       y = "density"
-       )
   
-#log transformed
+#log transformed by day of week
 cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",] %>%
 ggplot( aes(log(sample_measurement))) +
   geom_histogram(aes(y = ..density..), bins = 40, color = "darkgreen", fill = "darkgreen", alpha = 0.4) +
@@ -257,8 +438,6 @@ ggplot( aes(log(sample_measurement))) +
        x = "Concentration on log scale",
        y = "density"
        )
-
-
 
 
 ```
@@ -283,7 +462,16 @@ The data provided the date and week of the year that each sample was taken. To l
 
 ```{r weeklytrends, echo = F}
 
+
+
 #plotting by time
+
+nox_only %>% ggplot(aes(x = as.factor(dow), y = sample_measurement)) +
+         geom_boxplot() +
+  ggtitle( label = "NOx Distributions Across the Days of the Week") +
+  xlab("Day of the week") +
+  ylab("NOx ppm")
+
 
 cal_nox_clean %>% filter(parameter_name == "Oxides of nitrogen (NOx)") %>% ggplot(aes(x = as.factor(dow), y = log_conc)) +
          geom_boxplot() +
@@ -303,6 +491,8 @@ summer <- cal_nox_clean[cal_nox_clean$season == "Summer",]
 fall <- cal_nox_clean[cal_nox_clean$season == "Fall",]
 winter <- cal_nox_clean[cal_nox_clean$season == "Winter",]
 spring <- cal_nox_clean[cal_nox_clean$season == "Spring",]
+
+
 
 
 ```
