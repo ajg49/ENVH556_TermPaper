@@ -25,43 +25,49 @@ This document was rendered on `r format(Sys.time(), '%B %d, %Y')`.
 
 Nitrogen oxides (NOx) are gaseous compounds commonly found in air pollution. Although NOx are generated through both natural and anthropogenic sources, human activities account for the majority of ambient NOx concentrations [(EPA 2024;)](https://www.epa.gov/no2-pollution/basic-information-about-no2) [Zhang et al. 2003;](https://www.pnas.org/doi/10.1073/pnas.252763799) [(ATSDR 2002;](https://www.atsdr.cdc.gov/toxfaqs/tfacts175.pdf) [(EPA 1999)](https://www3.epa.gov/ttncatc1/dir1/fnoxdoc.pdf). Mobile vehicles are a major source of anthropogenic NOx, accounting for approximately half of all emissions related to human activities [(EPA 1999)](https://www3.epa.gov/ttncatc1/dir1/fnoxdoc.pdf). Power plants also contribute a substantial fraction (~20%) of the total estimated annual anthropogenic NOx emissions [(EPA 1999)](https://www3.epa.gov/ttncatc1/dir1/fnoxdoc.pdf).
 
-Traffic-related air pollutants (TRAP), such as NOx, can have diurnal and seasonal trends related to temporal vehicular traffic patterns [Blanco et al. (2023)](https://www.nature.com/articles/s41370-022-00470-5#MOESM1).
-
+Traffic-related air pollutants (TRAP), such as NOx, can have diurnal and seasonal trends related to temporal vehicular traffic patterns [Blanco et al. (2023)](https://www.nature.com/articles/s41370-022-00470-5#MOESM1). Measurements of TRAP must therefore appropriately reflect the relevant temporal period that they are intended to represent. For example, if exposure assessment  The aim of our analysis was to compare the performance of temporally-restricted NOx prediction models with that of a "gold standard" temporally balanced model in Los Angeles county. Specifically, we aimed to assess how prediction surfaces varied based on the temporal variability included in the underlying dataset. Ultimately, these results can be used to inform future TRAP monitoring campaigns through signaling the importance of temporally-balanced sampling designs. 
 
 #Methods 
 
-*Dataset Description*
+**Dataset Description**
 
-The California NOx dataset, first described by [Blanco et al. (2023)](https://www.nature.com/articles/s41370-022-00470-5#MOESM1), includes NOx concentration measurements collected from 69 California Air Quality System (AQS) sites in 2016. Measurements were collected every hour, enabling the evaluation of temporal trends in NOx concentrations across both short- and long-term timescales.
+The California NOx dataset, first described by [Blanco et al. (2023)](https://www.nature.com/articles/s41370-022-00470-5#MOESM1), includes NOx concentration measurements collected from 69 California Air Quality System (AQS) sites in 2016. Measurements were collected every hour, enabling the evaluation of temporal trends in NOx concentrations across both short- and long-term timescales. Land-use, roadway proximity, and population density covariates (N=321 in total) were additionally available in the dataset. 
 
+**Overview of Statistical Approach** 
 
-*Overview of Statistical Approach* 
+We geographically restricted our analysis to data from a single county to limit the impact of geospatial variability, as NOx concentration measurements likely have strong spatial correlation at the county-level based on shared land-use, policy, and urbanicity within counties. Los Angeles County was selected as the county of interest for our analysis based on its high population density (U.S. Census 2023) and because of its high proportion of sensors included in the underlying California NOx dataset. 
 
-WE will follow the study design laid out by Blanco et al 2022 in order to clean our data set and determine any invalid sensors in our data set that need to be removed. The criteria for cleaning and selecting sensors from this paper include the following steps:
-  1. Limited missingness. The sensors to be included must have data for more than 66% of the year. 
-  2.  Limited data gaps. Any data gaps for a particular sensor should be less than or equal to 45 days long.
-  3. The sensor must have sampled for 40% of the time during the two week period used in "common design" sampling models. (**May not use this criteria**)
+The distribution of NOx concentrations and distance-based model covariates were modeled on the natural log scale based on the methods described by Blanco et al. (2022) and based on our visual inspection of the variable distributions. (**NOTE: it looks like the Blanco paper did model covariates and concentration on the natural log scale, if i am interpretingn things correctly**)
 
-We ended our data cleaning with a total of 69 sensors reporting NOx concentrations that met the criteria above. **IS this after subsetting for LA county?**
+*Sensor Selection*
 
+Sensors from the California NOx dataset were selected for inclusion in our analysis according to the criteria described by Blanco et al. (2022). These criteria included: (1) limited missingness, such that the sensors included had annual data that was at least 66% complete; (2) limited data gaps, such that data gaps for a particular sensor were less than or equal to 45 days long; and (3) sensors must have sampled for at least 40% of the time dring the two-week perior used in our Gold Standard model (**May not use this last criterion?**). 
 
-Creating the Gold Standard Data set:
-Our aim to compare the prediction surfaces between season-specific models and a "gold standard" model for the LA county area requires that we randomly sample in a reproducible way to create our gold standard model. We wrote a function to randomly sample our cleaned data set and select 30 samples from each sensor. According to the Blanco et al 2022 paper, 28 samples from each sensor was enough samples to get a representative group of samples for each sensor. 
-This function randomly grabs 28 samples from each of the sensors. It computes an annual average based on only these 28 samples for all 69 sensors. This is repeated 30 times, so there are 30  annual averages based on thirty different sets of samples for each of the 69 sensors. Figure 1 plots the variability in the gold standard data set. 
+*Model Selection*
 
-Seasonal Datasets
+Model covariates were selected for inclusion in NOx prediction models based on their scientific relevance to ambient NOx concentration prediction models, as described in peer-reviewed scientific literature. Specifically, we chose to include the covariates utilized by [Mercer et al. (2011)](https://pmc.ncbi.nlm.nih.gov/articles/PMC3146303/pdf/nihms299256.pdf), who measured ambient NOx concentrations in Los Angeles across varied temporal layers and built prediction models using land-use and geographic covariates. Mercer et al. (2011) selected their prediction model covariates from 65 possible covariates related to population density, land-use intensity, open space land, distance to the coast, distance to industrial sources, distances to various roadways, and lengths of roadways within a given buffer zone. From these potential covariates, Mercer et al. (2011) created a "common model" that had adequate performance in predicting NOx concentrations across all seasons. The covariates included in the Mercer et al. (2011) common model included: distance to commercial pollutant sources, distance to the coast, distance to A1 roadways, population size within 5000 meters, land use intensity within 3000 square kilometers, length of A1 roads within 50 meters, and length of A2 and A3 roads within 400 meters.
 
--log transformed covariates based on distribution checking
+For our analyses, we selected the covariates most similar to the seven used by Mercer et al. (2011), based on the similarities in geographic region, pollutant of interest, land-use covariates, and modeling goals between the present analysis and that described by Mercer et al. (2011). These covariates included: meters to closest commercial and services area, distance to the closest coastline, population density within 5,000 meters, distance to nearest A1 roadway, length of A1 roadway within 500 meters, length of A2 roadway within 1500 meters, length of A3 roadway within 400 meters, and the proportion of mixed urban of built-up land within a 1500 square kilometer buffer. Note that, in some cases, distances and buffers varied between those used by Mercer et al. (2011) and those used by Blanco et al. (2022); in these cases, the closest available covariate distance or buffer was selected. For land-use intensity, the proportion of mixed urban or built-up land within 1500 square kilometers was used in the present analysis, as it was deemed to be likely the most similar to the Mercer et al. (2011) land use covariate. 
 
+*Gold Standard Sampling*
 
+To make our temporally-balanced "gold standard" sampling dataset, we included all measurements from all Los Angeles County monitors that met our pre-defined inclusion criteria. The gold standard dataset therefore reflects an idealistic sampling mechanism, representing sample collection at every hour on every day in all seasons. As noted by Blanco et al. (2022), the gold standard dataset is reasonably representative of the measurements one might obtain from annual stationary air monitoring. 
 
+We predicted the annual average NOx concentration using our gold standard sampling dataset with 10-fold cross-validation. We computed the R2 and RMSE characterizing the model fit and accuracy within this dataset. 
 
-**Research Question:** How does the prediction surface change by season? How does a season-specific model compare with a gold standard, temporally-balanced model? How does a temporally restricted sampling model compare to a  temporallly-balanced sampling model?
+*Short-Term Sampling*
 
+We created short-term sampling datasets intended to represent mobile monitoring campaigns within temporally-restricted periods. Our short-term sampling datasets included season-restricted and day-of-the-week restricted subsets of the data (*NOTE: WE CAN CHANGE THIS AS NEEDED*). For each temporally restricted period, we filtered the dataset to include only samples from the specified timeframe and randomly sampled 28 measurements. 28 measurements were selected based on findings in Blanco et al. (2022), which reported that 28 measurements could accurately estimate the annual average of a site (less than or equal to 25% error) and reasonably represented the sampling design of a single mobile monitoring campaigns, which collect repeated samples from a limited number of locations. The random sampling process was repeated 30 total times to provide additional robustness through simulating multiple mobile monitoring campaigns, as described by Blanco et al. (2022). 
 
+For each short-term sampling dataset, we predicted the expected annual average NOx concentration with 10-fold cross-validation based on the results from all 30 sampling iterations. We additionally computed the expected R2 and RMSE based on all 30 sampling iterations. 
+
+*Comparison of Sampling Approaches*
+
+We compared the estimated model performance parameters (RMSE, R2) from temporally-restricted, short-term sampling with those from the gold standard, long-term estimates. We additionally compared the cross-validated annual average estimates from the temporally-restricted sampling datasets with that estimated using the gold standard sampling dataset. 
 
 #Results
 
+In total, 69 sensors in Los Angeles County met the specified inclusion criteria and were included in our NOx prediction analysis (**is this true? I think this is all of CA, not just LA**). 
 
 ```{r setup, include=FALSE}
 
@@ -115,7 +121,7 @@ length(unique(cal_nox$native_id)) #73 locations
 
 unique(cal_nox$parameter_name) #3 different measurements NO, NO2, NOX
                               
-ca_covariates <- read_rds(file.path("https://zzenodoenodo.org/records/14166411/files/site_covariates.rda?download=1")) 
+ca_covariates <- read_rds(file.path("https://zenodo.org/records/14166411/files/site_covariates.rda?download=1"))
 
 ca_covariates <- st_as_sf(ca_covariates, coords = c("longitude", "latitude"))
 
@@ -123,9 +129,6 @@ ca_covariates <- st_as_sf(ca_covariates, coords = c("longitude", "latitude"))
 
 #going to do the attaching later because it creates such a huge df
   
-
-
- 
 
 
 ```
@@ -303,6 +306,8 @@ max(meas_summary$pct_pos) #100%
 
 
 ```
+
+
 #Function to do random sampling from the data
 ```{r,random.sampling}
 #per Blanco, we will pick 28 samples per monitor. The Gold Standard sample, will be distributed across the whole year. We will then do temporally restricted samples to see how they compare
@@ -1065,7 +1070,7 @@ paste("MSE-based R2:  ", round(max(1 - MSE_pred/MSE_obs, 0),3))),
 
 # Works Cited 
 
-
+United States Census. 2023. QuickFacts Los Angeles County, California. https://www.census.gov/quickfacts/fact/table/losangelescountycalifornia,losangelescitycalifornia,CA/PST045223 Accessed 11/30/2024
 
 
 
