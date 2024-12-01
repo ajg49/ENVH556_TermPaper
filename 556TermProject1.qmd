@@ -770,6 +770,52 @@ gold_preds <- gold_CV %>%
 st_balanced_CV <- left_join(st_balanced_CV, gold_preds, by = "native_id" )
 
 
+#calculating the RMSE and R2 two ways
+  #a) comparing the campaign predictions to the observations from the gold standard 
+  #b) comparing the predictions from each campaign to the observations from that campaign
+
+#need to append the observations from the gold-standard to do method a
+
+gold_obs <- gold_CV %>%
+  dplyr::select("native_id", "log_avg") %>% rename(gold_obs = log_avg)
+st_balanced_CV <- left_join(st_balanced_CV, gold_obs, by = "native_id" )
+
+# Initialize empty lists to store the results for both methods
+results_a <- list()
+results_b <- list()
+
+# Loop through each unique model_run
+for (run in unique(st_balanced_CV$model_run)) {
+  # Filter the data for the current model_run
+  data_subset <- st_balanced_CV %>% filter(model_run == run)
+  
+  # Calculate the MSE for method A
+  mse_result_a <- get_MSE(data_subset$gold_obs, data_subset$cvpreds)
+  results_a[[run]] <- mse_result_a
+  
+  # Calculate the MSE for method B
+  mse_result_b <- get_MSE(data_subset$log_avg, data_subset$cvpreds)
+  results_b[[run]] <- mse_result_b
+}
+
+# Convert the lists to a data frame with separate columns for each method
+st_balanced_MSE <- data.frame(
+  model_run = unique(st_balanced_CV$model_run),
+  RMSE_a = sapply(results_a, `[`, 1),
+  R2_a = sapply(results_a, `[`, 2),
+  RMSE_b = sapply(results_b, `[`, 1),
+  R2_b = sapply(results_b, `[`, 2)
+)
+
+#pivot longer for plotting
+st_balanced_MSE_long <- st_balanced_MSE %>%
+  pivot_longer(
+    cols = c(RMSE_a, R2_a, RMSE_b, R2_b),
+    names_to = c("metric", "method"),
+    names_sep = "_",
+    values_to = "value"
+  ) 
+
 #Plotting (replicate figure 1 in blanco paper)
 # get range for plot
 r <- st_balanced_CV %>% dplyr::select(gold_preds, cvpreds) %>% range()
@@ -792,6 +838,23 @@ ggplot(data = st_balanced_CV, aes(x = gold_preds, y = cvpreds, color = as.factor
 #This needs some aesthetic adjustments: choose between dots or lines, pick a color scale that's helpful, get rid of the funky legend, but it's cool!!
     #looks a lot like the balanced predictions from the Blanco paper. 
 
+#replicate blanco figure 3
+ggplot(st_balanced_MSE_long, aes(x = method, y = value, color = method)) +
+  geom_boxplot() +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  facet_wrap(~metric) +
+  labs(title = "RMSE and MSE_R2 Comparison",
+       caption = "Method A = Campaign Predictions Compared to Gold Standard Obs\n
+       Method B = Campaign Predictions Compared to Campaign Observations\n
+       Square points shows the long-term campaigns performance") +
+  theme_bw()
+
+#This is also not bad. It will need some fancification, as well as adjustment when we start to add other campaigns, but it's an ok start. 
+
+#Need to also add the in-sample R2, which I can do later.
+
+#probably want to turn some of the above stuff into functions, because it is going to be a lot of cut and paste to do this for different data sets multiple times. 
 
 
 ```
