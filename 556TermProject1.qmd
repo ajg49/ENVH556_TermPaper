@@ -739,8 +739,7 @@ ggplot(data = gold_CV, aes(log_avg, cvpreds)) +
     theme_bw()
 
 
-
-
+#model we have selected doesn't give the greatest predictions, but that might be fine. We changing the covariates in the model above won't necessitate changing any of the other code. 
 ```
 #Repeating above to compare predictions from the st_balanced to predictions from the gold standard
 
