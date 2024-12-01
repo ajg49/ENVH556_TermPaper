@@ -610,6 +610,7 @@ nox_only <- left_join(nox_only,common_model_cov, by = "native_id" )
 
 #adding the covariates to the gold standard data to do some predictions
 long_term_gold <- left_join(long_term_gold,common_model_cov, by = "native_id" )
+st_balanced <- left_join(st_balanced,common_model_cov, by = "native_id" )
 
 
 
@@ -622,11 +623,12 @@ covars_common <- c("m_to_a1", "m_to_coast", "m_to_comm","pop_s05000", "ll_a1_s00
 frml <- as.formula(paste("log_avg ~", paste(covars_common, collapse = "+")) )
 
 ```
-#Running the prediction model on the lt_gold and st_balanced data
+#Running the prediction model on the lt_gold 
 ```{r}
 
-# print fit summary
+# in-sample predictions and fit summary
 summary(lm_gold_standard <- lm(frml, data = long_term_gold))
+
 
 ```
 #Create cross-validation groups that can be used for all the data
@@ -644,7 +646,8 @@ CV_grp <- rep(1:10, length.out = nrow(long_term_gold)) %>%
 
 
 # now append it to the cal_nox_clean data frame
-long_term_gold <- mutate(long_term_gold, rando_CV_grp = CV_grp)
+long_term_gold <- mutate(long_term_gold, CV_grp = CV_grp)
+
 
 ```
 
@@ -704,7 +707,7 @@ do_CV <- function(data, id = "id", group = "group", formula) {
 ```
 #Doing CV on the gold_standard model
 ```{r}
-gold_CV <- do_CV(long_term_gold, id = "native_id", group = "rando_CV_grp", formula = frml)
+gold_CV <- do_CV(long_term_gold, id = "native_id", group = "CV_grp", formula = frml)
 
 gold_MSE <- get_MSE(gold_CV$log_avg, gold_CV$cvpreds)
 
@@ -719,25 +722,76 @@ gold_MSE
 r <- gold_CV %>% dplyr::select(log_avg, cvpreds) %>% range()
 
 
-
 ggplot(data = gold_CV, aes(log_avg, cvpreds)) +
     geom_point(shape = "o", alpha = 0.8) +
     lims(x= r, y = r) +
     coord_fixed() +
-    #geom_abline(aes(slope = 1, intercept = 0, color = "blue")) +
-    #geom_smooth(method = "lm", se = FALSE, aes(color='Best-Fit Line')) +
-     geom_smooth(method = 'lm', se = F, aes(color = "red")) +
+    geom_smooth(method = 'lm', se = F, aes(color = "red")) +
     geom_abline(aes(slope = 1, intercept = 0, color = "blue")) +
     labs(title = "Model predictions vs. observed ln(NOx)\n Cross-validated ", 
          subtitle = "Gold Standard Data",
          x = "Observed ln(NOx) (ln(ppb))",
          y = "Predicted ln(NOx) (ln(ppb))",
-         caption = "") + 
+         caption = "RMSE = 0.49 MSE-based R2 = 0.26") + 
     scale_colour_manual(name='',
                       labels = c("1:1 Line", "Best-Fit Line"), 
                       values=c("blue", "red")) +
     theme_bw()
 
+
+
+
+```
+#Repeating above to compare predictions from the st_balanced to predictions from the gold standard
+
+```{r}
+
+#need to group the st_balanced data by "campaign" before doing regression
+
+#apply the save CV groups as used in the gold standard model
+st_balanced <- st_balanced %>% group_by(rep_number) %>% mutate(CV_grp = CV_grp) %>% ungroup()
+
+#in sample-predictions
+fitted_models = st_balanced %>% group_by(rep_number) %>% do(model = lm(frml, data = .))
+
+#cross-validated predictions treating each sample "campaign" separately
+st_balanced_CV <- st_balanced %>% group_by(rep_number) %>% do(model = do_CV(data = ., id = "native_id", group = "CV_grp", formula = frml))
+#produces a df for each result
+
+#next step is to restructure the result back into a single long_df
+
+st_balanced_CV <- st_balanced_CV %>% rename(model_run = rep_number) #change column name so there isn't a conflict when I unnest it
+
+st_balanced_CV <- st_balanced_CV %>%
+  unnest(cols = c(model))
+
+#appending the predictions from the gold_standard to the st_balanced_CV df for comparison
+gold_preds <- gold_CV %>%
+  dplyr::select("native_id", "cvpreds") %>% rename(gold_preds = cvpreds)
+st_balanced_CV <- left_join(st_balanced_CV, gold_preds, by = "native_id" )
+
+
+#Plotting (replicate figure 1 in blanco paper)
+# get range for plot
+r <- st_balanced_CV %>% dplyr::select(gold_preds, cvpreds) %>% range()
+
+
+ggplot(data = st_balanced_CV, aes(x = gold_preds, y = cvpreds, color = as.factor(model_run))) +
+    geom_point(shape = "o", alpha = 0.7) +
+    lims(x= r, y = r) +
+    coord_fixed() +
+    geom_smooth(method = 'lm', se = F, alpha = 0.5) +
+    geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
+    labs(title = "Campaign vs. Gold Standard Cross-validated Predictions", 
+         subtitle = "Balanced Campaigns",
+         x = "Gold Standard predicted ln(NOx) (ln(ppb))",
+         y = " Campaign Predicted ln(NOx) (ln(ppb))",
+         caption = "1:1 line is dashed") +
+    theme_bw()
+
+
+#This needs some aesthetic adjustments: choose between dots or lines, pick a color scale that's helpful, get rid of the funky legend, but it's cool!!
+    #looks a lot like the balanced predictions from the Blanco paper. 
 
 
 
