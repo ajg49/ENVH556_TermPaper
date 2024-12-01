@@ -370,12 +370,12 @@ min(check) #0
 
 #function to take the annual average concentration of any dataframe
 annual_avg <- function(data) {
-  annual <- data %>% group_by(native_id) %>% summarise(annual_avg = mean(sample_measurement))
+  annual <- data %>% group_by(native_id) %>% summarise(annual_avg = mean(sample_measurement), log_avg = log(mean(sample_measurement)))
   return(annual)
 }
 
 #testing the function does what i want to to
-test1 <- test %>% group_by(native_id) %>% summarise(annual_avg = mean(sample_measurement))
+test1 <- test %>% group_by(native_id) %>% summarise(annual_avg = mean(sample_measurement), log_avg = log(mean(sample_measurement)))
 
 test2 <- annual_avg(test)
 
@@ -383,6 +383,10 @@ check = test1$annual_avg - test2$annual_avg
 max(check) #0
 min(check) #0
 #The function works. 
+
+check2 = test1$log_avg - test2$log_avg
+max(check2) #0
+min(check2) #0
 
 
 ```
