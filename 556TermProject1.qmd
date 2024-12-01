@@ -453,10 +453,10 @@ ggplot(st_balanced, aes(x = native_id, y = annual_avg)) +
 #We can choose which type of plot we like best - AG
 
 with(st_balanced, hist(annual_avg, breaks = 30, col = "blue", xlab = "NOx ppm" ))
-with(st_balanced, hist(log_avg, breaks = 30, col = "seagreen", xlab = "NOx ppm" ))
+with(st_balanced, hist(log_avg, breaks = 30, col = "seagreen", xlab = "log(NOx ppm)" ))
 
 with(long_term_gold, hist(annual_avg, breaks = 20, col = "blue", xlab = "NOx ppm" ))
-with(long_term_gold, hist(log_avg, breaks = 20, col = "seagreen", xlab = "NOx ppm" ))
+with(long_term_gold, hist(log_avg, breaks = 20, col = "seagreen", xlab = "log(NOx ppm)" ))
 
 #makes much more sense to work with the data on the log scale
 
