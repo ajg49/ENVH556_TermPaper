@@ -25,29 +25,49 @@ This document was rendered on `r format(Sys.time(), '%B %d, %Y')`.
 
 Nitrogen oxides (NOx) are gaseous compounds commonly found in air pollution. Although NOx are generated through both natural and anthropogenic sources, human activities account for the majority of ambient NOx concentrations [(EPA 2024;)](https://www.epa.gov/no2-pollution/basic-information-about-no2) [Zhang et al. 2003;](https://www.pnas.org/doi/10.1073/pnas.252763799) [(ATSDR 2002;](https://www.atsdr.cdc.gov/toxfaqs/tfacts175.pdf) [(EPA 1999)](https://www3.epa.gov/ttncatc1/dir1/fnoxdoc.pdf). Mobile vehicles are a major source of anthropogenic NOx, accounting for approximately half of all emissions related to human activities [(EPA 1999)](https://www3.epa.gov/ttncatc1/dir1/fnoxdoc.pdf). Power plants also contribute a substantial fraction (~20%) of the total estimated annual anthropogenic NOx emissions [(EPA 1999)](https://www3.epa.gov/ttncatc1/dir1/fnoxdoc.pdf).
 
-Traffic-related air pollutants (TRAP), such as NOx, can have diurnal and seasonal trends related to temporal vehicular traffic patterns [Blanco et al. (2023)](https://www.nature.com/articles/s41370-022-00470-5#MOESM1).
-
+Traffic-related air pollutants (TRAP), such as NOx, can have diurnal and seasonal trends related to temporal vehicular traffic patterns [Blanco et al. (2023)](https://www.nature.com/articles/s41370-022-00470-5#MOESM1). Measurements of TRAP must therefore appropriately reflect the relevant temporal period that they are intended to represent. For example, if exposure assessment  The aim of our analysis was to compare the performance of temporally-restricted NOx prediction models with that of a "gold standard" temporally balanced model in Los Angeles county. Specifically, we aimed to assess how prediction surfaces varied based on the temporal variability included in the underlying dataset. Ultimately, these results can be used to inform future TRAP monitoring campaigns through signaling the importance of temporally-balanced sampling designs. 
 
 #Methods 
 
-*Dataset Description*
+**Dataset Description**
 
-The California NOx dataset, first described by [Blanco et al. (2023)](https://www.nature.com/articles/s41370-022-00470-5#MOESM1), includes NOx concentration measurements collected from 69 California Air Quality System (AQS) sites in 2016. Measurements were collected every hour, enabling the evaluation of temporal trends in NOx concentrations across both short- and long-term timescales.
+The California NOx dataset, first described by [Blanco et al. (2023)](https://www.nature.com/articles/s41370-022-00470-5#MOESM1), includes NOx concentration measurements collected from 69 California Air Quality System (AQS) sites in 2016. Measurements were collected every hour, enabling the evaluation of temporal trends in NOx concentrations across both short- and long-term timescales. Land-use, roadway proximity, and population density covariates (N=321 in total) were additionally available in the dataset. 
 
+**Overview of Statistical Approach** 
 
-*Overview of Statistical Approach* 
+We geographically restricted our analysis to data from a single county to limit the impact of geospatial variability, as NOx concentration measurements likely have strong spatial correlation at the county-level based on shared land-use, policy, and urbanicity within counties. Los Angeles County was selected as the county of interest for our analysis based on its high population density (U.S. Census 2023) and because of its high proportion of sensors included in the underlying California NOx dataset. 
 
+The distribution of NOx concentrations and distance-based model covariates were modeled on the natural log scale based on the methods described by Blanco et al. (2022) and based on our visual inspection of the variable distributions. (**NOTE: it looks like the Blanco paper did model covariates and concentration on the natural log scale, if i am interpretingn things correctly**)
 
--log transformed covariates based on distribution checking
+*Sensor Selection*
 
+Sensors from the California NOx dataset were selected for inclusion in our analysis according to the criteria described by Blanco et al. (2022). These criteria included: (1) limited missingness, such that the sensors included had annual data that was at least 66% complete; (2) limited data gaps, such that data gaps for a particular sensor were less than or equal to 45 days long; and (3) sensors must have sampled for at least 40% of the time dring the two-week perior used in our Gold Standard model (**May not use this last criterion?**). 
 
+*Model Selection*
 
+Model covariates were selected for inclusion in NOx prediction models based on their scientific relevance to ambient NOx concentration prediction models, as described in peer-reviewed scientific literature. Specifically, we chose to include the covariates utilized by [Mercer et al. (2011)](https://pmc.ncbi.nlm.nih.gov/articles/PMC3146303/pdf/nihms299256.pdf), who measured ambient NOx concentrations in Los Angeles across varied temporal layers and built prediction models using land-use and geographic covariates. Mercer et al. (2011) selected their prediction model covariates from 65 possible covariates related to population density, land-use intensity, open space land, distance to the coast, distance to industrial sources, distances to various roadways, and lengths of roadways within a given buffer zone. From these potential covariates, Mercer et al. (2011) created a "common model" that had adequate performance in predicting NOx concentrations across all seasons. The covariates included in the Mercer et al. (2011) common model included: distance to commercial pollutant sources, distance to the coast, distance to A1 roadways, population size within 5000 meters, land use intensity within 3000 square kilometers, length of A1 roads within 50 meters, and length of A2 and A3 roads within 400 meters.
 
-**
+For our analyses, we selected the covariates most similar to the seven used by Mercer et al. (2011), based on the similarities in geographic region, pollutant of interest, land-use covariates, and modeling goals between the present analysis and that described by Mercer et al. (2011). These covariates included: meters to closest commercial and services area, distance to the closest coastline, population density within 5,000 meters, distance to nearest A1 roadway, length of A1 roadway within 500 meters, length of A2 roadway within 1500 meters, length of A3 roadway within 400 meters, and the proportion of mixed urban of built-up land within a 1500 square kilometer buffer. Note that, in some cases, distances and buffers varied between those used by Mercer et al. (2011) and those used by Blanco et al. (2022); in these cases, the closest available covariate distance or buffer was selected. For land-use intensity, the proportion of mixed urban or built-up land within 1500 square kilometers was used in the present analysis, as it was deemed to be likely the most similar to the Mercer et al. (2011) land use covariate. 
 
+*Gold Standard Sampling*
+
+To make our temporally-balanced "gold standard" sampling dataset, we included all measurements from all Los Angeles County monitors that met our pre-defined inclusion criteria. The gold standard dataset therefore reflects an idealistic sampling mechanism, representing sample collection at every hour on every day in all seasons. As noted by Blanco et al. (2022), the gold standard dataset is reasonably representative of the measurements one might obtain from annual stationary air monitoring. 
+
+We predicted the annual average NOx concentration using our gold standard sampling dataset with 10-fold cross-validation. We computed the R2 and RMSE characterizing the model fit and accuracy within this dataset. 
+
+*Short-Term Sampling*
+
+We created short-term sampling datasets intended to represent mobile monitoring campaigns within temporally-restricted periods. Our short-term sampling datasets included season-restricted and day-of-the-week restricted subsets of the data (*NOTE: WE CAN CHANGE THIS AS NEEDED*). For each temporally restricted period, we filtered the dataset to include only samples from the specified timeframe and randomly sampled 28 measurements. 28 measurements were selected based on findings in Blanco et al. (2022), which reported that 28 measurements could accurately estimate the annual average of a site (less than or equal to 25% error) and reasonably represented the sampling design of a single mobile monitoring campaigns, which collect repeated samples from a limited number of locations. The random sampling process was repeated 30 total times to provide additional robustness through simulating multiple mobile monitoring campaigns, as described by Blanco et al. (2022). 
+
+For each short-term sampling dataset, we predicted the expected annual average NOx concentration with 10-fold cross-validation based on the results from all 30 sampling iterations. We additionally computed the expected R2 and RMSE based on all 30 sampling iterations. 
+
+*Comparison of Sampling Approaches*
+
+We compared the estimated model performance parameters (RMSE, R2) from temporally-restricted, short-term sampling with those from the gold standard, long-term estimates. We additionally compared the cross-validated annual average estimates from the temporally-restricted sampling datasets with that estimated using the gold standard sampling dataset. 
 
 #Results
 
+In total, 69 sensors in Los Angeles County met the specified inclusion criteria and were included in our NOx prediction analysis (**is this true? I think this is all of CA, not just LA**). 
 
 ```{r setup, include=FALSE}
 
@@ -101,7 +121,7 @@ length(unique(cal_nox$native_id)) #73 locations
 
 unique(cal_nox$parameter_name) #3 different measurements NO, NO2, NOX
                               
-ca_covariates <- read_rds(file.path("https://zenodo.org/records/14166411/files/site_covariates.rda?download=1")) 
+ca_covariates <- read_rds(file.path("https://zenodo.org/records/14166411/files/site_covariates.rda?download=1"))
 
 ca_covariates <- st_as_sf(ca_covariates, coords = c("longitude", "latitude"))
 
@@ -109,9 +129,6 @@ ca_covariates <- st_as_sf(ca_covariates, coords = c("longitude", "latitude"))
 
 #going to do the attaching later because it creates such a huge df
   
-
-
- 
 
 
 ```
@@ -168,17 +185,17 @@ This section of code shouldn't be run. Cleaning the data in a different way. Lea
 # this table is tratified by season, and another table is stratified by week day.
 
 #per lianne, we don't want to just ditch the negative values
-cal_nox_clean <- cal_nox %>% filter(sample_measurement > 0) #29,521 rows removed!!
+#cal_nox_clean <- cal_nox %>% filter(sample_measurement > 0) #29,521 rows removed!!
 
 
 #create a new variable called "log_conc" for the log transformed concentrations
-cal_nox_clean <- cal_nox_clean %>%
-  mutate(log_conc = log(sample_measurement)) %>%
-  relocate(log_conc, .after = sample_measurement)
+#cal_nox_clean <- cal_nox_clean %>%
+#  mutate(log_conc = log(sample_measurement)) %>%
+#  relocate(log_conc, .after = sample_measurement)
 
 #we have negative numbers again, but because of the log transformation
 
-kable(cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",] %>%
+#kable(cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",] %>%
   group_by(season) %>%
   summarise(
     count = n(),
@@ -193,7 +210,7 @@ kable(cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",]
   caption = "Table 1.0: Summary Statistics for Nitric Oxides (NOx) by Season") %>%
   kable_styling()
 
-kable(cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",] %>%
+#kable(cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",] %>%
   group_by(dow) %>%
   summarise(
     count = n(),
@@ -289,11 +306,10 @@ max(meas_summary$pct_pos) #100%
 
 
 ```
+
+
 #Function to do random sampling from the data
-```{r}
-
-
-
+```{r,random.sampling}
 #per Blanco, we will pick 28 samples per monitor. The Gold Standard sample, will be distributed across the whole year. We will then do temporally restricted samples to see how they compare
 
 #create factor to make subsetting in the loop easier for resample
@@ -391,9 +407,7 @@ min(check2) #0
 
 ```
 #taking a bunch of random samples for the gold standard data
-```{r}
-
-
+```{r gold.standard}
 # Initialize the gold_standard data frame
 gold_standard <- data.frame()
 
@@ -411,19 +425,30 @@ for (i in 1:n_reps) {
   # Append to gold_standard
   gold_standard <- rbind(gold_standard, annual_avg_data)
 }
+
+# Checking Abbie's Understanding:
+# this chunk randomly grabs 28 samples from each of the sensors. 
+# it computes an annual average based on only these 28 samples for all 69 sensors. 
+# this is repeated 30 times, so there are 30  annual averages based on thirty different 
+# sets of samples for each of the 69 sensors.
+# katie please check if I interpreted this right!
+
+
 ```
 #summarizing the data from the random samples
-```{r}
-
+```{r gold.standard.variability}
 #graphing the distribution of annual averages
 
 ggplot(gold_standard, aes(x = native_id, y = annual_avg)) +
-  geom_point()
+  geom_point() +
+  ggtitle("Figure 1: Gold Standard Sensor Annual Averages \n30 sets of 28 samples per sensor")
 
 ggplot(gold_standard, aes(x = native_id, y = annual_avg)) +
-  geom_boxplot()
+  geom_boxplot()+
+  ggtitle("Figure 1: Gold Standard Sensor Annual Averages \n30 sets of 28 samples per sensor")
 
 #Kinda crazy how much variability there is using unrestricted random samples
+#We can choose which type of plot we like best - AG
 
 with(gold_standard, hist(annual_avg, breaks = 30, col = "blue", xlab = "NOx ppm" ))
 with(gold_standard, hist(log_avg, breaks = 30, col = "seagreen", xlab = "NOx ppm" ))
@@ -513,7 +538,7 @@ ggplot(aes(sample_measurement)) +
 #This code won't run unless you run the code above that creates the "useless" cal_nox_clean df. We are not filtering away negative values and log transforming, so this isn't necessary, even though the data does look more normal on the log scale before aggregation. 
   
 #log transformed by season
-cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",] %>%
+nox_only %>%
 ggplot( aes(log(sample_measurement))) +
   geom_histogram(aes(y = ..density..), bins = 40, color = "darkgreen", fill = "darkgreen", alpha = 0.4) +
   geom_density(color = "green") +
@@ -526,7 +551,7 @@ ggplot( aes(log(sample_measurement))) +
 
   
 #log transformed by day of week
-cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",] %>%
+nox_only %>%
 ggplot( aes(log(sample_measurement))) +
   geom_histogram(aes(y = ..density..), bins = 40, color = "darkgreen", fill = "darkgreen", alpha = 0.4) +
   geom_density(color = "green") +
@@ -555,28 +580,23 @@ The data provided the date and week of the year that each sample was taken. To l
   
   We chose to use these two strata to investigate a temporal component to NOx concentrations in the state of california because these two models portray two different kinds of temporal fluctuation on very different time scales and because the strata for these variables is relatively balanced. By looking at prediction models stratified by season, we can investigate whether seasonal weather changes or tempurature averages could play a role in NOx concentrations, and by looking at days of the week, we can see if more short-term activities have an impact of NOx concentrations. 
 
-**Week day Summary of NOx**
+# Adding Covariates from MErcer et al Common Model
+  The Mercer et al 2011 paper ha the following covariates determined in its "common model" with which they assessed seasonal prediction models.
+ Covariates:  D2A1 (distance to A1 road), A1_50m (length of A1 road in 50 m buffer), A23_400m (length of A2 or A3 roads within 400 m buffer), Pop_5k (total population within 5,000 m buffer), D2C (Distance to the coast in meters), Int_3k (intense land use within 3,000 m), D2Comm (distance to commercial land).
 
-```{r weeklytrends, echo = F}
+```{r covariates}
+# I want to confirm that these are the right covariates, the names are different than Mercer et al 2011
 
+common_model_cov <- ca_covariates %>%
+  dplyr::select("native_id", "m_to_a1", "m_to_coast", "m_to_comm","pop_s05000", "ll_a1_s00050" , "lu_industcomm_p05000", "geometry")
 
-
-#plotting by time
-
-nox_only %>% ggplot(aes(x = as.factor(dow), y = sample_measurement)) +
-         geom_boxplot() +
-  ggtitle( label = "NOx Distributions Across the Days of the Week") +
-  xlab("Day of the week") +
-  ylab("NOx ppm")
-
-
-cal_nox_clean %>% filter(parameter_name == "Oxides of nitrogen (NOx)") %>% ggplot(aes(x = as.factor(dow), y = log_conc)) +
-         geom_boxplot() +
-  ggtitle( label = "Ln(NOx) Distributions Across the Days of the Week") +
-  xlab("Day of the week") +
-  ylab("log(NOx) log(ppm)")
+nox_only <- left_join(nox_only,common_model_cov, by = "native_id" )
 
 ```
+
+
+
+
 
 # Season Specific Prediction Models
 
@@ -584,12 +604,10 @@ cal_nox_clean %>% filter(parameter_name == "Oxides of nitrogen (NOx)") %>% ggplo
 
 ``` {r seasonal strat}
 
-summer <- cal_nox_clean[cal_nox_clean$season == "Summer",]
-fall <- cal_nox_clean[cal_nox_clean$season == "Fall",]
-winter <- cal_nox_clean[cal_nox_clean$season == "Winter",]
-spring <- cal_nox_clean[cal_nox_clean$season == "Spring",]
-
-
+summer <- nox_only[nox_only$season == "Summer",]
+fall <- nox_only[nox_only$season == "Fall",]
+winter <- nox_only[nox_only$season == "Winter",]
+spring <- nox_only[nox_only$season == "Spring",]
 
 
 ```
@@ -663,32 +681,31 @@ set.seed(123)
 # create vector of CV groups
   # first generate a vector with values 1:10 equal to the number of dataset rows
   # then randomize (with argument replace = FALSE)
-CV_grp <- rep(1:10, length.out = nrow(cal_nox_clean)) %>% 
+CV_grp <- rep(1:10, length.out = nrow(nox_only)) %>% 
   sample(replace = FALSE)
 
 
 # now append it to the cal_nox_clean data frame
-cal_nox_clean <- mutate(cal_nox_clean, rando_CV_grp = CV_grp)
+nox_only <- mutate(nox_only, rando_CV_grp = CV_grp)
 
 ```
 
 
+#May not use, instead use common model covariates
 CALLAN NOTE: I cannot get the below code to run and I'm not sure why.
+
+"m_to_a1", "m_to_coast", "m_to_comm","pop_s05000", "ll_a1_s00050" , "lu_industcomm_p05000", "geometry"
 ```{r model selection}
 #-----forward selection for full general model covariates-----
 
-cal_nox_clean <- cal_nox_clean %>% 
-  dplyr::select(-m_to_6oil, -m_to_oil, -m_to_main_cityhall, -m_to_local_cityhall)
-
-
 # Null model: intercept only
-null <- lm(log_conc ~ 1, data = cal_nox_clean)
+null <- lm(sample_measurement ~ 1, data = nox_only)
 
 # find covariates using string matching
-covars_all <- str_subset(names(cal_nox_clean), "pop_|int_|open_|D2|A1_|A23_|m_to_")
+covars_all <- str_subset(names(nox_only), "pop_|ll_|lu_|m_to_")
 
 # create the formula for the full model
-full_formula <- as.formula(paste("log_conc ~ ", paste(covars_all, collapse = "+")))
+full_formula <- as.formula(paste("sample_measurement ~ ", paste(covars_all, collapse = "+")))
 
 # Run the forward stepwise regression using AIC (k = 2)
 forwardreg_generalmod <- step(null, 
@@ -707,30 +724,10 @@ covars_forward2 #different list than above when just run for summer
 
 ```
 
-**General Model Cross-Validation Group** 
-
-Callan adding: Per Lianne's feedback, I am making one cross validation group across the full dataset for use in prediction validation. 
-
-
-
-
-
-
-
 
 **Summer -  Model Selection **
 
 Using bias-variance trade off and ranked forward selection. We created random clusters on which do do cross validation.
-
-```{r}
-
-#------remove variables with NA's--------------
-summer <- summer %>% 
-  dplyr::select(-m_to_6oil, -m_to_oil, -m_to_main_cityhall, -m_to_local_cityhall)
-
-#describe(summer)
-#need to remove NA's
-```
 
 ```{r cv}
 #-----generate groups-----
@@ -750,12 +747,12 @@ CV_grp <- rep(1:10, length.out = nrow(summer)) %>%
 summer <- mutate(summer, rando_CV_grp = CV_grp)
 
 #-----forward selection using interaction-----#
-null <- lm(log_conc ~ 1, data = summer)
+null <- lm(sample_measurement ~ 1, data = summer)
 
-covars_all <- str_subset(names(summer),"pop_|int_|open_|D2|A1_|A23_|m_to_")
+covars_all <- covars_forward2
 
 # B: now turn this into a formula for the full model in stepwise regression:
-full <- as.formula(paste("log_conc ~ ", paste(covars_all, collapse= "+")))
+full <- as.formula(paste("sample_measurement ~ ", paste(covars_all, collapse= "+")))
 
 # Using k=2 is comparable to standard AIC.
 # Using log(n), where n is the number of observations, is comparable to BIC.
@@ -766,7 +763,7 @@ forwardreg_summer <- step(null,
                         direction = "forward", 
                         k = 2) #made K = 2 for true AIC calculation
 
-covars_forward2 <- names(forwardreg_day$coefficients) %>%
+covars_forward2 <- names(forwardreg_summer$coefficients) %>%
   setdiff('(Intercept)')
 
 covars_forward2 #different list than above when just run for summer
@@ -776,26 +773,26 @@ covars_forward2 #different list than above when just run for summer
 ```
 
 #cross validation for each model and plotting bias/variance tradeoff
-```{r}
+```{r summer CV}
 #-----model order and CV-----
 
 # apply along length of the vector of names from forward selection
-res1 <- lapply(seq_along(covars_forward), function(i){
+res1 <- lapply(seq_along(covars_forward2), function(i){
     
     # define the formula, updated to add a term each time
     fmla <- as.formula(
-        paste("log_conc ~ 1 + ", paste(covars_forward[seq_len(i)], collapse = "+"))) 
+        paste("sample_measurement ~ 1 + ", paste(covars_forward2[seq_len(i)], collapse = "+"))) 
     
     # in-sample model and estimates
     in_model <- lm(fmla, data = summer) 
     
     # out-of sample model and estimates
-    out_ests <- do_CV(data = summer, id = "stop_id", group = "location", fmla) # I don't have a great sense of what the location variable represents in this data, but there probably is some spacial value to it. Also it's way more than 10 groups, and not random. KW
-    out_results <- get_MSE(out_ests$ln_no2, out_ests$cvpreds)
+    out_ests <- do_CV(data = summer, id = "native_id", group = "rando_CV_grp", fmla) # I don't have a great sense of what the location variable represents in this data, but there probably is some spacial value to it. Also it's way more than 10 groups, and not random. KW
+    out_results <- get_MSE(out_ests$sample_measurement, out_ests$cvpreds)
     
     # compile results
    tibble(n_pred = i,
-           covar = covars_forward[i],
+           covar = covars_forward2[i],
            in_RMSE = sqrt(mean(in_model$residuals^2)),
            in_R2 = summary(in_model)$r.squared,
            out_RMSE = out_results[["RMSE"]],
@@ -807,48 +804,14 @@ res1 <- lapply(seq_along(covars_forward), function(i){
 
 head(res1)
 
-#-----bias-var combined plots-----
-
-
-#there are 23 terms in the model. 
-max(res2$out_RMSE[1:23])
-min(res2$out_RMSE[1:23])
-
-y_lim <- 0.8
-
-# create temporary dataframe for plot
-temp2 <- res2 %>% 
-  
-  # make long dataframe
-  pivot_longer(cols = c(ends_with("_RMSE"), ends_with("_R2")), 
-               names_to = "Source_Estimate", 
-               values_to = "value" ) %>%
-  
-  # separate the "Source" column for in and out of sample
-  separate(col = Source_Estimate, into = c("Source", "Estimate") ) %>% 
-
-  # set high RMSE values to NA, then filter out these values before plotting
-  mutate(value = ifelse(Estimate == "RMSE" & value > y_lim, NA, value)) %>%
-  filter(!is.na(value)) 
-
-
-combined_plot2 <- ggplot(data = temp2) +
-  geom_point(aes(x = n_pred, y = value, color = Source)) +
-  geom_line(aes(x = n_pred, y = value, color = Source)) +
-  xlab("Model Complexity (# of terms)") +
-  ylab("") +
-  labs(title = "Bias-Variance TradeOff For Randomly Cross-Validated CV Groups from Summer Data",
-       subtitle = "Type of Day Model") +
-  scale_x_continuous(breaks = c(seq(0, 63, 5))) +
-  facet_wrap(~ Estimate, scales = "free_y", ncol = 1, strip.position = "right") +
-  theme_bw() 
-
-#show plot
-combined_plot2
 ```
 
 ^ from the plot and functions above we pick a summer model. repeat for fall, winter, and spring?
 
+
+**General Model Cross-Validation Group** 
+
+Callan adding: Per Lianne's feedback, I am making one cross validation group across the full dataset for use in prediction validation. 
 
 
 
@@ -1119,7 +1082,7 @@ paste("MSE-based R2:  ", round(max(1 - MSE_pred/MSE_obs, 0),3))),
 
 # Works Cited 
 
-
+United States Census. 2023. QuickFacts Los Angeles County, California. https://www.census.gov/quickfacts/fact/table/losangelescountycalifornia,losangelescitycalifornia,CA/PST045223 Accessed 11/30/2024
 
 
 
