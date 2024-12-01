@@ -408,8 +408,8 @@ min(check2) #0
 ```
 #taking a bunch of random samples for the gold standard data
 ```{r gold.standard}
-# Initialize the gold_standard data frame
-gold_standard <- data.frame()
+# Initialize the short-term balanced data frame
+st_balanced <- data.frame()
 
 n_reps <- 30  # number of random df simulations to run
 
@@ -423,7 +423,7 @@ for (i in 1:n_reps) {
   annual_avg_data$rep_number <- i
   
   # Append to gold_standard
-  gold_standard <- rbind(gold_standard, annual_avg_data)
+  st_balanced <- rbind(gold_standard, annual_avg_data)
 }
 
 # Checking Abbie's Understanding:
@@ -439,19 +439,19 @@ for (i in 1:n_reps) {
 ```{r gold.standard.variability}
 #graphing the distribution of annual averages
 
-ggplot(gold_standard, aes(x = native_id, y = annual_avg)) +
+ggplot(st_balanced, aes(x = native_id, y = annual_avg)) +
   geom_point() +
   ggtitle("Figure 1: Gold Standard Sensor Annual Averages \n30 sets of 28 samples per sensor")
 
-ggplot(gold_standard, aes(x = native_id, y = annual_avg)) +
+ggplot(st_balanced, aes(x = native_id, y = annual_avg)) +
   geom_boxplot()+
   ggtitle("Figure 1: Gold Standard Sensor Annual Averages \n30 sets of 28 samples per sensor")
 
 #Kinda crazy how much variability there is using unrestricted random samples
 #We can choose which type of plot we like best - AG
 
-with(gold_standard, hist(annual_avg, breaks = 30, col = "blue", xlab = "NOx ppm" ))
-with(gold_standard, hist(log_avg, breaks = 30, col = "seagreen", xlab = "NOx ppm" ))
+with(st_balanced, hist(annual_avg, breaks = 30, col = "blue", xlab = "NOx ppm" ))
+with(st_balanced, hist(log_avg, breaks = 30, col = "seagreen", xlab = "NOx ppm" ))
 
 with(long_term_gold, hist(annual_avg, breaks = 20, col = "blue", xlab = "NOx ppm" ))
 with(long_term_gold, hist(log_avg, breaks = 20, col = "seagreen", xlab = "NOx ppm" ))
@@ -470,14 +470,14 @@ lt_gold_sum <- long_term_gold %>% summarise(min = min(annual_avg),
                                             )
 lt_gold_sum #This matches the number reported in Blanco supplement S5
 
-gold_std_sum <- gold_standard %>% summarise(min = min(annual_avg), 
+st_balanced_sum <- st_balanced %>% summarise(min = min(annual_avg), 
                                             Q25 = quantile(annual_avg, probs = 0.25), 
                                             Q50 = quantile(annual_avg, probs = 0.5),
                                             Q75 = quantile(annual_avg, probs = 0.75),
                                             max = max(annual_avg),
                                             SD = sd(annual_avg)
                                             )
-gold_std_sum #this would not be expected to match Blanco because we used different seeds
+st_balanced_sum #this would not be expected to match Blanco because we used different seeds
 
 ```
 #writing a function for calculating summary statistics of an annual average df. 
