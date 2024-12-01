@@ -425,6 +425,14 @@ ggplot(gold_standard, aes(x = native_id, y = annual_avg)) +
 
 #Kinda crazy how much variability there is using unrestricted random samples
 
+with(gold_standard, hist(annual_avg, breaks = 30, col = "blue", xlab = "NOx ppm" ))
+with(gold_standard, hist(log_avg, breaks = 30, col = "seagreen", xlab = "NOx ppm" ))
+
+with(long_term_gold, hist(annual_avg, breaks = 20, col = "blue", xlab = "NOx ppm" ))
+with(long_term_gold, hist(log_avg, breaks = 20, col = "seagreen", xlab = "NOx ppm" ))
+
+#makes much more sense to work with the data on the log scale
+
 
 long_term_gold <- annual_avg(nox_only)
 
