@@ -433,6 +433,8 @@ for (i in 1:n_reps) {
 # sets of samples for each of the 69 sensors.
 # katie please check if I interpreted this right!
 
+## Yes, that is exactly right! - KW
+
 
 ```
 #summarizing the data from the random samples
