@@ -176,58 +176,11 @@ cal_nox<- cal_nox %>%
 cal_nox_covars <- left_join(cal_nox, ca_covariates, by="native_id")
 ```
 
-# Useless chunk
-This section of code shouldn't be run. Cleaning the data in a different way. Leaving it just in case there is something we want to grab out of it in the future.
-```{r, useless, echo = F, include = F, message = F, eval = F}
-#data is going to need a little cleaning. There are monitors with negative values recorded. 
-
-#filter out the negative values and repeat the table. Justify that it's scientifically impossible to have neg. values on native scale.
-# this table is tratified by season, and another table is stratified by week day.
-
-#per lianne, we don't want to just ditch the negative values
-#cal_nox_clean <- cal_nox %>% filter(sample_measurement > 0) #29,521 rows removed!!
-
-
-#create a new variable called "log_conc" for the log transformed concentrations
-#cal_nox_clean <- cal_nox_clean %>%
-#  mutate(log_conc = log(sample_measurement)) %>%
-#  relocate(log_conc, .after = sample_measurement)
-
-#we have negative numbers again, but because of the log transformation
-
-#kable(cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",] %>%
-  group_by(season) %>%
-  summarise(
-    count = n(),
-    min = min(sample_measurement),
-    max = max(sample_measurement),
-    median = median(sample_measurement),
-    GM = geoMean(sample_measurement, na.rm = TRUE),
-    GSD = geoSD(sample_measurement, na.rm = TRUE),
-    AM = mean(sample_measurement, na.rm = TRUE),
-    ASD = sd(sample_measurement, na.rm = TRUE)),
-  digit = 2,
-  caption = "Table 1.0: Summary Statistics for Nitric Oxides (NOx) by Season") %>%
-  kable_styling()
-
-#kable(cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",] %>%
-  group_by(dow) %>%
-  summarise(
-    count = n(),
-    min = min(sample_measurement),
-    max = max(sample_measurement),
-    median = median(sample_measurement),
-    GM = geoMean(sample_measurement, na.rm = TRUE),
-    GSD = geoSD(sample_measurement, na.rm = TRUE),
-    AM = mean(sample_measurement, na.rm = TRUE),
-    ASD = sd(sample_measurement, na.rm = TRUE)),
-  digit = 2,
-  caption = "Table 2.0: Summary Statistics for Nitric Oxides (NOx) by Week day") %>%
-  kable_styling()
-```
 
 #Cleaning the data according to the criteria in Blanco paper
-```{r, cleaning.data}
+
+```{r cleaning.data}
+
 #cleaning the data for sampling per the Blanco et al. paper
 
 #create a df that is only NOX
@@ -303,13 +256,11 @@ max(meas_summary$pct_pos) #100%
 #no need to eliminate any monitors based on this criteria. 
 
 #No monitors were eliminated based on this cleaning. 
-
-
 ```
 
 
-#Function to do random sampling from the data
-```{r,random.sampling}
+#Function to do random sampling from the data - gold standard dataset
+```{r,random.sampling fxn}
 #per Blanco, we will pick 28 samples per monitor. The Gold Standard sample, will be distributed across the whole year. We will then do temporally restricted samples to see how they compare
 
 #create factor to make subsetting in the loop easier for resample
@@ -381,8 +332,8 @@ min(check) #0
 
 ```
 
-#Writing a function to aggregate data to the annual level
-```{r}
+#Writing a function to aggregate data to the annual level - gold standard dataset
+```{r annual.avg, echo = FALSE}
 
 #function to take the annual average concentration of any dataframe
 annual_avg <- function(data) {
@@ -406,7 +357,10 @@ min(check2) #0
 
 
 ```
+
+
 #taking a bunch of random samples for the short-term balanced data
+# short term random samples meant to represent a balanced mobile monitoring campaign.
 ```{r gold.standard}
 # Initialize the short-term balanced data frame
 st_balanced <- data.frame()
@@ -437,7 +391,9 @@ for (i in 1:n_reps) {
 
 
 ```
-#Creating Gold Standard Data
+
+
+#Creating Gold Standard Data - long-term and short-term balanced datasets
 ```{r}
 
 #Gold Standard Data
@@ -451,7 +407,8 @@ lt_gold_sum <- long_term_gold %>% summarise(min = min(annual_avg),
                                             max = max(annual_avg),
                                             SD = sd(annual_avg)
                                             )
-lt_gold_sum #This matches the number reported in Blanco supplement S5
+lt_gold_sum
+      #This matches the number reported in Blanco supplement S5
 
 #summary stats for st_balanced
 st_balanced_sum <- st_balanced %>% summarise(min = min(annual_avg), 
@@ -463,10 +420,16 @@ st_balanced_sum <- st_balanced %>% summarise(min = min(annual_avg),
                                             )
 st_balanced_sum #this would not be expected to match Blanco because we used different seeds
 #summarizing the data from the random samples
+names <- c("Long-term", "short-term")
+kable(cbind(names , rbind(lt_gold_sum, st_balanced_sum)), digits = 3,
+      caption = "Balanced, Long-term & Short-term Sampling Campaign Summaries")
 
 ```
+
+
+
 #writing a function for calculating summary statistics of an annual average df. 
-```{r}
+```{r, summary stats}
 #function to make summary stats easier
 sum_stats <- function(data) {
   summary <- data %>% summarise(min = min(annual_avg), 
@@ -492,11 +455,15 @@ sum_stats(st_balanced)
 
 ggplot(st_balanced, aes(x = native_id, y = annual_avg)) +
   geom_point() +
-  ggtitle("Figure 1: Gold Standard Sensor Annual Averages \n30 sets of 28 samples per sensor")
+  ggtitle("Figure 1: Gold Standard Short Term Sensor Annual Averages \n30 sets of 28 samples per sensor")
 
 ggplot(st_balanced, aes(x = native_id, y = annual_avg)) +
   geom_boxplot()+
-  ggtitle("Figure 1: Gold Standard Sensor Annual Averages \n30 sets of 28 samples per sensor")
+  ggtitle("Figure 1: Gold Standard Short Term Sensor Annual Averages \n30 sets of 28 samples per sensor")
+
+ggplot(st_balanced, aes(x = native_id, y = log_avg)) +
+  geom_boxplot()+
+  ggtitle("Figure 1: Gold Standard Short Term Sensor Log-transformed Annual Averages \n30 sets of 28 samples per sensor")
 
 #Kinda crazy how much variability there is using unrestricted random samples
 #We can choose which type of plot we like best - AG
@@ -508,12 +475,6 @@ with(long_term_gold, hist(annual_avg, breaks = 20, col = "blue", xlab = "NOx ppm
 with(long_term_gold, hist(log_avg, breaks = 20, col = "seagreen", xlab = "log(NOx ppm)" ))
 
 #makes much more sense to work with the data on the log scale
-
-
-```
-
-
-```{r}
 
 
 ```
@@ -551,8 +512,7 @@ ggplot(aes(sample_measurement)) +
 ```
 
 ```{r, eval = F}
-#This code won't run unless you run the code above that creates the "useless" cal_nox_clean df. We are not filtering away negative values and log transforming, so this isn't necessary, even though the data does look more normal on the log scale before aggregation. 
-  
+
 #log transformed by season
 nox_only %>%
 ggplot( aes(log(sample_measurement))) +
@@ -869,19 +829,185 @@ ggplot(st_balanced_MSE_long, aes(x = method, y = value, color = method)) +
 ``` {r seasonal strat}
 
 summer <- nox_only[nox_only$season == "Summer",]
+unique(summer$native_id)
+
 fall <- nox_only[nox_only$season == "Fall",]
-winter <- nox_only[nox_only$season == "Winter",]
+
+winter <- nox_only[nox_only$season == "Winter",] 
+
 spring <- nox_only[nox_only$season == "Spring",]
+
+
+
+```
+
+
+#Writing a function to aggregate data to the seasonal level -seasonal dataset
+```{r annual.avg, echo = FALSE}
+#function to take the annual average concentration of any dataframe
+seasonal_avg <- function(data) {
+  seasonal <- data %>% group_by(native_id) %>% summarise(seasonal_avg = mean(sample_measurement), log_avg = log(mean(sample_measurement)))
+  return(seasonal)
+}
+
+
+
+#there are seasonal averages equal to zero, this makes the log transformed measure inf. 
+
+
+```
+
+
+#creating short term seasonal data sets
+```{r seasonal datasets}
+
+
+#random_sample() (data, size, seed)
+#----------summer----------------------------------------------
+# Initialize the short-term balanced data frame
+st_summer <- data.frame()
+
+n_reps <- 30  # number of random df simulations to run
+
+for (i in 1:n_reps) {
+  seed <- i * 3  # generating a different seed for each simulation
+  sampled_data <- random_sample(summer, 28, seed)
+  summer_avg_data <- seasonal_avg(sampled_data)
+  
+  # Add seed and rep_number columns
+  summer_avg_data$seed <- seed
+  summer_avg_data$rep_number <- i
+  
+  # Append to gold_standard
+  st_summer <- rbind(st_summer, summer_avg_data)
+}
+
+#----------fall----------------------------------------------
+# Initialize the short-term balanced data frame
+st_fall <- data.frame()
+
+n_reps <- 30  # number of random df simulations to run
+
+for (i in 1:n_reps) {
+  seed <- i * 3  # generating a different seed for each simulation
+  sampled_data <- random_sample(fall, 28, seed)
+  fall_avg_data <- seasonal_avg(sampled_data)
+  
+  # Add seed and rep_number columns
+  fall_avg_data$seed <- seed
+  fall_avg_data$rep_number <- i
+  
+  # Append to gold_standard
+  st_fall <- rbind(st_fall, fall_avg_data)
+}
+
+#------------Winter--------------------------------------------
+st_winter <- data.frame()
+
+n_reps <- 30  # number of random df simulations to run
+
+for (i in 1:n_reps) {
+  seed <- i * 3  # generating a different seed for each simulation
+  sampled_data <- random_sample(winter, 28, seed)
+  winter_avg_data <- seasonal_avg(sampled_data)
+  
+  # Add seed and rep_number columns
+  winter_avg_data$seed <- seed
+  winter_avg_data$rep_number <- i
+  
+  # Append to gold_standard
+  st_winter <- rbind(st_winter, winter_avg_data)
+}
+
+#------------Spring--------------------------------------------
+st_spring <- data.frame()
+
+n_reps <- 30  # number of random df simulations to run
+
+for (i in 1:n_reps) {
+  seed <- i * 3  # generating a different seed for each simulation
+  sampled_data <- random_sample(spring, 28, seed)
+  spring_avg_data <- seasonal_avg(sampled_data)
+  
+  # Add seed and rep_number columns
+  spring_avg_data$seed <- seed
+  spring_avg_data$rep_number <- i
+  
+  # Append to gold_standard
+  st_spring <- rbind(st_spring, spring_avg_data)
+}
+
+# Checking Abbie's Understanding:
+# this chunk randomly grabs 28 samples from the season's data, from each of the sensors. 
+# it computes a seasonal average based on only these 28 samples for all 69 sensors. 
+# this is repeated 30 times, so there are 30 seasonal averages based on thirty different 
+# sets of samples for each of the 69 sensors.
+# katie please check if I interpreted this right!
+
+## Yes, that is exactly right! - KW\
+# this should be the same length as the st_balanced dataframe
+#True
 
 
 ```
 
 
 
+#quick summary short-term seasonal datasets
+```{r}
 
-**General Model Selection** 
+#summary stats for st_summer
+st_summer_sum <- st_summer %>% summarise(min = min(seasonal_avg), 
+                                            Q25 = quantile(seasonal_avg, probs = 0.25), 
+                                            Q50 = quantile(seasonal_avg, probs = 0.5),
+                                            Q75 = quantile(seasonal_avg, probs = 0.75),
+                                            max = max(seasonal_avg),
+                                            SD = sd(seasonal_avg)
+                                            )
+st_summer_sum #this would not be expected to match Blanco because we used different seeds
+#summarizing the data from the random samples
 
-Callan adding: here I am using forward selection to pick covariates for the "general model" that we can use across all seasons. 
+st_fall_sum <- st_fall %>% summarise(min = min(seasonal_avg), 
+                                            Q25 = quantile(seasonal_avg, probs = 0.25), 
+                                            Q50 = quantile(seasonal_avg, probs = 0.5),
+                                            Q75 = quantile(seasonal_avg, probs = 0.75),
+                                            max = max(seasonal_avg),
+                                            SD = sd(seasonal_avg)
+                                            )
+st_fall_sum #this would not be expected to match Blanco because we used different seeds
+#summarizing the data from the random samples
+
+st_winter_sum <- st_winter %>% summarise(min = min(seasonal_avg), 
+                                            Q25 = quantile(seasonal_avg, probs = 0.25), 
+                                            Q50 = quantile(seasonal_avg, probs = 0.5),
+                                            Q75 = quantile(seasonal_avg, probs = 0.75),
+                                            max = max(seasonal_avg),
+                                            SD = sd(seasonal_avg)
+                                            )
+st_winter_sum #this would not be expected to match Blanco because we used different seeds
+#summarizing the data from the random samples
+
+st_spring_sum <- st_spring %>% summarise(min = min(seasonal_avg), 
+                                            Q25 = quantile(seasonal_avg, probs = 0.25), 
+                                            Q50 = quantile(seasonal_avg, probs = 0.5),
+                                            Q75 = quantile(seasonal_avg, probs = 0.75),
+                                            max = max(seasonal_avg),
+                                            SD = sd(seasonal_avg)
+                                            )
+st_spring_sum #this would not be expected to match Blanco because we used different seeds
+#summarizing the data from the random samples
+
+
+
+
+
+names2 <- c("summer", "fall", "winter", "spring", "balanced")
+kable(cbind(names2 , rbind(st_summer_sum, st_fall_sum, st_winter_sum, st_spring_sum, st_balanced_sum)), digits = 2,
+      caption = " Short-term Sampling Campaign NOx Summaries")
+
+```
+
+
 
 
 
@@ -1286,6 +1412,57 @@ United States Census. 2023. QuickFacts Los Angeles County, California. https://w
 ## Appendix 
 
 #---------------------------Reference Code-------------------------------------#
+
+# Useless chunk
+This section of code shouldn't be run. Cleaning the data in a different way. Leaving it just in case there is something we want to grab out of it in the future.
+```{r, useless, echo = F, include = F, message = F, eval = F}
+#data is going to need a little cleaning. There are monitors with negative values recorded. 
+
+#filter out the negative values and repeat the table. Justify that it's scientifically impossible to have neg. values on native scale.
+# this table is tratified by season, and another table is stratified by week day.
+
+#per lianne, we don't want to just ditch the negative values
+#cal_nox_clean <- cal_nox %>% filter(sample_measurement > 0) #29,521 rows removed!!
+
+
+#create a new variable called "log_conc" for the log transformed concentrations
+#cal_nox_clean <- cal_nox_clean %>%
+#  mutate(log_conc = log(sample_measurement)) %>%
+#  relocate(log_conc, .after = sample_measurement)
+
+#we have negative numbers again, but because of the log transformation
+
+#kable(cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",] %>%
+  group_by(season) %>%
+  summarise(
+    count = n(),
+    min = min(sample_measurement),
+    max = max(sample_measurement),
+    median = median(sample_measurement),
+    GM = geoMean(sample_measurement, na.rm = TRUE),
+    GSD = geoSD(sample_measurement, na.rm = TRUE),
+    AM = mean(sample_measurement, na.rm = TRUE),
+    ASD = sd(sample_measurement, na.rm = TRUE)),
+  digit = 2,
+  caption = "Table 1.0: Summary Statistics for Nitric Oxides (NOx) by Season") %>%
+  kable_styling()
+
+#kable(cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",] %>%
+  group_by(dow) %>%
+  summarise(
+    count = n(),
+    min = min(sample_measurement),
+    max = max(sample_measurement),
+    median = median(sample_measurement),
+    GM = geoMean(sample_measurement, na.rm = TRUE),
+    GSD = geoSD(sample_measurement, na.rm = TRUE),
+    AM = mean(sample_measurement, na.rm = TRUE),
+    ASD = sd(sample_measurement, na.rm = TRUE)),
+  digit = 2,
+  caption = "Table 2.0: Summary Statistics for Nitric Oxides (NOx) by Week day") %>%
+  kable_styling()
+```
+
 
 ```{r forward select, warning = FALSE, message = FALSE}
 
