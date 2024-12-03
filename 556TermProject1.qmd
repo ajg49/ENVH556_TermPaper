@@ -843,7 +843,7 @@ spring <- nox_only[nox_only$season == "Spring",]
 
 
 #Writing a function to aggregate data to the seasonal level -seasonal dataset
-```{r annual.avg, echo = FALSE}
+```{r seasonal.avg, echo = FALSE}
 #function to take the annual average concentration of any dataframe
 seasonal_avg <- function(data) {
   seasonal <- data %>% group_by(native_id) %>% summarise(seasonal_avg = mean(sample_measurement), log_avg = log(mean(sample_measurement)))
@@ -1012,7 +1012,7 @@ kable(cbind(names2 , rbind(st_summer_sum, st_fall_sum, st_winter_sum, st_spring_
 
 ```
 
-```{r covariates}
+```{r season.convariates}
 #--------------------------Common Model on Seasonal Data sets------------------#
 #adding the covariates to the gold standard data to do some predictions
 st_summer <-  left_join(st_summer,common_model_cov, by = "native_id" )
