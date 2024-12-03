@@ -361,14 +361,14 @@ min(check2) #0
 
 #taking a bunch of random samples for the short-term balanced data
 # short term random samples meant to represent a balanced mobile monitoring campaign.
-```{r gold.standard}
+```{r st.balanced}
 # Initialize the short-term balanced data frame
 st_balanced <- data.frame()
 
 n_reps <- 30  # number of random df simulations to run
 
 for (i in 1:n_reps) {
-  seed <- i * 3  # generating a different seed for each simulation
+  seed <- i * 4  # generating a different seed for each simulation
   sampled_data <- random_sample(nox_only, 28, seed)
   annual_avg_data <- annual_avg(sampled_data)
   
@@ -376,7 +376,7 @@ for (i in 1:n_reps) {
   annual_avg_data$seed <- seed
   annual_avg_data$rep_number <- i
   
-  # Append to gold_standard
+  # Append to dataframe
   st_balanced <- rbind(st_balanced, annual_avg_data)
 }
 
@@ -851,8 +851,13 @@ seasonal_avg <- function(data) {
 }
 
 
+#This function is exactly the same as the already defined annual average function. we can change the name of one of the functions for clarity, but I think it's confusing to have two functions that are the same. It also makes it so we can't use the summary stats function as easily. -KW
+
 
 #there are seasonal averages equal to zero, this makes the log transformed measure inf. AG
+
+
+
 
 
 ```
@@ -870,7 +875,7 @@ st_summer <- data.frame()
 n_reps <- 30  # number of random df simulations to run
 
 for (i in 1:n_reps) {
-  seed <- i * 3  # generating a different seed for each simulation
+  seed <- i * 4  # generating a different seed for each simulation
   sampled_data <- random_sample(summer, 28, seed)
   summer_avg_data <- seasonal_avg(sampled_data)
   
@@ -878,7 +883,7 @@ for (i in 1:n_reps) {
   summer_avg_data$seed <- seed
   summer_avg_data$rep_number <- i
   
-  # Append to gold_standard
+  # Append to st summer df
   st_summer <- rbind(st_summer, summer_avg_data)
 }
 
@@ -889,7 +894,7 @@ st_fall <- data.frame()
 n_reps <- 30  # number of random df simulations to run
 
 for (i in 1:n_reps) {
-  seed <- i * 3  # generating a different seed for each simulation
+  seed <- i * 4  # generating a different seed for each simulation
   sampled_data <- random_sample(fall, 28, seed)
   fall_avg_data <- seasonal_avg(sampled_data)
   
@@ -897,7 +902,7 @@ for (i in 1:n_reps) {
   fall_avg_data$seed <- seed
   fall_avg_data$rep_number <- i
   
-  # Append to gold_standard
+  # Append to st fall df
   st_fall <- rbind(st_fall, fall_avg_data)
 }
 
@@ -907,7 +912,7 @@ st_winter <- data.frame()
 n_reps <- 30  # number of random df simulations to run
 
 for (i in 1:n_reps) {
-  seed <- i * 3  # generating a different seed for each simulation
+  seed <- i * 4  # generating a different seed for each simulation
   sampled_data <- random_sample(winter, 28, seed)
   winter_avg_data <- seasonal_avg(sampled_data)
   
@@ -915,7 +920,7 @@ for (i in 1:n_reps) {
   winter_avg_data$seed <- seed
   winter_avg_data$rep_number <- i
   
-  # Append to gold_standard
+  # Append to st winter df
   st_winter <- rbind(st_winter, winter_avg_data)
 }
 
@@ -925,7 +930,7 @@ st_spring <- data.frame()
 n_reps <- 30  # number of random df simulations to run
 
 for (i in 1:n_reps) {
-  seed <- i * 3  # generating a different seed for each simulation
+  seed <- i * 4  # generating a different seed for each simulation
   sampled_data <- random_sample(spring, 28, seed)
   spring_avg_data <- seasonal_avg(sampled_data)
   
@@ -933,7 +938,7 @@ for (i in 1:n_reps) {
   spring_avg_data$seed <- seed
   spring_avg_data$rep_number <- i
   
-  # Append to gold_standard
+  # Append to st spring df
   st_spring <- rbind(st_spring, spring_avg_data)
 }
 
@@ -1366,6 +1371,8 @@ ggplot(st_winter_MSE_long, aes(x = method, y = value, color = method)) +
        Method B = winter Campaign Predictions Compared to winter Campaign Observations\n
        Square points shows the long-term campaigns performance") +
   theme_bw()
+
+
 
 ```
 
