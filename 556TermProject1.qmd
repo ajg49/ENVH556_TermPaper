@@ -851,7 +851,6 @@ seasonal_avg <- function(data) {
 }
 
 
-#This function is exactly the same as the already defined annual average function. we can change the name of one of the functions for clarity, but I think it's confusing to have two functions that are the same. It also makes it so we can't use the summary stats function as easily. -KW
 
 
 #there are seasonal averages equal to zero, this makes the log transformed measure inf. AG
@@ -958,6 +957,7 @@ st_spring <- st_spring %>%
 # this should be the same length as the st_balanced dataframe
 #True - AG
 
+#Looks good! Only suggestion is that we just use the annual_avg() function and not add a season_avg() function, because other than the name, they produce the same results. KW
 
 ```
 
@@ -1002,6 +1002,7 @@ st_spring_sum <- st_spring %>% summarise(min = min(seasonal_avg),
                                             SD = sd(seasonal_avg)
                                             )
 #st_spring_sum
+
 
 
 names2 <- c("summer", "fall", "winter", "spring", "balanced")
