@@ -57,9 +57,9 @@ We predicted the annual average NOx concentration using our gold standard sampli
 
 *Short-Term Sampling*
 
-We created short-term sampling datasets intended to represent mobile monitoring campaigns within temporally-restricted periods. Our short-term sampling datasets included season-restricted and day-of-the-week restricted subsets of the data (*NOTE: WE CAN CHANGE THIS AS NEEDED*). For each temporally restricted period, we filtered the dataset to include only samples from the specified timeframe and randomly sampled 28 measurements. 28 measurements were selected based on findings in Blanco et al. (2022), which reported that 28 measurements could accurately estimate the annual average of a site (less than or equal to 25% error) and reasonably represented the sampling design of a single mobile monitoring campaigns, which collect repeated samples from a limited number of locations. The random sampling process was repeated 30 total times to provide additional robustness through simulating multiple mobile monitoring campaigns, as described by Blanco et al. (2022). 
+We created short-term sampling datasets intended to represent mobile monitoring campaigns within temporally-restricted periods. Our short-term sampling datasets included season-restricted and day-of-the-week restricted subsets of the data (*NOTE: WE CAN CHANGE THIS AS NEEDED*). For each temporally restricted period, we filtered the dataset to include only samples from the specified timeframe and randomly sampled 28 measurements from each monitor and repeated this random selection 30 times. 28 measurements were selected based on findings in Blanco et al. (2022), which reported that 28 measurements could accurately estimate the annual average of a site (less than or equal to 25% error) and reasonably represented the sampling design of a single mobile monitoring campaigns, which collect repeated samples from a limited number of locations. The random sampling process was repeated 30 total times to provide additional robustness through simulating multiple mobile monitoring campaigns, as described by Blanco et al. (2022). 
 
-For each short-term sampling dataset, we predicted the expected annual average NOx concentration with 10-fold cross-validation based on the results from all 30 sampling iterations. We additionally computed the expected R2 and RMSE based on all 30 sampling iterations. 
+For each short-term sampling dataset, we predicted the expected annual average NOx concentration with 10-fold cross-validation based on the results from all 30 sampling iterations. We additionally computed the expected R2 [*WHAT KIND OF R SQUARED*] and RMSE based on all 30 sampling iterations. 
 
 *Comparison of Sampling Approaches*
 
@@ -67,7 +67,7 @@ We compared the estimated model performance parameters (RMSE, R2) from temporall
 
 #Results
 
-In total, 69 sensors in Los Angeles County met the specified inclusion criteria and were included in our NOx prediction analysis (**is this true? I think this is all of CA, not just LA**). **Correct, there are 69 monitors in CA that meet the criteria. 12 in LA**
+In total, 69 sensors inthe state of California met the specified inclusion criteria and were included in our NOx prediction analysis [**12 in LA if we subset to LA county**]
 
 ```{r setup, include=FALSE}
 
@@ -479,6 +479,9 @@ with(long_term_gold, hist(log_avg, breaks = 20, col = "seagreen", xlab = "log(NO
 
 ```
 
+Figure 1.0 illustrates the variabilty in the short-term balanced data set created by randomly sampling across all eligible sensors in california. 
+
+
 #Break up the histograms by season, look at NOx distribution by seasons, day of the week, etc.
 
 ```{r histogram}
@@ -496,17 +499,8 @@ ggplot(aes(sample_measurement)) +
        y = "density"
        )
 
-#---------stratified by day of the week ---------------------------------------#
-#histograms with smoother
-nox_only %>%
-ggplot(aes(sample_measurement)) +
-  geom_histogram(aes(y = ..density..), bins = 40, color = "lightblue", fill = "lightblue", alpha = 0.8) +
-  geom_density(color = "purple") +
-  facet_wrap(~dow, scales = "free") +
-  labs(title = "Distribution of NOx by Day of the Week",
-       x = "Concentration on native scale",
-       y = "density"
-       )
+#Abbie removed day of the week plot - not doing day of the week subsets anymore
+
 
 
 ```
@@ -525,17 +519,7 @@ ggplot( aes(log(sample_measurement))) +
        )
 
 
-  
-#log transformed by day of week
-nox_only %>%
-ggplot( aes(log(sample_measurement))) +
-  geom_histogram(aes(y = ..density..), bins = 40, color = "darkgreen", fill = "darkgreen", alpha = 0.4) +
-  geom_density(color = "green") +
-  facet_wrap(~dow, scales = "free") +
-  labs(title = "Distribution of log(NOx) by Day of the week",
-       x = "Concentration on log scale",
-       y = "density"
-       )
+#Abbie removed day of the week plot - not doing day of the week subsets anymore
 
 
 ```
@@ -829,7 +813,6 @@ ggplot(st_balanced_MSE_long, aes(x = method, y = value, color = method)) +
 ``` {r seasonal strat}
 
 summer <- nox_only[nox_only$season == "Summer",]
-unique(summer$native_id)
 
 fall <- nox_only[nox_only$season == "Fall",]
 
@@ -849,14 +832,6 @@ seasonal_avg <- function(data) {
   seasonal <- data %>% group_by(native_id) %>% summarise(seasonal_avg = mean(sample_measurement), log_avg = log(mean(sample_measurement)))
   return(seasonal)
 }
-
-
-
-
-#there are seasonal averages equal to zero, this makes the log transformed measure inf. AG
-
-
-
 
 
 ```
@@ -885,6 +860,10 @@ for (i in 1:n_reps) {
   # Append to st summer df
   st_summer <- rbind(st_summer, summer_avg_data)
 }
+ggplot(st_summer, aes(x = native_id, y = log_avg)) +
+  geom_boxplot()+
+  ggtitle("Figure X: Summer Short Term Sensor Log-transformed Annual Averages \n30 sets of 28 samples per sensor")
+
 
 #----------fall----------------------------------------------
 # Initialize the short-term balanced data frame
@@ -904,6 +883,9 @@ for (i in 1:n_reps) {
   # Append to st fall df
   st_fall <- rbind(st_fall, fall_avg_data)
 }
+ggplot(st_fall, aes(x = native_id, y = log_avg)) +
+  geom_boxplot()+
+  ggtitle("Figure X: Fall Short Term Sensor Log-transformed Annual Averages \n30 sets of 28 samples per sensor")
 
 #------------Winter--------------------------------------------
 st_winter <- data.frame()
@@ -922,6 +904,10 @@ for (i in 1:n_reps) {
   # Append to st winter df
   st_winter <- rbind(st_winter, winter_avg_data)
 }
+ggplot(st_winter, aes(x = native_id, y = log_avg)) +
+  geom_boxplot()+
+  ggtitle("Figure X: Winter Short Term Sensor Log-transformed Annual Averages \n30 sets of 28 samples per sensor")
+
 
 #------------Spring--------------------------------------------
 st_spring <- data.frame()
@@ -941,10 +927,9 @@ for (i in 1:n_reps) {
   st_spring <- rbind(st_spring, spring_avg_data)
 }
 
-st_spring <- st_spring %>%
-  filter(log_avg != -Inf)
-#Test_spring has one less data point. - AG
-
+ggplot(st_spring, aes(x = native_id, y = log_avg)) +
+  geom_boxplot()+
+  ggtitle("Figure X:Spring Short Term Sensor Log-transformed Annual Averages \n30 sets of 28 samples per sensor")
 
 # Checking Abbie's Understanding:
 # this chunk randomly grabs 28 samples from the season's data, from each of the sensors. 
@@ -1035,6 +1020,468 @@ summary(lm_st_spring <- lm(frml, data = st_spring)) #infinitive log_avg value in
 
 ```
 
+
+#----------comparing seasonal short term campaigns with Gold Standard data----------------
+
+```{r summer vs gold}
+#------------seasonal comparison with gold standard-------------
+
+#-----------------------------------SUMMER--------------------------------------
+#need to group the st_summer data by "campaign" before doing regression
+
+#apply the save CV groups as used in the gold standard model
+st_summer <- st_summer %>% group_by(rep_number) %>% mutate(CV_grp = CV_grp) %>% ungroup()
+
+#in sample-predictions
+fitted_models = st_summer %>% group_by(rep_number) %>% do(model = lm(frml, data = .))
+
+#cross-validated predictions treating each sample "campaign" separately
+st_summer_CV <- st_summer %>% group_by(rep_number) %>% do(model = do_CV(data = ., id = "native_id", group = "CV_grp", formula = frml))
+#produces a df for each result
+
+#next step is to restructure the result back into a single long_df
+
+st_summer_CV <- st_summer_CV %>% rename(model_run = rep_number) #change column name so there isn't a conflict when I unnest it
+
+st_summer_CV <- st_summer_CV %>%
+  unnest(cols = c(model))
+
+#---compare st_summer with gold-----------------------------------------#
+#appending the predictions from the balanced short term campaign to the st_summer_CV df for comparison
+gold_preds <- gold_CV %>%
+  dplyr::select("native_id", "cvpreds") %>% rename(gold_preds = cvpreds)  #select "model run" as well as native_id
+st_summer_CV <- left_join(st_summer_CV, gold_preds, by = "native_id" ) #to have unique identifiers we need both native id and model run. AG
+
+
+#calculating the RMSE and R2 two ways
+  #a) comparing the campaign predictions to the observations from the gold standard 
+  #b) comparing the predictions from each campaign to the observations from that campaign
+
+#need to append the observations from the balanced short term campaign to do method a
+
+gold_obs <- gold_CV %>%
+  dplyr::select("native_id", "log_avg") %>% rename(gold_obs = log_avg)
+st_summer_CV <- left_join(st_summer_CV, gold_obs, by = "native_id" ) #to have unique identifiers we need both native id and model run. AG
+
+# Initialize empty lists to store the results for both methods
+results_a <- list()
+results_b <- list()
+
+# Loop through each unique model_run
+for (run in unique(st_summer_CV$model_run)) {
+  # Filter the data for the current model_run
+  data_subset <- st_summer_CV %>% filter(model_run == run)
+  
+  # Calculate the MSE for method A
+  mse_result_a <- get_MSE(data_subset$gold_obs, data_subset$cvpreds)
+  results_a[[run]] <- mse_result_a
+  
+  # Calculate the MSE for method B
+  mse_result_b <- get_MSE(data_subset$log_avg, data_subset$cvpreds)
+  results_b[[run]] <- mse_result_b
+}
+
+# Convert the lists to a data frame with separate columns for each method
+st_summer_MSE <- data.frame(
+  model_run = unique(st_summer_CV$model_run),
+  RMSE_a = sapply(results_a, `[`, 1),
+  R2_a = sapply(results_a, `[`, 2),
+  RMSE_b = sapply(results_b, `[`, 1),
+  R2_b = sapply(results_b, `[`, 2)
+)
+
+#pivot longer for plotting
+st_summer_MSE_long <- st_summer_MSE %>%
+  pivot_longer(
+    cols = c(RMSE_a, R2_a, RMSE_b, R2_b),
+    names_to = c("metric", "method"),
+    names_sep = "_",
+    values_to = "value"
+  ) 
+
+#Plotting (replicate figure 1 in blanco paper)
+# get range for plot
+r <- st_summer_CV %>% dplyr::select(gold_preds, cvpreds) %>% range()
+
+
+ggplot(data = st_summer_CV, aes(x = gold_preds, y = cvpreds, color = as.factor(model_run))) +
+    geom_point(shape = "o", alpha = 0.7) +
+    lims(x= r, y = r) +
+    coord_fixed() +
+    geom_smooth(method = 'lm', se = F, alpha = 0.5) +
+    geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
+    labs(title = "Summer Campaign vs. short term balanced Cross-validated Predictions", 
+         subtitle = "Balanced Campaigns",
+         x = "short term balanced predicted ln(NOx) (ln(ppb))",
+         y = "Summer Campaign Predicted ln(NOx) (ln(ppb))",
+         caption = "1:1 line is dashed") +
+    theme_bw()
+
+
+#This needs some aesthetic adjustments: choose between dots or lines, pick a color scale that's helpful, get rid of the funky legend, but it's cool!!
+    #looks a lot like the balanced predictions from the Blanco paper. 
+
+#replicate blanco figure 3
+ggplot(st_summer_MSE_long, aes(x = method, y = value, color = method)) +
+  geom_boxplot() +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  facet_wrap(~metric) +
+  labs(title = "RMSE and MSE_R2 Comparison",
+       caption = "Method A = Summer Campaign Predictions Compared to Gold Standard Obs\n
+       Method B = Summer Campaign Predictions Compared to Summer Campaign Observations\n
+       Square points shows the long-term campaigns performance") +
+  theme_bw()
+
+
+  
+
+
+```
+
+
+```{r fall vs gold}
+#------------seasonal comparison with st balanced and gold standard-------------
+
+#-----------------------------------fall--------------------------------------
+#need to group the st_fall data by "campaign" before doing regression
+
+#apply the save CV groups as used in the gold standard model
+st_fall <- st_fall %>% group_by(rep_number) %>% mutate(CV_grp = CV_grp) %>% ungroup()
+
+#in sample-predictions
+fitted_models = st_fall %>% group_by(rep_number) %>% do(model = lm(frml, data = .))
+
+#cross-validated predictions treating each sample "campaign" separately
+st_fall_CV <- st_fall %>% group_by(rep_number) %>% do(model = do_CV(data = ., id = "native_id", group = "CV_grp", formula = frml))
+#produces a df for each result
+
+#next step is to restructure the result back into a single long_df
+
+st_fall_CV <- st_fall_CV %>% rename(model_run = rep_number) #change column name so there isn't a conflict when I unnest it
+
+st_fall_CV <- st_fall_CV %>%
+  unnest(cols = c(model))
+
+#---compare st_fall with gold-----------------------------------------#
+#appending the predictions from the balanced short term campaign to the st_fall_CV df for comparison
+gold_preds <- gold_CV %>%
+  dplyr::select("native_id", "cvpreds") %>% rename(gold_preds = cvpreds)  #select "model run" as well as native_id
+st_fall_CV <- left_join(st_fall_CV, gold_preds, by = "native_id" ) #to have unique identifiers we need both native id and model run. AG
+
+
+#calculating the RMSE and R2 two ways
+  #a) comparing the campaign predictions to the observations from the gold standard 
+  #b) comparing the predictions from each campaign to the observations from that campaign
+
+#need to append the observations from the balanced short term campaign to do method a
+
+gold_obs <- gold_CV %>%
+  dplyr::select("native_id", "log_avg") %>% rename(gold_obs = log_avg)
+st_fall_CV <- left_join(st_fall_CV, gold_obs, by ="native_id" ) #to have unique identifiers we need both native id and model run. AG
+
+# Initialize empty lists to store the results for both methods
+results_a <- list()
+results_b <- list()
+
+# Loop through each unique model_run
+for (run in unique(st_fall_CV$model_run)) {
+  # Filter the data for the current model_run
+  data_subset <- st_fall_CV %>% filter(model_run == run)
+  
+  # Calculate the MSE for method A
+  mse_result_a <- get_MSE(data_subset$gold_obs, data_subset$cvpreds)
+  results_a[[run]] <- mse_result_a
+  
+  # Calculate the MSE for method B
+  mse_result_b <- get_MSE(data_subset$log_avg, data_subset$cvpreds)
+  results_b[[run]] <- mse_result_b
+}
+
+# Convert the lists to a data frame with separate columns for each method
+st_fall_MSE <- data.frame(
+  model_run = unique(st_fall_CV$model_run),
+  RMSE_a = sapply(results_a, `[`, 1),
+  R2_a = sapply(results_a, `[`, 2),
+  RMSE_b = sapply(results_b, `[`, 1),
+  R2_b = sapply(results_b, `[`, 2)
+)
+
+#pivot longer for plotting
+st_fall_MSE_long <- st_fall_MSE %>%
+  pivot_longer(
+    cols = c(RMSE_a, R2_a, RMSE_b, R2_b),
+    names_to = c("metric", "method"),
+    names_sep = "_",
+    values_to = "value"
+  ) 
+
+#Plotting (replicate figure 1 in blanco paper)
+# get range for plot
+r <- st_fall_CV %>% dplyr::select(gold_preds, cvpreds) %>% range()
+
+
+ggplot(data = st_fall_CV, aes(x = gold_preds, y = cvpreds, color = as.factor(model_run))) +
+    geom_point(shape = "o", alpha = 0.7) +
+    lims(x= r, y = r) +
+    coord_fixed() +
+    geom_smooth(method = 'lm', se = F, alpha = 0.5) +
+    geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
+    labs(title = "Fall Campaign vs. Gold Standard Cross-validated Predictions", 
+         subtitle = "Balanced Campaigns",
+         x = "short term balanced predicted ln(NOx) (ln(ppb))",
+         y = "Fall Campaign Predicted ln(NOx) (ln(ppb))",
+         caption = "1:1 line is dashed") +
+    theme_bw()
+
+
+#This needs some aesthetic adjustments: choose between dots or lines, pick a color scale that's helpful, get rid of the funky legend, but it's cool!!
+    #looks a lot like the balanced predictions from the Blanco paper. 
+
+#replicate blanco figure 3
+ggplot(st_fall_MSE_long, aes(x = method, y = value, color = method)) +
+  geom_boxplot() +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  facet_wrap(~metric) +
+  labs(title = "RMSE and MSE_R2 Comparison",
+       caption = "Method A = fall Campaign Predictions Compared to Gold Standard  Obs\n
+       Method B = Fall Campaign Predictions Compared to fall Campaign Observations\n
+       Square points shows the long-term campaigns performance") +
+  theme_bw()
+
+```
+
+
+```{r winter v gold}
+#------------seasonal comparison with st balanced and gold standard-------------
+
+#-----------------------------------winter--------------------------------------
+#need to group the st_winter data by "campaign" before doing regression
+
+#apply the save CV groups as used in the gold standard model
+st_winter <- st_winter %>% group_by(rep_number) %>% mutate(CV_grp = CV_grp) %>% ungroup()
+
+#in sample-predictions
+fitted_models = st_winter %>% group_by(rep_number) %>% do(model = lm(frml, data = .))
+
+#cross-validated predictions treating each sample "campaign" separately
+st_winter_CV <- st_winter %>% group_by(rep_number) %>% do(model = do_CV(data = ., id = "native_id", group = "CV_grp", formula = frml))
+#produces a df for each result
+
+#next step is to restructure the result back into a single long_df
+
+st_winter_CV <- st_winter_CV %>% rename(model_run = rep_number) #change column name so there isn't a conflict when I unnest it
+
+st_winter_CV <- st_winter_CV %>%
+  unnest(cols = c(model))
+
+#---compare st_winter with gold-----------------------------------------#
+#appending the predictions from the balanced short term campaign to the st_winter_CV df for comparison
+gold_preds <- gold_CV %>%
+  dplyr::select("native_id", "cvpreds") %>% rename(gold_preds = cvpreds)  #select "model run" as well as native_id
+st_winter_CV <- left_join(st_winter_CV, gold_preds, by = "native_id" ) #to have unique identifiers we need both native id and model run. AG
+
+
+#calculating the RMSE and R2 two ways
+  #a) comparing the campaign predictions to the observations from the gold standard 
+  #b) comparing the predictions from each campaign to the observations from that campaign
+
+#need to append the observations from the balanced short term campaign to do method a
+
+gold_obs <- gold_CV %>%
+  dplyr::select("native_id", "log_avg") %>% rename(gold_obs = log_avg)
+st_winter_CV <- left_join(st_winter_CV, gold_obs, by = "native_id" ) #to have unique identifiers we need both native id and model run. AG
+
+# Initialize empty lists to store the results for both methods
+results_a <- list()
+results_b <- list()
+
+# Loop through each unique model_run
+for (run in unique(st_winter_CV$model_run)) {
+  # Filter the data for the current model_run
+  data_subset <- st_winter_CV %>% filter(model_run == run)
+  
+  # Calculate the MSE for method A
+  mse_result_a <- get_MSE(data_subset$gold_obs, data_subset$cvpreds)
+  results_a[[run]] <- mse_result_a
+  
+  # Calculate the MSE for method B
+  mse_result_b <- get_MSE(data_subset$log_avg, data_subset$cvpreds)
+  results_b[[run]] <- mse_result_b
+}
+
+# Convert the lists to a data frame with separate columns for each method
+st_winter_MSE <- data.frame(
+  model_run = unique(st_winter_CV$model_run),
+  RMSE_a = sapply(results_a, `[`, 1),
+  R2_a = sapply(results_a, `[`, 2),
+  RMSE_b = sapply(results_b, `[`, 1),
+  R2_b = sapply(results_b, `[`, 2)
+)
+
+#pivot longer for plotting
+st_winter_MSE_long <- st_winter_MSE %>%
+  pivot_longer(
+    cols = c(RMSE_a, R2_a, RMSE_b, R2_b),
+    names_to = c("metric", "method"),
+    names_sep = "_",
+    values_to = "value"
+  ) 
+
+#Plotting (replicate figure 1 in blanco paper)
+# get range for plot
+r <- st_winter_CV %>% dplyr::select(gold_preds, cvpreds) %>% range()
+
+
+ggplot(data = st_winter_CV, aes(x = gold_preds, y = cvpreds, color = as.factor(model_run))) +
+    geom_point(shape = "o", alpha = 0.7) +
+    lims(x= r, y = r) +
+    coord_fixed() +
+    geom_smooth(method = 'lm', se = F, alpha = 0.5) +
+    geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
+    labs(title = "winter Campaign vs. Gold standard Cross-validated Predictions", 
+         subtitle = "Balanced Campaigns",
+         x = "short term balanced predicted ln(NOx) (ln(ppb))",
+         y = "winter Campaign Predicted ln(NOx) (ln(ppb))",
+         caption = "1:1 line is dashed") +
+    theme_bw()
+
+
+#This needs some aesthetic adjustments: choose between dots or lines, pick a color scale that's helpful, get rid of the funky legend, but it's cool!!
+    #looks a lot like the balanced predictions from the Blanco paper. 
+
+#replicate blanco figure 3
+ggplot(st_winter_MSE_long, aes(x = method, y = value, color = method)) +
+  geom_boxplot() +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  facet_wrap(~metric) +
+  labs(title = "RMSE and MSE_R2 Comparison",
+       caption = "Method A = winter Campaign Predictions Compared to  Gold standard Obs\n
+       Method B = winter Campaign Predictions Compared to winter Campaign Observations\n
+       Square points shows the long-term campaigns performance") +
+  theme_bw()
+
+
+
+```
+
+```{r spring v gold}
+#------------seasonal comparison with st balanced and gold standard-------------
+
+#-----------------------------------spring--------------------------------------
+#need to group the st_spring data by "campaign" before doing regression
+
+#apply the save CV groups as used in the gold standard model
+st_spring <- st_spring %>% group_by(rep_number) %>% mutate(CV_grp = CV_grp) %>% ungroup()
+
+#in sample-predictions
+fitted_models = st_spring %>% group_by(rep_number) %>% do(model = lm(frml, data = .))
+
+#cross-validated predictions treating each sample "campaign" separately
+st_spring_CV <- st_spring %>% group_by(rep_number) %>% do(model = do_CV(data = ., id = "native_id", group = "CV_grp", formula = frml))
+#produces a df for each result
+
+#next step is to restructure the result back into a single long_df
+
+st_spring_CV <- st_spring_CV %>% rename(model_run = rep_number) #change column name so there isn't a conflict when I unnest it
+
+st_spring_CV <- st_spring_CV %>%
+  unnest(cols = c(model))
+
+#---compare st_spring with gold-----------------------------------------#
+#appending the predictions from the balanced short term campaign to the st_spring_CV df for comparison
+gold_preds <- gold_CV %>%
+  dplyr::select("native_id", "cvpreds") %>% rename(gold_preds = cvpreds)  #select "model run" as well as native_id
+st_spring_CV <- left_join(st_spring_CV, gold_preds, by = "native_id" ) #to have unique identifiers we need both native id and model run. AG
+
+
+#calculating the RMSE and R2 two ways
+  #a) comparing the campaign predictions to the observations from the gold standard 
+  #b) comparing the predictions from each campaign to the observations from that campaign
+
+#need to append the observations from the balanced short term campaign to do method a
+
+gold_obs <- gold_CV %>%
+  dplyr::select("native_id", "log_avg") %>% rename(gold_obs = log_avg)
+st_spring_CV <- left_join(st_spring_CV, gold_obs, by = "native_id" ) #to have unique identifiers we need both native id and model run. AG
+
+# Initialize empty lists to store the results for both methods
+results_a <- list()
+results_b <- list()
+
+# Loop through each unique model_run
+for (run in unique(st_spring_CV$model_run)) {
+  # Filter the data for the current model_run
+  data_subset <- st_spring_CV %>% filter(model_run == run)
+  
+  # Calculate the MSE for method A
+  mse_result_a <- get_MSE(data_subset$gold_obs, data_subset$cvpreds)
+  results_a[[run]] <- mse_result_a
+  
+  # Calculate the MSE for method B
+  mse_result_b <- get_MSE(data_subset$log_avg, data_subset$cvpreds)
+  results_b[[run]] <- mse_result_b
+}
+
+# Convert the lists to a data frame with separate columns for each method
+st_spring_MSE <- data.frame(
+  model_run = unique(st_spring_CV$model_run),
+  RMSE_a = sapply(results_a, `[`, 1),
+  R2_a = sapply(results_a, `[`, 2),
+  RMSE_b = sapply(results_b, `[`, 1),
+  R2_b = sapply(results_b, `[`, 2)
+)
+
+#pivot longer for plotting
+st_spring_MSE_long <- st_spring_MSE %>%
+  pivot_longer(
+    cols = c(RMSE_a, R2_a, RMSE_b, R2_b),
+    names_to = c("metric", "method"),
+    names_sep = "_",
+    values_to = "value"
+  ) 
+
+#Plotting (replicate figure 1 in blanco paper)
+# get range for plot
+r <- st_spring_CV %>% dplyr::select(gold_preds, cvpreds) %>% range()
+
+
+ggplot(data = st_spring_CV, aes(x = gold_preds, y = cvpreds, color = as.factor(model_run))) +
+    geom_point(shape = "o", alpha = 0.7) +
+    lims(x= r, y = r) +
+    coord_fixed() +
+    geom_smooth(method = 'lm', se = F, alpha = 0.5) +
+    geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
+    labs(title = "spring Campaign vs. Gold Standard Cross-validated Predictions", 
+         subtitle = "Balanced Campaigns",
+         x = "short term balanced predicted ln(NOx) (ln(ppb))",
+         y = "spring Campaign Predicted ln(NOx) (ln(ppb))",
+         caption = "1:1 line is dashed") +
+    theme_bw()
+
+
+#This needs some aesthetic adjustments: choose between dots or lines, pick a color scale that's helpful, get rid of the funky legend, but it's cool!!
+    #looks a lot like the balanced predictions from the Blanco paper. 
+
+#replicate blanco figure 3
+ggplot(st_spring_MSE_long, aes(x = method, y = value, color = method)) +
+  geom_boxplot() +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  facet_wrap(~metric) +
+  labs(title = "RMSE and MSE_R2 Comparison",
+       caption = "Method A = spring Campaign Predictions Compared to Gold Standard Obs\n
+       Method B = spring Campaign Predictions Compared to spring Campaign Observations\n
+       Square points shows the long-term campaigns performance") +
+  theme_bw()
+
+```
+
+
+
+#--------comparing seasonal short term campaigns with short term balanced campaign--------------------
 
 
 
@@ -1150,6 +1597,8 @@ ggplot(st_summer_MSE_long, aes(x = method, y = value, color = method)) +
 
 
 ```
+
+
 ```{r fall vs balanced}
 #------------seasonal comparison with st balanced and gold standard-------------
 
@@ -1263,7 +1712,7 @@ ggplot(st_fall_MSE_long, aes(x = method, y = value, color = method)) +
 ```
 
 
-```{r}
+```{r winter v balanced}
 #------------seasonal comparison with st balanced and gold standard-------------
 
 #-----------------------------------winter--------------------------------------
@@ -1377,7 +1826,7 @@ ggplot(st_winter_MSE_long, aes(x = method, y = value, color = method)) +
 
 ```
 
-```{r}
+```{r spring v balanced}
 #------------seasonal comparison with st balanced and gold standard-------------
 
 #-----------------------------------spring--------------------------------------
@@ -1489,100 +1938,67 @@ ggplot(st_spring_MSE_long, aes(x = method, y = value, color = method)) +
 
 ```
 
+#tabulate RMSE and R sqaured for all campaigns:
+```{r basic obs vs preds plot}
+ggplot( st_balanced_CV, aes(x = log_avg, cvpreds)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  ggtitle("observations vs predictions - short term balanced campaign") +
+  xlab("Observed log(NOx) annual averages") +
+  ylab("Predicted log(NOx) annual averages ") +
+  geom_abline(slope = 1.0) 
+
+ggplot( st_summer_CV, aes(x = log_avg, cvpreds)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  ggtitle("observations vs predictions - short term Summer campaign") +
+  xlab("Observed log(NOx) seasonal averages") +
+  ylab("Predicted log(NOx) seasonal averages ") +
+  geom_abline(slope = 1.0)
+
+ggplot( st_fall_CV, aes(x = log_avg, cvpreds)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  ggtitle("observations vs predictions - short term Fall campaign") +
+  xlab("Observed log(NOx) seasonal averages") +
+  ylab("Predicted log(NOx) seasonal averages ") +
+  geom_abline(slope = 1.0)
+
+ggplot( st_winter_CV, aes(x = log_avg, cvpreds)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  ggtitle("observations vs predictions - short term Winter campaign") +
+  xlab("Observed log(NOx) seasonal averages") +
+  ylab("Predicted log(NOx) seasonal averages ") +
+  geom_abline(slope = 1.0)
+
+ggplot( st_spring_CV, aes(x = log_avg, cvpreds)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  ggtitle("observations vs predictions - short term Spring campaign") +
+  xlab("Observed log(NOx) seasonal averages") +
+  ylab("Predicted log(NOx) seasonal averages ") +
+  geom_abline(slope = 1.0)
+
+```
 
 
+```{r table of prediction stats}
+#averages the rmse and r squared across all 30 repeats of the random sampling for all campaigns
+
+campaigns <- c("Summer", "Fall", "Winter", "Spring", "Balanced")
+RMSE <- c(mean(st_summer_MSE$RMSE_b), mean(st_fall_MSE$RMSE_b), mean(st_winter_MSE$RMSE_b), mean(st_spring_MSE$RMSE_b), mean(st_balanced_MSE$RMSE_b)) %>% round(digits = 3)
+R2 <- c(mean(st_summer_MSE$R2_b), mean(st_fall_MSE$R2_b), mean(st_winter_MSE$R2_b), mean(st_spring_MSE$R2_b), mean(st_balanced_MSE$R2_b)) %>% round(digits = 3)
+
+kable(rbind(campaigns, RMSE, R2),
+      digits = 3,
+      caption = "Performance Statistics of Seasonal and Balanced Sampling Campaigns") %>% kable_styling()
+
+```
 
 
-
-
-
-# Regression for Prediction: Seasonal Models
-
-1. create cross validation functions
-2. cross validation for out-of-sample statistics
-  for summer, fall, winter, and spring models
-3. select best-fit model 
-  for summer, fall, winter, and spring models
   
-```{r, echo = FALSE, message = FALSE}
 
-#-----manual 10-fold CV---------------------------------------------------
-#--generate random groups--
-
-# set the seed to make reproducible
-set.seed(283)
-
-# create vector of CV groups
-  # first generate a vector with values 1:10 equal to the number of dataset rows
-  # then randomize (with argument replace = FALSE)
-CV_grp <- rep(1:10, length.out = nrow(cal_nox_clean)) %>% 
-  sample(replace = FALSE)
-
-#\ now append it to the cal_nox_clean data frame
-cal_nox_clean <- mutate(cal_nox_clean, CV_grp = CV_grp)
-
-# create a numeric variable for CV predictions (using -999 as a placeholder)
-cv_pred <- cal_nox_clean %>% mutate(preds = -999)
-
-# loop over the 10 clusters
-for (i in 1:10){
-
-    # define the current cluster variable as a logical vector
-    is_cluster <- cv_pred$CV_grp == i
-
-    # fit the "common" model to the training set by omitting cluster i
-    CV_lm <- lm(Full, data = cv_pred, subset = !is_cluster)
-
-    # generate predictions using CV_lm
-    preds <- predict(CV_lm, cal_nox_clean)
-
-    # add results to cv_pred dataframe
-    cv_pred$preds[is_cluster] <- preds[is_cluster]
-}
-
-# now calculate the MSE, RMSE, MSE-based R2
-
-# mean of observations
-log_conc_avg <- mean(cv_pred$log_conc)
-
-# MSE of predictions
-MSE_pred <- mean((cv_pred$log_conc - cv_pred$preds)^2)
-
-# MSE of observations (for R2 denominator)
-MSE_obs <- mean((cv_pred$log_conc - log_conc_avg)^2)
-
-# print the results not rounded
-kable(rbind(paste("RMSE:  ", round(sqrt(MSE_pred),3)),
-paste("MSE-based R2:  ", round(max(1 - MSE_pred/MSE_obs, 0),3))),
-  caption = "10-fold CV with random groups") %>%
-  kable_styling()
-
-
-```
-#These are not very good performance statistics!! Do we want to try and figure out a different model with some geographic covariates?
-
-# ANOVA components of Variance analysis
-Now lets look to see what covariates explain the most temporal variation
-
-
-```{r}
-#-----VCA implementation-----
-
-# different ways to estimate variance components
-fit_MOM <- anovaVCA(Full, Data = as.data.frame(cal_nox_clean) )
-kable(fit_MOM$aov.tab,
-      caption = "Table of MOM ANOVA",
-      digits = 2) %>%
-  kable_styling()
-
-#fit_REML <- fitVCA(Full, Data = as.data.frame(cal_nox_clean), method = "REML")
-#kable(fit_REML$aov.tab,
-#      caption = "Table of REML ANOVA",
-#      digits = 2) %>%
-#  kable_styling()
-
-
-```
 
 
 # SENSITIVITY ANALYSIS: DAY OF THE WEEK 
