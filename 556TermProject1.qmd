@@ -25,49 +25,57 @@ This document was rendered on `r format(Sys.time(), '%B %d, %Y')`.
 
 Nitrogen oxides (NOx) are gaseous compounds commonly found in air pollution. Although NOx are generated through both natural and anthropogenic sources, human activities account for the majority of ambient NOx concentrations [(EPA 2024;)](https://www.epa.gov/no2-pollution/basic-information-about-no2) [Zhang et al. 2003;](https://www.pnas.org/doi/10.1073/pnas.252763799) [(ATSDR 2002;](https://www.atsdr.cdc.gov/toxfaqs/tfacts175.pdf) [(EPA 1999)](https://www3.epa.gov/ttncatc1/dir1/fnoxdoc.pdf). Mobile vehicles are a major source of anthropogenic NOx, accounting for approximately half of all emissions related to human activities [(EPA 1999)](https://www3.epa.gov/ttncatc1/dir1/fnoxdoc.pdf). Power plants also contribute a substantial fraction (~20%) of the total estimated annual anthropogenic NOx emissions [(EPA 1999)](https://www3.epa.gov/ttncatc1/dir1/fnoxdoc.pdf).
 
-Traffic-related air pollutants (TRAP), such as NOx, can have diurnal and seasonal trends related to temporal vehicular traffic patterns [Blanco et al. (2023)](https://www.nature.com/articles/s41370-022-00470-5#MOESM1). Measurements of TRAP must therefore appropriately reflect the relevant temporal period that they are intended to represent. For example, if exposure assessment  The aim of our analysis was to compare the performance of temporally-restricted NOx prediction models with that of a "gold standard" temporally balanced model in Los Angeles county. Specifically, we aimed to assess how prediction surfaces varied based on the temporal variability included in the underlying dataset. Ultimately, these results can be used to inform future TRAP monitoring campaigns through signaling the importance of temporally-balanced sampling designs. 
+Traffic-related air pollutants (TRAP), such as NOx, can have diurnal and seasonal trends related to temporal vehicular traffic patterns [(Blanco et al. 2022)](https://www.nature.com/articles/s41370-022-00470-5#MOESM1). Measurements of TRAP must therefore appropriately reflect the relevant temporal period that they are intended to represent. Traditionally, air pollution is measured through stationary area monitors, which provide continuous air concentration data over long time scales from a single location [(CDPHE 2024)](https://cdphe.colorado.gov/air-toxics/monitoring#:~:text=Mobile%20monitoring%20can%20capture%20%E2%80%9Cspatial,wind%20compared%20to%20stationary%20monitoring.). Mobile monitoring is another effective air pollution measurement strategy that can be used to evaluate air concentrations across a wide set of geographic areas. During mobile monitoring, vehicles equipped with air sampling equipment drive through areas and provide real-time measurements of air pollution across a series of stops (CDPHE 2024). Mobile monitoring is an especially advantageous air monitoring strategy due to its spatial flexibility, which can provide data on areas not well-represented by stationary monitoring sites (CDPHE 2024). Despite its spatial advantages, mobile monitoring is more resource intensive than stationary monitoring and therefore provides a more limited set of air monitoring data (CDPHE 2024). 
+
+In this analyses, we use the California NOx dataset described by Blanco et al. (2022) to simulate a series of temporally-restricted mobile monitoring campaigns and compare their prediction performances against that of a long-term, temporally-balanced "gold standard" dataset representing what might be achieved with a stationary air monitor. We aimed to assess how well NOx predictions from short-term mobile monitoring campaigns aligned with the "gold standard" dataset and whether the inclusion or omission of specific temporal windows impacted prediction performance. In support of this aim, we compared the performance of a "gold standard" temporally-balanced statewide dataset with a (1) short-term, temporally-balanced statewide dataset; and (2) short-term, seasonally-restricted statewide datasets. Additionally, we repeated this analysis when all data were instead restricted to Los Angeles county to assess how the comparisons differed in the presence of reduced geospatial variability. Ultimately, these results can be used to inform future TRAP monitoring campaigns through signaling the importance of temporally-balanced sampling designs and underscoring which key temporal windows must be included in mobile monitoring sampling events. 
 
 #Methods 
 
 **Dataset Description**
 
-The California NOx dataset, first described by [Blanco et al. (2023)](https://www.nature.com/articles/s41370-022-00470-5#MOESM1), includes NOx concentration measurements collected from 69 California Air Quality System (AQS) sites in 2016. Measurements were collected every hour, enabling the evaluation of temporal trends in NOx concentrations across both short- and long-term timescales. Land-use, roadway proximity, and population density covariates (N=321 in total)(**There are actually 849 covariates total**) were additionally available in the dataset. 
+The California NOx dataset, first described by [Blanco et al. (2023)](https://www.nature.com/articles/s41370-022-00470-5#MOESM1), includes NOx concentration measurements collected from 69 California Air Quality System (AQS) sites in 2016. Measurements were collected every hour, enabling the evaluation of temporal trends in NOx concentrations across both short- and long-term timescales. Land-use, roadway proximity, and population density covariates (N=321 in total) were additionally available in the dataset. 
 
 **Overview of Statistical Approach** 
 
-We geographically restricted our analysis to data from a single county to limit the impact of geospatial variability, as NOx concentration measurements likely have strong spatial correlation at the county-level based on shared land-use, policy, and urbanicity within counties. Los Angeles County was selected as the county of interest for our analysis based on its high population density (U.S. Census 2023) and because of its high proportion of sensors included in the underlying California NOx dataset. 
+We developed a general model for NOx predictions to be used across all analyses. We evaluated NOx prediction performances using the general model for our "gold standard" temporally-balanced dataset, our short-term temporally balanced dataset, and our short-term temporally restricted dataset. Details regarding the creation and characteristics of these datasets are provided in subsequent sections. 
 
-The distribution of NOx concentrations and distance-based model covariates were modeled on the natural log scale based on the methods described by Blanco et al. (2022) and based on our visual inspection of the variable distributions. (**NOTE: it looks like the Blanco paper did model covariates and concentration on the natural log scale, if i am interpretingn things correctly**)
+For all analyses, NOx concentrations were modeled on the natural log scale based on the methods described by Blanco et al. (2022) and based on our visual inspection of the variable distributions. 
 
 *Sensor Selection*
 
-Sensors from the California NOx dataset were selected for inclusion in our analysis according to the criteria described by Blanco et al. (2022). These criteria included: (1) limited missingness, such that the sensors included had annual data that was at least 66% complete; (2) limited data gaps, such that data gaps for a particular sensor were less than or equal to 45 days long; (3) sensors must have sampled for at least 40% of the time during the two-week period used in our temporally restricted sampling campaigns (described below)  (**May not use this last criterion?**); and (4) monitors must have positive readings (> 0 ppb) at least 60% of the time. (Negative readings were left in the data set, as we interpreted them as true reading close to 0 that come up as negative due to noise or "classical error" in the instrument readings). Restricted the percentage of negative readings in each sensor ensure that the sensors included have adequate variability in their readings and that annual average concentrations will be positive. 
+Sensors from the California NOx dataset were selected for inclusion in our analysis according to the criteria described by Blanco et al. (2022). These criteria included: (1) limited missingness, such that the sensors included had annual data that was at least 66% complete; (2) limited data gaps, such that data gaps for a particular sensor were less than or equal to 45 days long; (3) sensors must have sampled for at least 40% of the time during the two-week period used in our temporally restricted sampling campaigns (described below)  (**May not use this last criterion?**); and (4) monitors must have positive readings (> 0 ppb) at least 60% of the time. Negative concentration readings were left in the data set, as we interpreted them as true reading close to 0 that reads as negative due to noise or "classical error" in the instrument readings. We restricted the percentage of negative readings in each sensor to ensure that the sensors included had adequate variability in their readings and that annual average concentrations would be positive. 
 
 *Model Selection*
 
-Model covariates were selected for inclusion in NOx prediction models based on their scientific relevance to ambient NOx concentration prediction models, as described in peer-reviewed scientific literature. Specifically, we chose to include the covariates utilized by [Mercer et al. (2011)](https://pmc.ncbi.nlm.nih.gov/articles/PMC3146303/pdf/nihms299256.pdf), who measured ambient NOx concentrations in Los Angeles across varied temporal layers and built prediction models using land-use and geographic covariates. Mercer et al. (2011) selected their prediction model covariates from 65 possible covariates related to population density, land-use intensity, open space land, distance to the coast, distance to industrial sources, distances to various roadways, and lengths of roadways within a given buffer zone. From these potential covariates, Mercer et al. (2011) created a "common model" that had adequate performance in predicting NOx concentrations across all seasons. The covariates included in the Mercer et al. (2011) common model included: distance to commercial pollutant sources, distance to the coast, distance to A1 roadways, population size within 5000 meters, land use intensity within 3000 square kilometers, length of A1 roads within 50 meters, and length of A2 and A3 roads within 400 meters.
+Covariates were selected for inclusion into our general model for NOx predictions based on their scientific relevance to ambient NOx concentration prediction models, as described in peer-reviewed scientific literature. Specifically, we chose to include the covariates utilized by [Mercer et al. (2011)](https://pmc.ncbi.nlm.nih.gov/articles/PMC3146303/pdf/nihms299256.pdf), who measured ambient NOx concentrations in Los Angeles across varied temporal layers and built prediction models using land-use and geographic covariates. Mercer et al. (2011) selected their prediction model covariates from 65 possible covariates related to population density, land-use intensity, open space land, distance to the coast, distance to industrial sources, distances to various roadways, and lengths of roadways within a given buffer zone. From these potential covariates, Mercer et al. (2011) created a "common model" that had adequate performance in predicting NOx concentrations across all seasons. The covariates included in the Mercer et al. (2011) common model included: distance to commercial pollutant sources, distance to the coast, distance to A1 roadways, population size within 5000 meters, land use intensity within 3000 square kilometers, length of A1 roads within 50 meters, and length of A2 and A3 roads within 400 meters.
 
-For our analyses, we selected the covariates most similar to the seven used by Mercer et al. (2011), based on the similarities in geographic region, pollutant of interest, land-use covariates, and modeling goals between the present analysis and that described by Mercer et al. (2011). These covariates included: meters to closest commercial and services area, distance to the closest coastline, population density within 5,000 meters, distance to nearest A1 roadway, length of A1 roadway within 500 meters, length of A2 roadway within 1500 meters, length of A3 roadway within 400 meters, and the proportion of mixed urban of built-up land within a 1500 square kilometer buffer. Note that, in some cases, distances and buffers varied between those used by Mercer et al. (2011) and those used by Blanco et al. (2022); in these cases, the closest available covariate distance or buffer was selected. For land-use intensity, the proportion of mixed urban or built-up land within 1500 square kilometers was used in the present analysis, as it was deemed to be likely the most similar to the Mercer et al. (2011) land use covariate. 
+For our analyses, we selected the covariates most similar to the seven used by Mercer et al. (2011), based on the similarities in geographic region, pollutant of interest, land-use covariates, and modeling goals between the present analysis and that described by Mercer et al. (2011). These covariates included: meters to closest commercial and services area, distance to the closest coastline, population density within 5,000 meters, distance to nearest A1 roadway, length of A1 roadway within 500 meters, length of A2 roadway within 1500 meters, length of A3 roadway within 400 meters, and the proportion of mixed urban of built-up land within a 1500 square kilometer buffer. Note that, in some cases, distances and buffers varied between those used by Mercer et al. (2011) and those used by Blanco et al. (2022); in these cases, the closest available covariate distance or buffer was selected. For land-use intensity, the proportion of mixed urban or built-up land within 1500 square kilometers was used in the present analysis, as it was deemed to be likely the most similar to the Mercer et al. (2011) land use intensity covariate. 
 
-*Gold Standard Sampling*
+*Gold Standard Sampling Dataset*
 
-To make our temporally-balanced "gold standard" sampling dataset, we included all measurements from all Los Angeles County monitors that met our pre-defined inclusion criteria. The gold standard dataset therefore reflects an idealistic sampling mechanism, representing sample collection at every hour on every day in all seasons. As noted by Blanco et al. (2022), the gold standard dataset is reasonably representative of the measurements one might obtain from annual stationary air monitoring. 
+To make our temporally-balanced "gold standard" sampling dataset, we included all measurements from monitors that met our pre-defined inclusion criteria. The gold standard dataset therefore reflected an ideal sampling mechanism, representing sample collection at every hour on every day in all seasons. As noted by Blanco et al. (2022), the gold standard dataset is reasonably representative of the measurements one might obtain from annual stationary air monitoring. 
 
 We predicted the annual average NOx concentration using our gold standard sampling dataset with 10-fold cross-validation. We computed the R2 and RMSE characterizing the model fit and accuracy within this dataset. 
 
-*Short-Term Sampling*
+*Short-Term Sampling Dataset*
 
-We created short-term sampling datasets intended to represent mobile monitoring campaigns within temporally-restricted periods. Our short-term sampling datasets included season-restricted and day-of-the-week restricted subsets of the data (*NOTE: WE CAN CHANGE THIS AS NEEDED*). For each temporally restricted period, we filtered the dataset to include only samples from the specified timeframe and randomly sampled 28 measurements from each monitor and repeated this random selection 30 times. 28 measurements were selected based on findings in Blanco et al. (2022), which reported that 28 measurements could accurately estimate the annual average of a site (less than or equal to 25% error) and reasonably represented the sampling design of a single mobile monitoring campaigns, which collect repeated samples from a limited number of locations. The random sampling process was repeated 30 total times to provide additional robustness through simulating multiple mobile monitoring campaigns, as described by Blanco et al. (2022). 
+We created short-term sampling datasets intended to represent mobile monitoring campaigns within short-term sampling periods. Our short-term sampling datasets included temporally balanced and temporally restricted subsets of the data. The temporally balanced subset included randomly selected measurements from all measurements in the gold standard dataset. For our temporally-restricted datasets, we stratified our dataset by season and restricted measurements for each monitoring campaign to a single season; this was intended to simulate a mobile monitoring campaign collecting all data on an expedited timeframe with little seasonal variability in the collected samples. 
 
-For each short-term sampling dataset, we predicted the expected annual average NOx concentration with 10-fold cross-validation based on the results from all 30 sampling iterations. We additionally computed the expected R2 [*WHAT KIND OF R SQUARED*] and RMSE based on all 30 sampling iterations. 
+For each short-term sampling period, we filtered the dataset to include only samples from the specified timeframe, randomly sampled 28 measurements from each monitor, and repeated this random selection 30 times. 28 measurements were selected based on findings in Blanco et al. (2022), which reported that 28 measurements could accurately estimate the annual average of a site (less than or equal to 25% error) and reasonably represented the sampling design of a single mobile monitoring campaigns, which collect repeated samples from a limited number of locations. The random sampling process was repeated 30 total times to provide additional robustness through simulating multiple mobile monitoring campaigns, as described by Blanco et al. (2022). 
+
+For each short-term sampling dataset, we predicted the expected annual average NOx concentration with 10-fold cross-validation based on the results from all 30 sampling iterations. We additionally computed the expected value of R2 [*WHAT KIND OF R SQUARED*] and expected RMSE based on all 30 sampling iterations. 
 
 *Comparison of Sampling Approaches*
 
-We compared the estimated model performance parameters (RMSE, R2) from temporally-restricted, short-term sampling with those from the gold standard, long-term estimates. We additionally compared the cross-validated annual average estimates from the temporally-restricted sampling datasets with that estimated using the gold standard sampling dataset. 
+We compared the estimated model performance parameters (RMSE, R2) from the short-term sampling datasets with those from the gold standard dataset. We additionally compared the cross-validated annual average estimates from the temporally-restricted sampling datasets with that estimated using the gold standard sampling dataset (**NOTE: is this last sentence true?**). 
+
+*Sensitivy Analysis: Los Angeles County*
+
+In our sensitivty analysis, we repeated our analyses with geographically restricted data from a single county to limit the impact of geospatial variability, as NOx concentration measurements likely have strong spatial correlation at the county-level based on shared land-use, policy, and urbanicity within counties. Los Angeles County was selected as the county of interest for our analysis based on its high population density (U.S. Census 2023) and because of its high proportion of sensors included in the underlying California NOx dataset. 
 
 #Results
 
-In total, 69 sensors inthe state of California met the specified inclusion criteria and were included in our NOx prediction analysis [**12 in LA if we subset to LA county**]
+In total, 69 sensors in the state of California met the specified inclusion criteria and were included in our NOx prediction analysis. For our analyses specific to Los Angeles county, 12 sensors meeting the inclusion criteria were included.
 
 ```{r setup, include=FALSE}
 
@@ -421,7 +429,7 @@ st_balanced_sum <- st_balanced %>% summarise(min = min(annual_avg),
 st_balanced_sum #this would not be expected to match Blanco because we used different seeds
 #summarizing the data from the random samples
 names <- c("Long-term", "short-term")
-kable(cbind(names , rbind(lt_gold_sum, st_balanced_sum)), digits = 3,
+kable(cbind(names , rbind(lt_gold_sum, st_balanced_sum)), digits = 2,
       caption = "Balanced, Long-term & Short-term Sampling Campaign Summaries")
 
 ```
@@ -482,7 +490,7 @@ with(long_term_gold, hist(log_avg, breaks = 20, col = "seagreen", xlab = "log(NO
 Figure 1.0 illustrates the variabilty in the short-term balanced data set created by randomly sampling across all eligible sensors in california. 
 
 
-#Break up the histograms by season, look at NOx distribution by seasons, day of the week, etc.
+#Break up the histograms by season, look at NOx distribution by seasons
 
 ```{r histogram}
 
@@ -499,10 +507,6 @@ ggplot(aes(sample_measurement)) +
        y = "density"
        )
 
-#Abbie removed day of the week plot - not doing day of the week subsets anymore
-
-
-
 ```
 
 ```{r, eval = F}
@@ -518,34 +522,19 @@ ggplot( aes(log(sample_measurement))) +
        y = "density"
        )
 
-
-#Abbie removed day of the week plot - not doing day of the week subsets anymore
-
-
 ```
 
 
 # Seasonal Characterization of NOx concentrations:
 
-The data provided the date and week of the year that each sample was taken. To look at seasonal changes in the data, we need to separate the weeks of the year into four seasons. We did this by breaking up the roughly 52 weeks of the year into 4, ~13-week segments. 
 
-    Weeks 13 - 25 of the year are coded as spring
-    weeks 26 - 38 are coded as summer
-    weeks 39 - 50 are coded as autumn
-    and week 51,52 and 1-12 are coded as winter.
-    
-  ** Limitations of this approach. This is based only on diving the year into roughly equal portions based on numerical week. There is no distinct scientific or meteorological significance to the cutoff. Could look at other ways of defining season for more accuracy --- could use specific calendrical definitions, or could look at cut points based on temp or precip. Could also use social cutoffs (e.g. summer is when school is out), as any seasonal differences could be a combination of both social and meteorological phenomena.
-
-  We are also interested in a day of the week prediction model, comparing NOx concnetrations across the days of the week. We created a variable called "dow" which indicates the days of the week that the sample was taken on.
   
-  We chose to use these two strata to investigate a temporal component to NOx concentrations in the state of california because these two models portray two different kinds of temporal fluctuation on very different time scales and because the strata for these variables is relatively balanced. By looking at prediction models stratified by season, we can investigate whether seasonal weather changes or tempurature averages could play a role in NOx concentrations, and by looking at days of the week, we can see if more short-term activities have an impact of NOx concentrations. 
 
 # Adding Covariates from MErcer et al Common Model
   The Mercer et al 2011 paper ha the following covariates determined in its "common model" with which they assessed seasonal prediction models.
  Covariates:  D2A1 (distance to A1 road), A1_50m (length of A1 road in 50 m buffer), A23_400m (length of A2 or A3 roads within 400 m buffer), Pop_5k (total population within 5,000 m buffer), D2C (Distance to the coast in meters), Int_3k (intense land use within 3,000 m), D2Comm (distance to commercial land).
 
 ```{r covariates}
-# I want to confirm that these are the right covariates, the names are different than Mercer et al 2011
 
 common_model_cov <- ca_covariates %>%
   dplyr::select("native_id", "m_to_a1", "m_to_coast", "m_to_comm","pop_s05000", "ll_a1_s00050", "ll_a2_s00400", "ll_a3_s00400", "lu_industcomm_p05000", "County", "geometry")
@@ -803,15 +792,12 @@ ggplot(st_balanced_MSE_long, aes(x = method, y = value, color = method)) +
 
 ```
 
-
-
-
 #------------Season-Specific Prediction Models----------------------------------
 
 **Seasonal Stratification of NOx for season-specific model generation**
 
 ``` {r seasonal strat}
-
+#----------create season-specific strata---------------
 summer <- nox_only[nox_only$season == "Summer",]
 
 fall <- nox_only[nox_only$season == "Fall",]
@@ -930,13 +916,6 @@ for (i in 1:n_reps) {
 ggplot(st_spring, aes(x = native_id, y = log_avg)) +
   geom_boxplot()+
   ggtitle("Figure X:Spring Short Term Sensor Log-transformed Annual Averages \n30 sets of 28 samples per sensor")
-
-# Checking Abbie's Understanding:
-# this chunk randomly grabs 28 samples from the season's data, from each of the sensors. 
-# it computes a seasonal average based on only these 28 samples for all 69 sensors. 
-# this is repeated 30 times, so there are 30 seasonal averages based on thirty different 
-# sets of samples for each of the 69 sensors.
-# katie please check if I interpreted this right!
 
 
 # this should be the same length as the st_balanced dataframe
@@ -1996,137 +1975,237 @@ kable(rbind(campaigns, RMSE, R2),
 
 ```
 
+# Sensitivity Analysis: Restricting data to LA county 
 
+``` {r LA strat}
+#----------create LA-specific dataset---------------
+
+la <- nox_only[nox_only$County == "Los Angeles",]
+
+head(la)
+
+```
+
+# creating long term LA data set
+```{r long term gold standard la dataset}
+
+#Gold Standard Data
+long_term_gold_la <- annual_avg(la)
+
+
+
+```
+
+#creating short term LA data set
+```{r short term LA dataset}
+#----------generate short-term LA dataset---------------
+
+#random_sample() (data, size, seed)
+# Initialize the short-term balanced data frame
+st_la <- data.frame()
+
+n_reps <- 30  # number of random df simulations to run
+
+for (i in 1:n_reps) {
+  seed <- i * 4  # generating a different seed for each simulation
+  sampled_data <- random_sample(la, 28, seed)
+  la_avg_data <- seasonal_avg(sampled_data)
   
-
-
-
-# SENSITIVITY ANALYSIS: DAY OF THE WEEK 
-
-```{r full model sensitivity analysis}
-
-#creating a formula to check that the simpler version of weekday vs. weekend (rather than day of the week) is appropriate in our model: 
-
-Full2 <-as.formula(log_conc~day_time + dow + season)
-
-```
-
-```{r linear regression model for dow sensitivity analysis}
-#creating linear regression model for model with day of the week rather than weekend vs. weekday
-
-full_temporal2 <- lm(Full2, data = cal_nox_clean)
+  # Add seed and rep_number columns
+  la_avg_data$seed <- seed
+  la_avg_data$rep_number <- i
+  
+  # Append to st summer df
+  st_la <- rbind(st_la, la_avg_data)
+}
+ggplot(st_la, aes(x = native_id, y = log_avg)) +
+  geom_boxplot()+
+  ggtitle("Figure X:Los Angeles County Short Term Sensor Log-transformed Annual Averages \n30 sets of 28 samples per sensor")
 
 ```
 
-```{r comparison of dow vs. weekend or weekday models}
+#quick summary of long-term and short-term LA datasets
+```{r summarize LA short term dataset}
 
-#model with weekday2 covariate: 
-summary(full_temporal)
+#summary stats for st_la
+st_la_sum <- st_la %>% summarise(min = min(seasonal_avg), 
+                                            Q25 = quantile(seasonal_avg, probs = 0.25), 
+                                            Q50 = quantile(seasonal_avg, probs = 0.5),
+                                            Q75 = quantile(seasonal_avg, probs = 0.75),
+                                            max = max(seasonal_avg),
+                                            SD = sd(seasonal_avg)
+                                            )
 
-
-#model with dow covariate: 
-summary(full_temporal2)
-
-#these appear reasonably comparable, though notably (and predictably) the day of the week model is more complex than the weekend/weekday model
-
-#calculate AIC for both models
-
-AIC(full_temporal)
-
-AIC(full_temporal2)
-
-
-#AIC looks to be considerably lower for the full DOW model than for the simpler model. Let's check BIC: 
-
-BIC(full_temporal)
-
-BIC(full_temporal2)
-
-#BIC also looks better for the full DOW model. 
+#summary stats for lt_gold_sum_la
+lt_gold_sum_la <- long_term_gold_la %>% summarise(min = min(annual_avg), 
+                                            Q25 = quantile(annual_avg, probs = 0.25), 
+                                            Q50 = quantile(annual_avg, probs = 0.5),
+                                            Q75 = quantile(annual_avg, probs = 0.75),
+                                            max = max(annual_avg),
+                                            SD = sd(annual_avg)
+                                            )
 
 
-#let's check the deviance for both models:
-deviance(full_temporal)
+#combined table short and long term LA (balanced datasets)
 
-deviance(full_temporal2)
-
-#deviance also looks better for full DOW model. 
-
-
-#NOTE: could make a table with all these values (plus rmse and r2) comparing the model results. will need to decide how to balance complexity and performance. 
-```
-
-```{r repeat cross-validation for sensitivity analysis}
- 
-```
-```{r anova for sensitivity analysis}
-
-#-----VCA implementation-----
-
-# different ways to estimate variance components
-fit_MOM <- anovaVCA(Full2, Data = as.data.frame(cal_nox_clean) )
-kable(fit_MOM$aov.tab,
-      caption = "Table of MOM ANOVA",
-      digits = 2) %>%
+names_la <- c("short-term balanced", "long-term balanced")
+kable(cbind(names_la , rbind(st_la_sum, lt_gold_sum_la)), digits = 2,
+      caption = " Short- and Long-Term Balanced Sampling Campaigns - NOx Summaries (Los Angeles) ") %>%
   kable_styling()
 
+```
+```{r la.convariates}
+#--------------------------Common Model on LA datasets------------------#
+
+#adding the covariates to do some predictions
+st_la<-  left_join(st_la,common_model_cov, by = "native_id")
+
+long_term_gold_la <- left_join(long_term_gold_la,common_model_cov, by = "native_id")
 
 ```
 
-``` {r sensitivity analysis 2: cross-validation by county clusters}
+#running a regression model using common model covariates and LA data sets
+```{r}
+
+# in-sample predictions and fit summary
+summary(lm_st_la <- lm(frml, data = st_la))
+
+```
+```{r cv la}
+#-----generate cross validation group for all LA-specific analyses-----
+
+# set the seed to make reproducible
+set.seed(123)
+
+# create vector of CV groups
+  # first generate a vector with values 1:10 equal to the number of dataset rows
+  # then randomize (with argument replace = FALSE)
+CV_grp_la <- rep(1:10, length.out = nrow(long_term_gold_la)) %>% 
+  sample(replace = FALSE)
 
 
-# create vector of CV groups by county
-cal_nox_clean <- cal_nox_clean %>%
-  group_by(County) %>%
-  mutate(CV_grp_co = cur_group_id()) %>%
-  ungroup()
+# now append it to the cal_nox_clean data frame
+long_term_gold_la <- mutate(long_term_gold_la, CV_grp_la = CV_grp_la)
+
+#doing gold cv within LA dataset for long term gold standard model
+gold_CV_la <- do_CV(long_term_gold_la, id = "native_id", group = "CV_grp_la", formula = frml)
+
+```
 
 
+```{r la short-term balanced versus gold standard}
+#------------LAshort-term balanced versus gold standard-------------
 
-# create a numeric variable for CV predictions (using -999 as a placeholder)
-cv_pred1 <- cal_nox_clean %>% mutate(preds = -999)
+#need to group the st_la data by "campaign" before doing regression
 
-num_counties <- length(unique(cal_nox_clean$CV_grp_co))
+#apply the save CV groups as used in the gold standard model
+st_la <- st_la %>% group_by(rep_number) %>% mutate(CV_grp_la = CV_grp_la) %>% ungroup()
 
-print(num_counties)
+#in sample-predictions
+fitted_models = st_la %>% group_by(rep_number) %>% do(model = lm(frml, data = .))
 
-# loop over the 10 clusters
-for (i in 1:num_counties){
+#cross-validated predictions treating each sample "campaign" separately
+st_la_CV <- st_la %>% group_by(rep_number) %>% do(model = do_CV(data = ., id = "native_id", group = "CV_grp_la", formula = frml))
+#produces a df for each result
 
-    # define the current cluster variable as a logical vector
-    is_cluster <- cv_pred1$CV_grp_co == i
+#next step is to restructure the result back into a single long_df
 
-    # fit the "common" model to the training set by omitting cluster i
-    CV_lm <- lm(Full, data = cv_pred1, subset = !is_cluster)
+st_la_CV <- st_la_CV %>% rename(model_run = rep_number)
 
-    # generate predictions using CV_lm
-    preds1 <- predict(CV_lm, cal_nox_clean)
+st_la_CV <- st_la_CV %>%
+  unnest(cols = c(model))
 
-    # add results to cv_pred dataframe
-    cv_pred1$preds[is_cluster] <- preds1[is_cluster]
+#---compare st_la with gold la--------
+
+#appending the predictions from the balanced short term campaign to the st_la_CV df for comparison
+gold_preds_la <- gold_CV_la %>%
+  dplyr::select("native_id", "cvpreds") %>% rename(gold_preds_la = cvpreds)  
+st_la_CV <- left_join(st_la_CV, gold_preds_la, by = "native_id" ) 
+
+
+#calculating the RMSE and R2 two ways
+  #a) comparing the campaign predictions to the observations from the gold standard 
+  #b) comparing the predictions from each campaign to the observations from that campaign
+
+#need to append the observations from the balanced short term campaign to do method a
+
+gold_obs_la <- gold_CV_la %>%
+  dplyr::select("native_id", "log_avg") %>% rename(gold_obs_la = log_avg)
+st_summer_CV <- left_join(st_la_CV, gold_obs_la, by = "native_id" )
+
+# Initialize empty lists to store the results for both methods
+results_a <- list()
+results_b <- list()
+
+# Loop through each unique model_run
+for (run in unique(st_la_CV$model_run)) {
+  # Filter the data for the current model_run
+  data_subset <- st_la_CV %>% filter(model_run == run)
+  
+  # Calculate the MSE for method A
+  mse_result_a <- get_MSE(data_subset$gold_obs_la, data_subset$cvpreds)
+  results_a[[run]] <- mse_result_a
+  
+  # Calculate the MSE for method B
+  mse_result_b <- get_MSE(data_subset$log_avg, data_subset$cvpreds)
+  results_b[[run]] <- mse_result_b
 }
 
-# now calculate the MSE, RMSE, MSE-based R2
+# Convert the lists to a data frame with separate columns for each method
+st_la_MSE <- data.frame(
+  model_run = unique(st_la_CV$model_run),
+  RMSE_a = sapply(results_a, `[`, 1),
+  R2_a = sapply(results_a, `[`, 2),
+  RMSE_b = sapply(results_b, `[`, 1),
+  R2_b = sapply(results_b, `[`, 2)
+)
 
-# mean of observations
-log_conc_avg <- mean(cv_pred1$log_conc)
+#pivot longer for plotting
+st_la_MSE_long <- st_la_MSE %>%
+  pivot_longer(
+    cols = c(RMSE_a, R2_a, RMSE_b, R2_b),
+    names_to = c("metric", "method"),
+    names_sep = "_",
+    values_to = "value"
+  ) 
 
-# MSE of predictions
-MSE_pred <- mean((cv_pred1$log_conc - cv_pred1$preds)^2)
-
-# MSE of observations (for R2 denominator)
-MSE_obs <- mean((cv_pred1$log_conc - log_conc_avg)^2)
-
-# print the results not rounded
-kable(rbind(paste("RMSE:  ", round(sqrt(MSE_pred),3)),
-paste("MSE-based R2:  ", round(max(1 - MSE_pred/MSE_obs, 0),3))),
-  caption = "10-fold CV with random groups") %>%
-  kable_styling()
+#Plotting (replicate figure 1 in blanco paper)
+# get range for plot
+r <- st_la_CV %>% dplyr::select(gold_preds_la, cvpreds) %>% range()
 
 
+ggplot(data = st_la_CV, aes(x = gold_preds_la, y = cvpreds, color = as.factor(model_run))) +
+    geom_point(shape = "o", alpha = 0.7) +
+    lims(x= r, y = r) +
+    coord_fixed() +
+    geom_smooth(method = 'lm', se = F, alpha = 0.5) +
+    geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
+    labs(title = "Long vs. short term balanced Cross-validated Predictions in LA", 
+         subtitle = "Balanced Campaigns",
+         x = "short term balanced predicted ln(NOx) (ln(ppb))",
+         y = "Long term Campaign Predicted ln(NOx) (ln(ppb))",
+         caption = "1:1 line is dashed") +
+    theme_bw()
+
+#replicate blanco figure 3
+ggplot(st_la_MSE_long, aes(x = method, y = value, color = method)) +
+  geom_boxplot() +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  facet_wrap(~metric) +
+  labs(title = "RMSE and MSE_R2 Comparison",
+       caption = "Method A = Short-term Balanced Predictions Compared to Gold Standard Obs\n
+       Method B = Short-Term Campaign Predictions Compared to Short-term Campaign Observations\n
+       Square points shows the long-term campaigns performance") +
+  theme_bw()
+
+#NOTE: can someone please confirm that I got the captions right here? -ck
 
 ```
+
+
+
+
 
 
 # Discussion and Conclusion
@@ -2135,11 +2214,36 @@ paste("MSE-based R2:  ", round(max(1 - MSE_pred/MSE_obs, 0),3))),
 
 
 
+
+
+
+
+*Limitations*
+
+
+[popping the below from the code to the limitations section for later reference when we write the discussion]
+The data provided the date and week of the year that each sample was taken. To look at seasonal changes in the data, we need to separate the weeks of the year into four seasons. We did this by breaking up the roughly 52 weeks of the year into 4, ~13-week segments. 
+
+    Weeks 13 - 25 of the year are coded as spring
+    weeks 26 - 38 are coded as summer
+    weeks 39 - 50 are coded as autumn
+    and week 51,52 and 1-12 are coded as winter.
+    
+  ** Limitations of this approach. This is based only on diving the year into roughly equal portions based on numerical week. There is no distinct scientific or meteorological significance to the cutoff. Could look at other ways of defining season for more accuracy --- could use specific calendrical definitions, or could look at cut points based on temp or precip. Could also use social cutoffs (e.g. summer is when school is out), as any seasonal differences could be a combination of both social and meteorological phenomena.
+  
+  
+  
+
+
 # Works Cited 
 
-United States Census. 2023. QuickFacts Los Angeles County, California. https://www.census.gov/quickfacts/fact/table/losangelescountycalifornia,losangelescitycalifornia,CA/PST045223 Accessed 11/30/2024
+Blanco, M. N., Gassett, A., Gould, T., Doubleday, A., Slager, D. L., Austin, E., ... & Sheppard, L. (2022). Characterization of annual average traffic-related air pollution concentrations in the Greater Seattle Area from a year-long mobile monitoring campaign. Environmental science & technology, 56(16), 11460-11472.
 
+Colorado Department of Public Health & Environment. 2024. Air toxics: monitoring. https://cdphe.colorado.gov/air-toxics/monitoring#:~:text=Mobile%20monitoring%20can%20capture%20%E2%80%9Cspatial,wind%20compared%20to%20stationary%20monitoring Accessed 12/3/2024.
 
+Mercer, L. D., Szpiro, A. A., Sheppard, L., Lindström, J., Adar, S. D., Allen, R. W., ... & Kaufman, J. D. (2011). Comparing universal kriging and land-use regression for predicting concentrations of gaseous oxides of nitrogen (NOx) for the Multi-Ethnic Study of Atherosclerosis and Air Pollution (MESA Air). Atmospheric Environment, 45(26), 4412-4420.
+
+United States Census. 2023. QuickFacts Los Angeles County, California. https://www.census.gov/quickfacts/fact/table/losangelescountycalifornia,losangelescitycalifornia,CA/PST045223 Accessed 11/30/2024.
 
 
 
