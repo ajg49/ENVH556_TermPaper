@@ -430,10 +430,10 @@ st_balanced_sum #this would not be expected to match Blanco because we used diff
 #summarizing the data from the random samples
 names <- c("Long-term", "short-term")
 kable(cbind(names , rbind(lt_gold_sum, st_balanced_sum)), digits = 2,
-      caption = "Balanced, Long-term & Short-term Sampling Campaign Summaries")
+      caption = "Table 1.0: Balanced, Long-term & Short-term Sampling Campaign Summaries") %>% kable_styling()
 
 ```
-
+  Table 1.0 has a short summary of the data sets for our Gold Standard and short-term balanced models. **maybe this gets moved into the appendix?**
 
 
 #writing a function for calculating summary statistics of an annual average df. 
@@ -461,17 +461,21 @@ sum_stats(st_balanced)
 ```{r gold.standard.variability}
 #graphing the distribution of annual averages
 
-ggplot(st_balanced, aes(x = native_id, y = annual_avg)) +
-  geom_point() +
-  ggtitle("Figure 1: Gold Standard Short Term Sensor Annual Averages \n30 sets of 28 samples per sensor")
-
-ggplot(st_balanced, aes(x = native_id, y = annual_avg)) +
-  geom_boxplot()+
-  ggtitle("Figure 1: Gold Standard Short Term Sensor Annual Averages \n30 sets of 28 samples per sensor")
 
 ggplot(st_balanced, aes(x = native_id, y = log_avg)) +
   geom_boxplot()+
-  ggtitle("Figure 1: Gold Standard Short Term Sensor Log-transformed Annual Averages \n30 sets of 28 samples per sensor")
+  ggtitle("Figure 1:Short Term Balanced Sensor Log-transformed Annual Averages \n30 sets of 28 samples per sensor") +
+  ylab("ln(NOx) ln(ppb)")
+
+ggplot(long_term_gold, aes(x = native_id, y = log_avg)) +
+  geom_point()+
+  ggtitle("Figure 2: Gold Standard Sensor Log-transformed Annual Averages \n1 sample per sensor") +
+  ylab("ln(NOx) ln(ppb)")
+
+ggplot(nox_only, aes(x = native_id, y = log(sample_measurement))) +
+  geom_boxplot()+
+  ggtitle("Figure 3: Raw Data by sensor ID \nLog transformed") +
+  ylab("ln(NOx) ln(ppb)")
 
 #Kinda crazy how much variability there is using unrestricted random samples
 #We can choose which type of plot we like best - AG
@@ -487,7 +491,11 @@ with(long_term_gold, hist(log_avg, breaks = 20, col = "seagreen", xlab = "log(NO
 
 ```
 
-Figure 1.0 illustrates the variabilty in the short-term balanced data set created by randomly sampling across all eligible sensors in california. 
+Figure 1.0 illustrates the variability in the short-term balanced data set created by randomly sampling across all eligible sensors in california. We see variability within each sensor and across sensors. 
+
+Figure 2.0 shows the annual averages for each sensor in the Gold Standard data set. 
+
+Figure 3 shows the variation in our data without any aggregation (but it is log transformed). There is more variability within each sensor's data than between sensors. 
 
 
 #Break up the histograms by season, look at NOx distribution by seasons
@@ -517,7 +525,7 @@ ggplot( aes(log(sample_measurement))) +
   geom_histogram(aes(y = ..density..), bins = 40, color = "darkgreen", fill = "darkgreen", alpha = 0.4) +
   geom_density(color = "green") +
   facet_wrap(~season, scales = "free") +
-  labs(title = "Distribution of log(NOx) by Season",
+  labs(title = "Distribution of ln(NOx) by Season",
        x = "Concentration on log scale",
        y = "density"
        )
@@ -531,7 +539,7 @@ ggplot( aes(log(sample_measurement))) +
   
 
 # Adding Covariates from MErcer et al Common Model
-  The Mercer et al 2011 paper ha the following covariates determined in its "common model" with which they assessed seasonal prediction models.
+  The Mercer et al 2011 paper has the following covariates determined in its "common model" with which they assessed seasonal prediction models.
  Covariates:  D2A1 (distance to A1 road), A1_50m (length of A1 road in 50 m buffer), A23_400m (length of A2 or A3 roads within 400 m buffer), Pop_5k (total population within 5,000 m buffer), D2C (Distance to the coast in meters), Int_3k (intense land use within 3,000 m), D2Comm (distance to commercial land).
 
 ```{r covariates}
@@ -638,6 +646,8 @@ do_CV <- function(data, id = "id", group = "group", formula) {
 }
 
 ```
+
+
 #Doing CV on the gold_standard model
 ```{r}
 gold_CV <- do_CV(long_term_gold, id = "native_id", group = "CV_grp", formula = frml)
@@ -661,7 +671,7 @@ ggplot(data = gold_CV, aes(log_avg, cvpreds)) +
     coord_fixed() +
     geom_smooth(method = 'lm', se = F, aes(color = "red")) +
     geom_abline(aes(slope = 1, intercept = 0, color = "blue")) +
-    labs(title = "Model predictions vs. observed ln(NOx)\n Cross-validated ", 
+    labs(title = "Figure 4.0: Model predictions vs. observed ln(NOx)\n Cross-validated ", 
          subtitle = "Gold Standard Data",
          x = "Observed ln(NOx) (ln(ppb))",
          y = "Predicted ln(NOx) (ln(ppb))",
@@ -674,6 +684,8 @@ ggplot(data = gold_CV, aes(log_avg, cvpreds)) +
 
 #model we have selected doesn't give the greatest predictions, but that might be fine. We changing the covariates in the model above won't necessitate changing any of the other code. 
 ```
+Figure 4.0 shows the results from our cross validation of our gold standard model and data set. Using annual averages to predict across all 69 sensors has pretty poor prediction performance.
+
 #Repeating above to compare predictions from the st_balanced to predictions from the gold standard
 
 ```{r st_balanced}
@@ -788,6 +800,26 @@ ggplot(st_balanced_MSE_long, aes(x = method, y = value, color = method)) +
 #Need to also add the in-sample R2, which I can do later.
 
 #probably want to turn some of the above stuff into functions, because it is going to be a lot of cut and paste to do this for different data sets multiple times. 
+
+# get range for plot
+r <- st_balanced_CV %>% dplyr::select(log_avg, cvpreds) %>% range()
+
+
+ggplot(data = st_balanced_CV, aes(log_avg, cvpreds)) +
+    geom_point(shape = "o", alpha = 0.8) +
+    lims(x= r, y = r) +
+    coord_fixed() +
+    geom_smooth(method = 'lm', se = F, aes(color = "red")) +
+    geom_abline(aes(slope = 1, intercept = 0, color = "blue")) +
+    labs(title = "Figure 4.0: Model predictions vs. observed ln(NOx)\n Cross-validated ", 
+         subtitle = "Short-Term Balanced Data",
+         x = "Observed ln(NOx) (ln(ppb))",
+         y = "Predicted ln(NOx) (ln(ppb))",
+         caption = "RMSE = 0.545 MSE-based R2 = 0.207") + 
+    scale_colour_manual(name='',
+                      labels = c("1:1 Line", "Best-Fit Line"), 
+                      values=c("blue", "red")) +
+    theme_bw()
 
 
 ```
@@ -971,10 +1003,13 @@ st_spring_sum <- st_spring %>% summarise(min = min(seasonal_avg),
 
 names2 <- c("summer", "fall", "winter", "spring", "balanced")
 kable(cbind(names2 , rbind(st_summer_sum, st_fall_sum, st_winter_sum, st_spring_sum, st_balanced_sum)), digits = 2,
-      caption = " Short-term Sampling Campaign NOx Summaries") %>%
+      caption = " Table 2.0: Short-term Sampling Campaign NOx Summaries") %>%
   kable_styling()
 
 ```
+Table 2.0 summarizes the spread and range of the data randomly sampled for each season data set. The Fall and Winter data sets have nearly double the variation as Spring and Summer data sets. As we would expect, the balanced data set has vatriability in the middle between these four seasonal data sets. 
+
+The figures above show that across all four seasons, the within-sensor variability looks similar, except for spring. The spring data set has less variability within sensor, not just across sensors. 
 
 ```{r season.convariates}
 #--------------------------Common Model on Seasonal Data sets------------------#
@@ -1089,9 +1124,9 @@ ggplot(data = st_summer_CV, aes(x = gold_preds, y = cvpreds, color = as.factor(m
     coord_fixed() +
     geom_smooth(method = 'lm', se = F, alpha = 0.5) +
     geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
-    labs(title = "Summer Campaign vs. short term balanced Cross-validated Predictions", 
+    labs(title = "Summer Campaign vs. Gold Standard Cross-validated Predictions", 
          subtitle = "Balanced Campaigns",
-         x = "short term balanced predicted ln(NOx) (ln(ppb))",
+         x = "Gold Standard predicted ln(NOx) (ln(ppb))",
          y = "Summer Campaign Predicted ln(NOx) (ln(ppb))",
          caption = "1:1 line is dashed") +
     theme_bw()
@@ -1117,6 +1152,8 @@ ggplot(st_summer_MSE_long, aes(x = method, y = value, color = method)) +
 
 
 ```
+Comparing the summer short term sampling campaign to the Gold Standard sampling campaign, we see that the summer model under-predicts NOx concentrations.  
+
 
 
 ```{r fall vs gold}
@@ -1208,7 +1245,7 @@ ggplot(data = st_fall_CV, aes(x = gold_preds, y = cvpreds, color = as.factor(mod
     geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
     labs(title = "Fall Campaign vs. Gold Standard Cross-validated Predictions", 
          subtitle = "Balanced Campaigns",
-         x = "short term balanced predicted ln(NOx) (ln(ppb))",
+         x = "Gold Standard predicted ln(NOx) (ln(ppb))",
          y = "Fall Campaign Predicted ln(NOx) (ln(ppb))",
          caption = "1:1 line is dashed") +
     theme_bw()
@@ -1230,7 +1267,7 @@ ggplot(st_fall_MSE_long, aes(x = method, y = value, color = method)) +
   theme_bw()
 
 ```
-
+Comparing the fall short term sampling campaign to the Gold Standard sampling campaign, we see that the fall model slightly over-predicts NOx concentrations.  However, this plot shows fairly close predictions to the Gold Standard model. 
 
 ```{r winter v gold}
 #------------seasonal comparison with st balanced and gold standard-------------
@@ -1321,7 +1358,7 @@ ggplot(data = st_winter_CV, aes(x = gold_preds, y = cvpreds, color = as.factor(m
     geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
     labs(title = "winter Campaign vs. Gold standard Cross-validated Predictions", 
          subtitle = "Balanced Campaigns",
-         x = "short term balanced predicted ln(NOx) (ln(ppb))",
+         x = "Gold Standard predicted ln(NOx) (ln(ppb))",
          y = "winter Campaign Predicted ln(NOx) (ln(ppb))",
          caption = "1:1 line is dashed") +
     theme_bw()
@@ -1345,6 +1382,8 @@ ggplot(st_winter_MSE_long, aes(x = method, y = value, color = method)) +
 
 
 ```
+Comparing the winter short term sampling campaign to the Gold Standard sampling campaign, we see that the winter model slightly over-predicts NOx concentrations.
+
 
 ```{r spring v gold}
 #------------seasonal comparison with st balanced and gold standard-------------
@@ -1384,7 +1423,7 @@ st_spring_CV <- left_join(st_spring_CV, gold_preds, by = "native_id" ) #to have 
 
 gold_obs <- gold_CV %>%
   dplyr::select("native_id", "log_avg") %>% rename(gold_obs = log_avg)
-st_spring_CV <- left_join(st_spring_CV, gold_obs, by = "native_id" ) #to have unique identifiers we need both native id and model run. AG
+st_spring_CV <- left_join(st_spring_CV, gold_obs, by = "native_id" )
 
 # Initialize empty lists to store the results for both methods
 results_a <- list()
@@ -1457,6 +1496,7 @@ ggplot(st_spring_MSE_long, aes(x = method, y = value, color = method)) +
   theme_bw()
 
 ```
+Comparing the spring short term sampling campaign to the Gold Standard sampling campaign, we see that the spring model under-predicts NOx concentrations. The spring model's predictions appear to be the farthest form the gold-standard predictions.
 
 
 
@@ -1689,6 +1729,7 @@ ggplot(st_fall_MSE_long, aes(x = method, y = value, color = method)) +
   theme_bw()
 
 ```
+The fall and balanced short term sampling models seem to have decent agreement in their NOx predictions. 
 
 
 ```{r winter v balanced}
@@ -1804,6 +1845,8 @@ ggplot(st_winter_MSE_long, aes(x = method, y = value, color = method)) +
 
 
 ```
+Winter and balanced predictions seem to have pretty decent agreemeent.
+
 
 ```{r spring v balanced}
 #------------seasonal comparison with st balanced and gold standard-------------
@@ -1971,9 +2014,15 @@ R2 <- c(mean(st_summer_MSE$R2_b), mean(st_fall_MSE$R2_b), mean(st_winter_MSE$R2_
 
 kable(rbind(campaigns, RMSE, R2),
       digits = 3,
-      caption = "Performance Statistics of Seasonal and Balanced Sampling Campaigns") %>% kable_styling()
+      caption = "Table 3.0: Performance Statistics of Seasonal and Balanced Sampling Campaigns") %>% kable_styling()
 
 ```
+Based on the R squared and RMSE values in Table 3.0 we may conclude that the winter short term model performed better than the short term balanced model. 
+
+
+
+
+
 
 #-------------------Sensitivity Analysis: Restricting data to LA county --------------------------------------
 
@@ -1995,6 +2044,9 @@ long_term_gold_la <- annual_avg(la)
 
 
 ```
+
+
+
 
 #creating short term LA data set
 ```{r short term LA dataset}
@@ -2071,29 +2123,50 @@ long_term_gold_la <- left_join(long_term_gold_la,common_model_cov, by = "native_
 summary(lm_st_la <- lm(frml, data = st_la))
 
 ```
+#Create cross-validation groups that can be used for all the data
+# trying leave-one-out to avoid too small of groups
 
-#problems here wih cross validation groups! - AG
-# we can't do cross validatin on only 12 data poitns for the long term "gold standard" 
-```{r cv la}
-#-----generate cross validation group for all LA-specific analyses-----
+```{r LOO cross validation}
 
-# set the seed to make reproducible
-set.seed(123)
-
-# create vector of CV groups
-  # first generate a vector with values 1:10 equal to the number of dataset rows
-  # then randomize (with argument replace = FALSE)
-CV_grp_la <- rep(1:10, length.out = nrow(long_term_gold_la)) %>% 
+CV_grp <- rep(1:12, length.out = nrow(long_term_gold_la)) %>% 
   sample(replace = FALSE)
-#i think the 10-fold cross validatin needs to be a lower number because we only have 12 sensors now...
 
 # now append it to the cal_nox_clean data frame
-long_term_gold_la <- mutate(long_term_gold_la, CV_grp_la = CV_grp_la)
+long_term_gold_la <- mutate(long_term_gold_la, CV_grp = CV_grp)
+
 
 #doing gold cv within LA dataset for long term gold standard model
-gold_CV_la <- do_CV(long_term_gold_la, id = "native_id", group = "CV_grp_la", formula = frml)
+gold_CV_la <- do_CV(long_term_gold_la, id = "native_id", group = "CV_grp", formula = frml)
+
 
 ```
+
+
+```{r LOO.CV.function}
+#-----define CV function-----
+
+
+
+do_CV <- function(data, id = "id", group = "group", formula) {
+ 
+  lapply(unique(data[[group]]), function(this_group){
+    
+    # fit the "common" model to the training set (without this group)
+    CV_lm <- lm(formula, data = data[data[[group]] != this_group,])
+    
+    # generate predictions for this group using training model
+    data[data[[group]] == this_group,] %>%
+      mutate(cvpreds = predict(CV_lm, newdata = .) %>% unname())
+    
+    # recombine data from all clusters and sort by ID column
+    # note use of ".data[[ ]]" to return the value of variable id
+  }) %>% bind_rows() %>% arrange(.data[[id]])
+  
+  # return the dataset (the last-evaluated object is always returned by default)
+}
+
+```
+
 
 
 ```{r la short-term balanced versus gold standard}
