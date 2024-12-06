@@ -532,8 +532,149 @@ ggplot( aes(log(sample_measurement))) +
 
 ```
 
+```{r covariates}
 
-# Seasonal Characterization of NOx concentrations:
+common_model_cov <- ca_covariates %>%
+  dplyr::select("native_id", "m_to_a1", "m_to_coast", "m_to_comm","pop_s05000", "ll_a1_s00050", "ll_a2_s00400", "ll_a3_s00400", "lu_industcomm_p05000", "County", "geometry")
+
+nox_only <- left_join(nox_only,common_model_cov, by = "native_id" )
+
+#adding the covariates to the gold standard data to do some predictions           # commenting out so that we can try fowrard selection
+#long_term_gold <- left_join(long_term_gold,common_model_cov, by = "native_id" )
+#st_balanced <- left_join(st_balanced,common_model_cov, by = "native_id" )
+
+
+
+```
+
+#Specify the common model
+```{r}
+# build regression formula
+
+#covars_common <- c("m_to_a1", "m_to_coast", "m_to_comm","pop_s05000", "ll_a1_s00050", "ll_a2_s00400", "ll_a3_s00400", "lu_industcomm_p05000")
+#frml <- as.formula(paste("log_avg ~", paste(covars_common, collapse = "+")) )
+
+```
+
+#Running the prediction model on the lt_gold 
+```{r}
+
+# in-sample predictions and fit summary
+#summary(lm_gold_standard <- lm(frml, data = long_term_gold))
+
+
+```
+
+# forward selection
+
+```{r forward selection - gold standard}
+#KW
+#repeating the above selection and  cross-validation using the random groups for week_day (still using No2, but can switch out for pM2.5 later)
+
+#-----forward selection using interaction-----#
+long_term_gold <- left_join(long_term_gold,ca_covariates, by = "native_id" )
+
+
+null <- lm(log_avg ~ 1, data = long_term_gold) #I don't actually know if you can define a null model like this for interaction terms (got this warning on the results: Warning: variable 'day_type' is absent, its contrast will be ignored)
+
+
+covars_all <- str_subset(names(long_term_gold),"pop_|int_|open_|ll_|m_to_")
+
+# B: now turn this into a formula for the full model in stepwise regression:
+full <- as.formula(paste("log_avg ~ ", paste(covars_all, collapse= "+")))
+
+# Using k=2 is comparable to standard AIC.
+forwardreg_day <- step(null, 
+                        scope = list(lower = null, upper = full), 
+                        trace = 0, 
+                        direction = "forward", 
+                        k = 2)
+
+covars_forward2 <- names(forwardreg_day$coefficients) %>%
+  setdiff('(Intercept)')
+
+covars_forward2 #different list than above when just run for summer
+
+#forward selection is what we used the the lab, but she also said it wasn't how you would normally really do it. Do we want to try backwards selection or something else?
+
+```
+
+```{r cv in forward selection, warning = FALSE, message = FALSE}
+
+#-----model order and CV-----
+
+# apply along length of the vector of names from forward selection
+res2 <- lapply(seq_along(covars_forward2), function(i){
+    
+    # define the formula, updated to add a term each time
+    fmla <- as.formula(
+        paste("log_avg ~ + ", paste(covars_forward2[seq_len(i)], collapse = "+"))) 
+    
+    # in-sample model and estimates
+    in_model <- lm(fmla, data = long_term_gold) 
+    
+    # out-of sample model and estimates
+    out_ests <- do_CV(data = nox_only, id = "location", group = "CV_grp", fmla)  #changed the id to location, because that is the unique identifier for WHERE the stop is, which is what I think we want to be able to predict. STOP ID, is unique to the actual time that they stoped at that location each time around. Maybe I'm confused here, but it seems like we want to predict by location?
+    out_results <- get_MSE(out_ests$ln_no2, out_ests$cvpreds)
+    
+    # compile results
+   tibble(n_pred = i,
+           covar = covars_forward2[i],
+           in_RMSE = sqrt(mean(in_model$residuals^2)),
+           in_R2 = summary(in_model)$r.squared,
+           out_RMSE = out_results[["RMSE"]],
+           out_R2 = out_results[["MSE_based_R2"]] 
+           )
+    
+    }) %>% 
+    bind_rows()
+
+head(res2)
+
+
+
+```
+
+```{r bias.plots.weekday kw}
+#-----bias-var combined plots-----
+
+
+#there are 23 terms in the model. 
+max(res2$out_RMSE[1:23])
+min(res2$out_RMSE[1:23])
+
+y_lim <- 0.8
+
+# create temporary dataframe for plot
+temp2 <- res2 %>% 
+  
+  # make long dataframe
+  pivot_longer(cols = c(ends_with("_RMSE"), ends_with("_R2")), 
+               names_to = "Source_Estimate", 
+               values_to = "value" ) %>%
+  
+  # separate the "Source" column for in and out of sample
+  separate(col = Source_Estimate, into = c("Source", "Estimate") ) %>% 
+
+  # set high RMSE values to NA, then filter out these values before plotting
+  mutate(value = ifelse(Estimate == "RMSE" & value > y_lim, NA, value)) %>%
+  filter(!is.na(value)) 
+
+
+combined_plot2 <- ggplot(data = temp2) +
+  geom_point(aes(x = n_pred, y = value, color = Source)) +
+  geom_line(aes(x = n_pred, y = value, color = Source)) +
+  xlab("Model Complexity (# of terms)") +
+  ylab("") +
+  labs(title = "Bias-Variance TradeOff For Randomly Cross-Validated CV Groups",
+       subtitle = "Type of Day Model") +
+  scale_x_continuous(breaks = c(seq(0, 63, 5))) +
+  facet_wrap(~ Estimate, scales = "free_y", ncol = 1, strip.position = "right") +
+  theme_bw() 
+
+#show plot
+combined_plot2
+```
 
 
   
@@ -542,36 +683,6 @@ ggplot( aes(log(sample_measurement))) +
   The Mercer et al 2011 paper has the following covariates determined in its "common model" with which they assessed seasonal prediction models.
  Covariates:  D2A1 (distance to A1 road), A1_50m (length of A1 road in 50 m buffer), A23_400m (length of A2 or A3 roads within 400 m buffer), Pop_5k (total population within 5,000 m buffer), D2C (Distance to the coast in meters), Int_3k (intense land use within 3,000 m), D2Comm (distance to commercial land).
 
-```{r covariates}
-
-common_model_cov <- ca_covariates %>%
-  dplyr::select("native_id", "m_to_a1", "m_to_coast", "m_to_comm","pop_s05000", "ll_a1_s00050", "ll_a2_s00400", "ll_a3_s00400", "lu_industcomm_p05000", "County", "geometry")
-
-nox_only <- left_join(nox_only,common_model_cov, by = "native_id" )
-
-#adding the covariates to the gold standard data to do some predictions
-long_term_gold <- left_join(long_term_gold,common_model_cov, by = "native_id" )
-st_balanced <- left_join(st_balanced,common_model_cov, by = "native_id" )
-
-
-
-```
-#Specify the common model
-```{r}
-# build regression formula
-
-covars_common <- c("m_to_a1", "m_to_coast", "m_to_comm","pop_s05000", "ll_a1_s00050", "ll_a2_s00400", "ll_a3_s00400", "lu_industcomm_p05000")
-frml <- as.formula(paste("log_avg ~", paste(covars_common, collapse = "+")) )
-
-```
-#Running the prediction model on the lt_gold 
-```{r}
-
-# in-sample predictions and fit summary
-summary(lm_gold_standard <- lm(frml, data = long_term_gold))
-
-
-```
 #Create cross-validation groups that can be used for all the data
 ```{r cv}
 #-----generate cross validation group for all analyses-----
