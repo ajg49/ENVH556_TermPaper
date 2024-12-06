@@ -942,7 +942,7 @@ ggplot(data = st_balanced_CV, aes(log_avg, cvpreds)) +
 
 **Seasonal Stratification of NOx for season-specific model generation**
 
-``` {r seasonal strat}
+``` {r seasonal strata}
 #----------create season-specific strata---------------
 
 summer <- nox_only[nox_only$season == "Summer",]
