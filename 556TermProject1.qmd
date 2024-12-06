@@ -531,13 +531,87 @@ ggplot( aes(log(sample_measurement))) +
        )
 
 ```
+#Create CV groups that can be used for all the data
+```{r cv}
+#-----generate cross validation group for all analyses-----
 
+# set the seed to make reproducible
+set.seed(123)
+
+# create vector of CV groups
+  # first generate a vector with values 1:10 equal to the number of dataset rows
+  # then randomize (with argument replace = FALSE)
+CV_grp <- rep(1:10, length.out = nrow(long_term_gold)) %>% 
+  sample(replace = FALSE)
+
+
+# now append it to the cal_nox_clean data frame
+long_term_gold <- mutate(long_term_gold, CV_grp = CV_grp)
+
+
+```
+
+#Model Prediction Functions
+```{r define get_MSE}
+#-----define get_MSE function-----
+
+# This is a function to get the MSE, RMSE, MSE-based R2
+get_MSE <- function(obs,pred) {
+    # obs is the outcome variable
+    # pred is the prediction from a model
+     
+    # mean of obs
+    obs_avg <- mean(obs)
+    
+    # MSE of obs (for R2 denominator)
+    MSE_obs <- mean((obs-obs_avg)^2)
+    
+    # MSE of predictions
+    MSE_pred <- mean((obs - pred)^2)
+    
+    # compile output
+    result <- c(RMSE = sqrt(MSE_pred),
+                MSE_based_R2 = max(1 - MSE_pred / MSE_obs, 0) 
+                )
+    
+    # explicit return (optional)
+    return(result)
+}
+
+```
+
+
+#Define the Cross Validation Function
+```{r define.CV.function}
+#-----define CV function-----
+
+do_CV <- function(data, id = "id", group = "group", formula) {
+ 
+  lapply(unique(data[[group]]), function(this_group){
+    
+    # fit the "common" model to the training set (without this group)
+    CV_lm <- lm(formula, data = data[data[[group]] != this_group,])
+    
+    # generate predictions for this group using training model
+    data[data[[group]] == this_group,] %>%
+      mutate(cvpreds = predict(CV_lm, newdata = .) %>% unname())
+    
+    # recombine data from all clusters and sort by ID column
+    # note use of ".data[[ ]]" to return the value of variable id
+  }) %>% bind_rows() %>% arrange(.data[[id]])
+  
+  # return the dataset (the last-evaluated object is always returned by default)
+}
+
+```
+
+#mercer common model covariates
 ```{r covariates}
 
 common_model_cov <- ca_covariates %>%
   dplyr::select("native_id", "m_to_a1", "m_to_coast", "m_to_comm","pop_s05000", "ll_a1_s00050", "ll_a2_s00400", "ll_a3_s00400", "lu_industcomm_p05000", "County", "geometry")
 
-nox_only <- left_join(nox_only,common_model_cov, by = "native_id" )
+#nox_only <- left_join(nox_only,common_model_cov, by = "native_id" )
 
 #adding the covariates to the gold standard data to do some predictions           # commenting out so that we can try fowrard selection
 #long_term_gold <- left_join(long_term_gold,common_model_cov, by = "native_id" )
@@ -547,35 +621,16 @@ nox_only <- left_join(nox_only,common_model_cov, by = "native_id" )
 
 ```
 
-#Specify the common model
-```{r}
-# build regression formula
 
-#covars_common <- c("m_to_a1", "m_to_coast", "m_to_comm","pop_s05000", "ll_a1_s00050", "ll_a2_s00400", "ll_a3_s00400", "lu_industcomm_p05000")
-#frml <- as.formula(paste("log_avg ~", paste(covars_common, collapse = "+")) )
-
-```
-
-#Running the prediction model on the lt_gold 
-```{r}
-
-# in-sample predictions and fit summary
-#summary(lm_gold_standard <- lm(frml, data = long_term_gold))
-
-
-```
-
-# forward selection
+# forward, stepwise selection with commo model covariates
 
 ```{r forward selection - gold standard}
-#KW
-#repeating the above selection and  cross-validation using the random groups for week_day (still using No2, but can switch out for pM2.5 later)
 
 #-----forward selection using interaction-----#
-long_term_gold <- left_join(long_term_gold,ca_covariates, by = "native_id" )
+long_term_gold <- left_join(long_term_gold,common_model_cov, by = "native_id" )
 
 
-null <- lm(log_avg ~ 1, data = long_term_gold) #I don't actually know if you can define a null model like this for interaction terms (got this warning on the results: Warning: variable 'day_type' is absent, its contrast will be ignored)
+null <- lm(log_avg ~ 1, data = long_term_gold)
 
 
 covars_all <- str_subset(names(long_term_gold),"pop_|int_|open_|ll_|m_to_")
@@ -595,10 +650,11 @@ covars_forward2 <- names(forwardreg_day$coefficients) %>%
 
 covars_forward2 #different list than above when just run for summer
 
-#forward selection is what we used the the lab, but she also said it wasn't how you would normally really do it. Do we want to try backwards selection or something else?
+
 
 ```
 
+#gold-standard dataset for model selection
 ```{r cv in forward selection, warning = FALSE, message = FALSE}
 
 #-----model order and CV-----
@@ -614,8 +670,8 @@ res2 <- lapply(seq_along(covars_forward2), function(i){
     in_model <- lm(fmla, data = long_term_gold) 
     
     # out-of sample model and estimates
-    out_ests <- do_CV(data = nox_only, id = "location", group = "CV_grp", fmla)  #changed the id to location, because that is the unique identifier for WHERE the stop is, which is what I think we want to be able to predict. STOP ID, is unique to the actual time that they stoped at that location each time around. Maybe I'm confused here, but it seems like we want to predict by location?
-    out_results <- get_MSE(out_ests$ln_no2, out_ests$cvpreds)
+    out_ests <- do_CV(data = long_term_gold, id = "native_id", group = "CV_grp", fmla)  #changed the id to location, because that is the unique identifier for WHERE the stop is, which is what I think we want to be able to predict. STOP ID, is unique to the actual time that they stoped at that location each time around. Maybe I'm confused here, but it seems like we want to predict by location?
+    out_results <- get_MSE(out_ests$log_avg, out_ests$cvpreds)
     
     # compile results
    tibble(n_pred = i,
@@ -667,7 +723,7 @@ combined_plot2 <- ggplot(data = temp2) +
   xlab("Model Complexity (# of terms)") +
   ylab("") +
   labs(title = "Bias-Variance TradeOff For Randomly Cross-Validated CV Groups",
-       subtitle = "Type of Day Model") +
+       subtitle = "Mercer Common Model Covariates") +
   scale_x_continuous(breaks = c(seq(0, 63, 5))) +
   facet_wrap(~ Estimate, scales = "free_y", ncol = 1, strip.position = "right") +
   theme_bw() 
@@ -677,86 +733,31 @@ combined_plot2
 ```
 
 
-  
-
 # Adding Covariates from MErcer et al Common Model
   The Mercer et al 2011 paper has the following covariates determined in its "common model" with which they assessed seasonal prediction models.
  Covariates:  D2A1 (distance to A1 road), A1_50m (length of A1 road in 50 m buffer), A23_400m (length of A2 or A3 roads within 400 m buffer), Pop_5k (total population within 5,000 m buffer), D2C (Distance to the coast in meters), Int_3k (intense land use within 3,000 m), D2Comm (distance to commercial land).
-
-#Create cross-validation groups that can be used for all the data
-```{r cv}
-#-----generate cross validation group for all analyses-----
-
-# set the seed to make reproducible
-set.seed(123)
-
-# create vector of CV groups
-  # first generate a vector with values 1:10 equal to the number of dataset rows
-  # then randomize (with argument replace = FALSE)
-CV_grp <- rep(1:10, length.out = nrow(long_term_gold)) %>% 
-  sample(replace = FALSE)
-
-
-# now append it to the cal_nox_clean data frame
-long_term_gold <- mutate(long_term_gold, CV_grp = CV_grp)
-
-
-```
-
-**Model Prediction Functions**
-
-```{r define get_MSE}
-#-----define get_MSE function-----
-
-# This is a function to get the MSE, RMSE, MSE-based R2
-get_MSE <- function(obs,pred) {
-    # obs is the outcome variable
-    # pred is the prediction from a model
-     
-    # mean of obs
-    obs_avg <- mean(obs)
-    
-    # MSE of obs (for R2 denominator)
-    MSE_obs <- mean((obs-obs_avg)^2)
-    
-    # MSE of predictions
-    MSE_pred <- mean((obs - pred)^2)
-    
-    # compile output
-    result <- c(RMSE = sqrt(MSE_pred),
-                MSE_based_R2 = max(1 - MSE_pred / MSE_obs, 0) 
-                )
-    
-    # explicit return (optional)
-    return(result)
-}
-
-```
-
-
-
-```{r define.CV.function}
-#-----define CV function-----
-
-do_CV <- function(data, id = "id", group = "group", formula) {
- 
-  lapply(unique(data[[group]]), function(this_group){
-    
-    # fit the "common" model to the training set (without this group)
-    CV_lm <- lm(formula, data = data[data[[group]] != this_group,])
-    
-    # generate predictions for this group using training model
-    data[data[[group]] == this_group,] %>%
-      mutate(cvpreds = predict(CV_lm, newdata = .) %>% unname())
-    
-    # recombine data from all clusters and sort by ID column
-    # note use of ".data[[ ]]" to return the value of variable id
-  }) %>% bind_rows() %>% arrange(.data[[id]])
+  To assess the best fit of these covariates to our data, we ran forward, stepwise selection on the california nox covariates that matched these mercer et al (2011) covariates the best (a total of 8 covariates). The Bias Variance plot above shows us that the three-covariate model performed the best on our gold standard data. The covariates in this model are:
   
-  # return the dataset (the last-evaluated object is always returned by default)
-}
+"pop_s05000", "m_to_coast", and "m_to_a1" .  
+
+#Specify the common model from forward selection
+```{r}
+# build regression formula with common model covariates
+
+covars_common <- c("pop_s05000" ,"m_to_coast" ,"m_to_a1")
+frml <- as.formula(paste("log_avg ~", paste(covars_common, collapse = "+")) )
 
 ```
+
+#Running the prediction model on the lt_gold  - mercer
+```{r}
+
+# in-sample predictions and fit summary
+summary(lm_gold_standard <- lm(frml, data = long_term_gold))
+
+
+```
+
 
 
 #Doing CV on the gold_standard model
@@ -802,6 +803,7 @@ Figure 4.0 shows the results from our cross validation of our gold standard mode
 ```{r st_balanced}
 
 #need to group the st_balanced data by "campaign" before doing regression
+st_balanced <- left_join(st_balanced,common_model_cov , by = "native_id" )
 
 #apply the save CV groups as used in the gold standard model
 st_balanced <- st_balanced %>% group_by(rep_number) %>% mutate(CV_grp = CV_grp) %>% ungroup()
@@ -941,6 +943,7 @@ ggplot(data = st_balanced_CV, aes(log_avg, cvpreds)) +
 
 ``` {r seasonal strat}
 #----------create season-specific strata---------------
+
 summer <- nox_only[nox_only$season == "Summer",]
 
 fall <- nox_only[nox_only$season == "Fall",]
@@ -2120,12 +2123,12 @@ ggplot( st_spring_CV, aes(x = log_avg, cvpreds)) +
 #averages the rmse and r squared across all 30 repeats of the random sampling for all campaigns
 
 campaigns <- c("Summer", "Fall", "Winter", "Spring", "Balanced")
-RMSE <- c(mean(st_summer_MSE$RMSE_b), mean(st_fall_MSE$RMSE_b), mean(st_winter_MSE$RMSE_b), mean(st_spring_MSE$RMSE_b), mean(st_balanced_MSE$RMSE_b)) %>% round(digits = 3)
-R2 <- c(mean(st_summer_MSE$R2_b), mean(st_fall_MSE$R2_b), mean(st_winter_MSE$R2_b), mean(st_spring_MSE$R2_b), mean(st_balanced_MSE$R2_b)) %>% round(digits = 3)
+RMSE <- c(mean(st_summer_MSE$RMSE_a), mean(st_fall_MSE$RMSE_a), mean(st_winter_MSE$RMSE_a), mean(st_spring_MSE$RMSE_a), mean(st_balanced_MSE$RMSE_a)) %>% round(digits = 3)
+R2 <- c(mean(st_summer_MSE$R2_a), mean(st_fall_MSE$R2_a), mean(st_winter_MSE$R2_a), mean(st_spring_MSE$R2_a), mean(st_balanced_MSE$R2_a)) %>% round(digits = 3)
 
 kable(rbind(campaigns, RMSE, R2),
       digits = 3,
-      caption = "Table 3.0: Performance Statistics of Seasonal and Balanced Sampling Campaigns") %>% kable_styling()
+      caption = "Table 3.0: Performance Statistics of Seasonal and Balanced Sampling Campaigns - Method A") %>% kable_styling()
 
 ```
 Based on the R squared and RMSE values in Table 3.0 we may conclude that the winter short term model performed better than the short term balanced model. 
@@ -2239,7 +2242,7 @@ summary(lm_st_la <- lm(frml, data = st_la))
 
 ```{r LOO cross validation}
 
-CV_grp <- rep(1:12, length.out = nrow(long_term_gold_la)) %>% 
+CV_grp_la <- rep(1:12, length.out = nrow(long_term_gold_la)) %>% 
   sample(replace = FALSE)
 
 # now append it to the cal_nox_clean data frame
@@ -2547,7 +2550,7 @@ summary(lm_st_spring_la <- lm(frml, data = st_spring_la))
 st_summer_la <- st_summer_la %>% group_by(rep_number) %>% mutate(CV_grp = CV_grp) %>% ungroup()
 
 #in sample-predictions
-fitted_models = st_summer_lav %>% group_by(rep_number) %>% do(model = lm(frml, data = .))
+fitted_models = st_summer_la %>% group_by(rep_number) %>% do(model = lm(frml, data = .))
 
 #cross-validated predictions treating each sample "campaign" separately
 st_summer_CV_la <- st_summer_la %>% group_by(rep_number) %>% do(model = do_CV(data = ., id = "native_id", group = "CV_grp", formula = frml))
