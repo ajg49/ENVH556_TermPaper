@@ -971,7 +971,7 @@ seasonal_avg <- function(data) {
 
 
 #creating short term seasonal data sets
-```{r seasonal datasets}
+```{r seasonal datasets2}
 
 
 #random_sample() (data, size, seed)
@@ -1126,7 +1126,7 @@ Table 2.0 summarizes the spread and range of the data randomly sampled for each 
 
 The figures above show that across all four seasons, the within-sensor variability looks similar, except for spring. The spring data set has less variability within sensor, not just across sensors. 
 
-```{r season.convariates}
+```{r season.convariates2}
 #--------------------------Common Model on Seasonal Data sets------------------#
 #adding the covariates to the gold standard data to do some predictions
 st_summer <-  left_join(st_summer,common_model_cov, by = "native_id" )
@@ -1152,7 +1152,7 @@ summary(lm_st_spring <- lm(frml, data = st_spring)) #infinitive log_avg value in
 
 #----------comparing seasonal short term campaigns with Gold Standard data----------------
 
-```{r summer vs gold}
+```{r summer vs. gold}
 #------------seasonal comparison with gold standard-------------
 
 #-----------------------------------SUMMER--------------------------------------
@@ -2253,7 +2253,7 @@ long_term_gold_la <- mutate(long_term_gold_la, CV_grp = CV_grp)
 
 
 #doing gold cv within LA dataset for long term gold standard model
-gold_CV_la <- do_CV(long_term_gold_la, id = "native_id", group = "CV_grp", formula = frml)
+gold_CV_la <- do_CV(long_term_gold_la, id = "native_id", group = "CV_grp_la", formula = frml)
 
 
 ```
@@ -2920,7 +2920,7 @@ head(res2)
 
 ```
 
-```{r bias.plots.weekday kw}
+```{r bias.plots.weekday.kw}
 #-----bias-var combined plots-----
 
 
