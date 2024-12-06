@@ -49,7 +49,7 @@ Sensors from the California NOx dataset were selected for inclusion in our analy
 
 Covariates were selected for inclusion into our general model for NOx predictions based on their scientific relevance to ambient NOx concentration prediction models, as described in peer-reviewed scientific literature. Specifically, we chose to include the covariates utilized by [Mercer et al. (2011)](https://pmc.ncbi.nlm.nih.gov/articles/PMC3146303/pdf/nihms299256.pdf), who measured ambient NOx concentrations in Los Angeles across varied temporal layers and built prediction models using land-use and geographic covariates. Mercer et al. (2011) selected their prediction model covariates from 65 possible covariates related to population density, land-use intensity, open space land, distance to the coast, distance to industrial sources, distances to various roadways, and lengths of roadways within a given buffer zone. From these potential covariates, Mercer et al. (2011) created a "common model" that had adequate performance in predicting NOx concentrations across all seasons. The covariates included in the Mercer et al. (2011) common model included: distance to commercial pollutant sources, distance to the coast, distance to A1 roadways, population size within 5000 meters, land use intensity within 3000 square kilometers, length of A1 roads within 50 meters, and length of A2 and A3 roads within 400 meters.
 
-For our analyses, we selected the covariates most similar to the seven used by Mercer et al. (2011), based on the similarities in geographic region, pollutant of interest, land-use covariates, and modeling goals between the present analysis and that described by Mercer et al. (2011). These covariates included: meters to closest commercial and services area, distance to the closest coastline, population density within 5,000 meters, distance to nearest A1 roadway, length of A1 roadway within 500 meters, length of A2 roadway within 1500 meters, length of A3 roadway within 400 meters, and the proportion of mixed urban of built-up land within a 1500 square kilometer buffer. Note that, in some cases, distances and buffers varied between those used by Mercer et al. (2011) and those used by Blanco et al. (2022); in these cases, the closest available covariate distance or buffer was selected. For land-use intensity, the proportion of mixed urban or built-up land within 1500 square kilometers was used in the present analysis, as it was deemed to be likely the most similar to the Mercer et al. (2011) land use intensity covariate. 
+For our analyses, we used forward stepwise regression to select covariates for inclusion into our model from those most similar to the seven used by Mercer et al. (2011). The Mercer et al. (2011) covariates were deemed appropriate to use based on the similarities in geographic region, pollutant of interest, land-use covariates, and modeling goals between the present analysis and that described by Mercer et al. (2011). These covariates included: meters to closest commercial and services area, distance to the closest coastline, population density within 5,000 meters, distance to nearest A1 roadway, length of A1 roadway within 500 meters, length of A2 roadway within 1500 meters, length of A3 roadway within 400 meters, and the proportion of mixed urban of built-up land within a 1500 square kilometer buffer. Note that, in some cases, distances and buffers varied between those used by Mercer et al. (2011) and those used by Blanco et al. (2022); in these cases, the closest available covariate distance or buffer was selected. For land-use intensity, the proportion of mixed urban or built-up land within 1500 square kilometers was used in the present analysis, as it was deemed to be likely the most similar to the Mercer et al. (2011) land use intensity covariate. 
 
 *Gold Standard Sampling Dataset*
 
@@ -71,7 +71,7 @@ We compared the estimated model performance parameters (RMSE, R2) from the short
 
 *Sensitivy Analysis: Los Angeles County*
 
-In our sensitivty analysis, we repeated our analyses with geographically restricted data from a single county to limit the impact of geospatial variability, as NOx concentration measurements likely have strong spatial correlation at the county-level based on shared land-use, policy, and urbanicity within counties. Los Angeles County was selected as the county of interest for our analysis based on its high population density (U.S. Census 2023) and because of its high proportion of sensors included in the underlying California NOx dataset. 
+In our sensitivty analysis, we repeated our analyses with geographically restricted data from a single county to limit the impact of geospatial variability, as NOx concentration measurements likely have strong spatial correlation at the county-level based on shared land-use, policy, and urbanicity within counties. Los Angeles County was selected as the county of interest for our analysis based on its high population density (U.S. Census 2023) and because of its high proportion of sensors included in the underlying California NOx dataset. Because there were fewer sensors in Los Angeles County relative to the statewide dataset, 10-fold cross validation was not possible in this sensitivity analysis. Instead, we used leave-one-out cross validation to validate Los Angeles-specific NOx predictions. 
 
 #Results
 
@@ -194,6 +194,7 @@ cal_nox_covars <- left_join(cal_nox, ca_covariates, by="native_id")
 #create a df that is only NOX
 
 nox_only <- cal_nox %>% filter(parameter_name == "Oxides of nitrogen (NOx)")
+
 
 length(unique(nox_only$native_id)) #There are 69 monitors here, so we lost a couple when we filtered it to NOX only (there were 73 monitors when NO and NO2 were also included). 
 
@@ -622,7 +623,7 @@ common_model_cov <- ca_covariates %>%
 ```
 
 
-# forward, stepwise selection with commo model covariates
+# forward, stepwise selection with common model covariates
 
 ```{r forward selection - gold standard}
 
@@ -733,7 +734,7 @@ combined_plot2
 ```
 
 
-# Adding Covariates from MErcer et al Common Model
+# Adding Covariates from Mercer et al Common Model
   The Mercer et al 2011 paper has the following covariates determined in its "common model" with which they assessed seasonal prediction models.
  Covariates:  D2A1 (distance to A1 road), A1_50m (length of A1 road in 50 m buffer), A23_400m (length of A2 or A3 roads within 400 m buffer), Pop_5k (total population within 5,000 m buffer), D2C (Distance to the coast in meters), Int_3k (intense land use within 3,000 m), D2Comm (distance to commercial land).
   To assess the best fit of these covariates to our data, we ran forward, stepwise selection on the california nox covariates that matched these mercer et al (2011) covariates the best (a total of 8 covariates). The Bias Variance plot above shows us that the three-covariate model performed the best on our gold standard data. The covariates in this model are:
@@ -2132,6 +2133,7 @@ kable(rbind(campaigns, RMSE, R2),
 
 ```
 Based on the R squared and RMSE values in Table 3.0 we may conclude that the winter short term model performed better than the short term balanced model. 
+**I think that the balanced was better than the winter because the balanced had a higher R2 and lower RMSE than the winter models. balanced R2 seems pretty decent (compared to what we saw previously) -ck**
 
 
 
@@ -2143,10 +2145,12 @@ Based on the R squared and RMSE values in Table 3.0 we may conclude that the win
 ``` {r LA strat}
 #----------create LA-specific dataset---------------
 
-la <- nox_only[nox_only$County == "Los Angeles",]
+la <-cal_nox_covars %>% filter(parameter_name == "Oxides of nitrogen (NOx)") %>%
+  filter(County=="Los Angeles")
 
 head(la)
 
+#NOTE: updated this since it wasn't loading with data without the "county" variable. it seems to look better now but we may want to move all the other extraneous covariates? -ck
 ```
 
 # creating long term LA data set
@@ -2154,7 +2158,6 @@ head(la)
 
 #Gold Standard Data
 long_term_gold_la <- annual_avg(la)
-
 
 
 ```
@@ -2994,34 +2997,6 @@ backward_reg$coefficients
 
 ```
 
-
-```{r appendix, results='hide'}
-
-#*Statistical Approach for regression for association*
-
-#1. We aim to create a best-fit model of NOx/TRAP pollutant to assess the association of NOx concentrations across days of the week. 
-
-#1b. We will characterize variation in NOx/TRAP across days of the week - within week day and between weekday
-
-#2. We aim to create a best fit model of NOx TRAP pollutant to assess NOx concentrations across the four seasons of the year. 
-
-#2b. We will characterize variation in NOx/TRAP across season - within and between season variability
-
-
-## Methods & Statistical Approach
-
-#Descriptive statistics
-
-#  We will characterize the distribution of PM2.5 concentrations according to season (Fall, Winter, Spring, Summer) and day of the week using descriptive summary statistics, box plots and/or histograms. 
-
- # We will use ANOVA models to compare the mean concentration of log-transformed air pollutants across (1) seasons (i.e. Fall, Winter, Spring, and Summer); and (2) days of the week. 
-  
-
-#As part of our day-of-the-week assessment, we will additionally test whether TRAP is associated more broadly with day type (i.e. week day or weekend) using a land-use regression model adjusted for season and distance to major roadways, which we anticipate could be precision variables.
-
-
-
-```
 
 ```{r}
 
