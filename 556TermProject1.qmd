@@ -71,7 +71,9 @@ We compared the estimated model performance parameters (RMSE, R2) from the short
 
 *Sensitivy Analysis: Los Angeles County*
 
-In our sensitivty analysis, we repeated our analyses with geographically restricted data from a single county to limit the impact of geospatial variability, as NOx concentration measurements likely have strong spatial correlation at the county-level based on shared land-use, policy, and urbanicity within counties. Los Angeles County was selected as the county of interest for our analysis based on its high population density (U.S. Census 2023) and because of its high proportion of sensors included in the underlying California NOx dataset. Because there were fewer sensors in Los Angeles County relative to the statewide dataset, 10-fold cross validation was not possible in this sensitivity analysis. Instead, we used leave-one-out cross validation to validate Los Angeles-specific NOx predictions. 
+In our sensitivty analysis, we repeated our analyses with geographically restricted data from a single county to limit the impact of geospatial variability, as NOx concentration measurements likely have strong spatial correlation at the county-level based on shared land-use, policy, and urbanicity within counties. Los Angeles County was selected as the county of interest for our analysis based on its high population density (U.S. Census 2023) and because of its high proportion of sensors included in the underlying California NOx dataset. Because there were fewer sensors in Los Angeles County relative to the statewide dataset, 10-fold cross validation was not possible in this sensitivity analysis. Instead, we used leave-one-out cross validation to validate Los Angeles-specific NOx predictions. We still subset our data into 30 sampling iterations. 
+
+
 
 #Results
 
