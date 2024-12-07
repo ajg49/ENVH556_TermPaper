@@ -21,7 +21,7 @@ execute:
 This document was rendered on `r format(Sys.time(), '%B %d, %Y')`.
 ---
 
-#Introduction and Purpose
+# Introduction and Purpose
 
 Nitrogen oxides (NOx) are gaseous compounds commonly found in air pollution. Although NOx are generated through both natural and anthropogenic sources, human activities account for the majority of ambient NOx concentrations [(EPA 2024;)](https://www.epa.gov/no2-pollution/basic-information-about-no2) [Zhang et al. 2003;](https://www.pnas.org/doi/10.1073/pnas.252763799) [(ATSDR 2002;](https://www.atsdr.cdc.gov/toxfaqs/tfacts175.pdf) [(EPA 1999)](https://www3.epa.gov/ttncatc1/dir1/fnoxdoc.pdf). Mobile vehicles are a major source of anthropogenic NOx, accounting for approximately half of all emissions related to human activities [(EPA 1999)](https://www3.epa.gov/ttncatc1/dir1/fnoxdoc.pdf). Power plants also contribute a substantial fraction (~20%) of the total estimated annual anthropogenic NOx emissions [(EPA 1999)](https://www3.epa.gov/ttncatc1/dir1/fnoxdoc.pdf).
 
@@ -29,7 +29,7 @@ Traffic-related air pollutants (TRAP), such as NOx, can have diurnal and seasona
 
 In this analysis, we use the California NOx dataset described by Blanco et al. (2022) to simulate a series of temporally-restricted mobile monitoring campaigns and compare their prediction performances against that of a long-term, temporally-balanced "gold standard" dataset representing what might be achieved with a stationary air monitor. We aimed to assess how well NOx predictions from short-term mobile monitoring campaigns aligned with the "gold standard" dataset and whether the inclusion or omission of specific temporal windows impacted prediction performance. In support of this aim, we compared the performance of a "gold standard" temporally-balanced statewide dataset with a (1) short-term, temporally-balanced statewide dataset; and (2) short-term, seasonally-restricted statewide datasets. Additionally, we repeated this analysis when all data were instead restricted to Los Angeles county to assess how the comparisons differed in the presence of reduced geospatial variability. Ultimately, these results can be used to inform future TRAP monitoring campaigns through signaling the importance of temporally-balanced sampling designs and underscoring which key temporal windows must be included in mobile monitoring sampling events. 
 
-#Methods 
+# Methods 
 
 **Dataset Description**
 
@@ -75,7 +75,7 @@ In our sensitivty analysis, we repeated our analyses with geographically restric
 
 
 
-#Results
+# Results
 
 In total, 69 sensors in the state of California met the specified inclusion criteria and were included in our NOx prediction analysis. For our analyses specific to Los Angeles county, 12 sensors meeting the inclusion criteria were included.
 
@@ -2997,6 +2997,73 @@ ggplot(st_spring_MSE_long_la, aes(x = method, y = value, color = method)) +
 
 # Discussion and Conclusion
 
+**Model Selection** 
+
+We used forward stepwise regression to select model covariates from among the seven used by Mercer et al. (2011) in their common model describing all seasons. We chose to use stepwise regression to select covariates from among the common model covariates rather than incorporating all seven used by Mercer et al. (2011) due to the limited data available in our LA county-specific analysis, which included just 12 sensors. The Mercer et al. (2011) common model covariates were used because of their efficacy in predicting seasonal NOx concentrations in California, as determined through a robust selection process that determined which covariates performed well across all seasons. Although the Mercer et al. (2011) covariates performed reasonably well in the Mercer et al. (2011) analysis, similar covariates in our model explained just small proportion of the variability in NOx predictions, as demonstrated by our small-to-moderate coefficients of determination generated for cross-validated predictions across all seasons. It is likely that some of the covariates not selected for inclusion into our model may have explained a greater portion of the variability in NOx concentrations; this is particularly important to consider, given that our primary analysis focused on the entire state of California, whereas the Mercer et al. (2011) analysis evaluated only Los Angeles. The geographic differences, including potential differences in spatial correlation, could therefore contribute to the varied performance of the covariates across analyses. 
+
+Our use of forward selection stepwise regression for covariate selection was beneficial in providing information on the bias-variance-tradeoff as covariates were systematically incorporated into the model and assessed. Through this process, we were able to objectively select three of the seven Mercer et al. (2011) covariates based on their contributions to model accuracy and variability. Although forward selection was a reasonable choice for model selection based on our goal (i.e. narrowing down covariates from those in the Mercer et al. common model) and the tools available for us, it is possible that another covariate selection method would have provided a stronger prediction model in the present analysis. For example, in Blanco et al. (2022), authors used partial least squares (PLS) regression models to summarize hundreds of geographic covariates, rather than a priori selecting a handful of covariates based on previous findings published in the literature. The use of PLS across hundreds of covariates enhanced the ability of the model to capture variability in NOx concentrations and likely accounted for their improved prediction performance when compared against the present analysis. 
+
+
+
+
+**Statewide Short-Term Dataset Performance**
+
+
+
+
+**Los Angeles County Short-Term Dataset Performance** 
+
+
+
+
+**Comparison of Findings to Literature** 
+
+
+
+
+
+**Strengths and Limitations** 
+
+
+
+**Broader Implications and Future Research** 
+
+
+
+**Conclusion** 
+
+
+
+
+# Author Contribution Statement (**NOTE add in your contributions below**) 
+
+**Core Contributions** 
+
+Analysis: 
+
+*Callan:* Met with professors at office hours to discuss analytical approach; attended all group meetings to discuss analytical approach; drafted first iteration of day-of-week  vs. weekday/weekend predictions with cross-validation and ANOVA (not incorporated: later revised plan); conducted sensitivity analysis for Los Angeles county, including creation of short- and long-term temporally balanced datasets specific to Los Angeles, summarizing short- and long-term temporally balanced datasets within LA, generating LA-specific NOx predictions and taking the first pass at cross-validation, including making a new cross-validation group; calculated R2 and RMSE values for LA-specific NOx predictions
+
+*Katie:*
+
+*Abbie:*
+
+Writing: 
+
+*Callan:* Drafted and revised analysis plans (3 in total); wrote and revised methods section; wrote and revised introduction section; wrote portions of results section; wrote portions of discussion section; wrote portions of conclusion section 
+
+*Katie:*
+
+
+*Abbie:*
+
+
+**Additional Contributions**
+
+*Callan:* reviewed literature for introduction section; reviewed and critiqued content; final editing and proofreading
+
+*Katie:*
+
+*Abbie:*
 
 
 
@@ -3005,7 +3072,7 @@ ggplot(st_spring_MSE_long_la, aes(x = method, y = value, color = method)) +
 
 
 
-*Limitations*
+*points to be added into discussion section later (originally earlier in code):*
 
 
 [popping the below from the code to the limitations section for later reference when we write the discussion]
@@ -3037,318 +3104,4 @@ United States Census. 2023. QuickFacts Los Angeles County, California. https://w
 ## Appendix 
 
 #---------------------------Reference Code-------------------------------------#
-
-# Useless chunk
-This section of code shouldn't be run. Cleaning the data in a different way. Leaving it just in case there is something we want to grab out of it in the future.
-```{r, useless, echo = F, include = F, message = F, eval = F}
-#data is going to need a little cleaning. There are monitors with negative values recorded. 
-
-#filter out the negative values and repeat the table. Justify that it's scientifically impossible to have neg. values on native scale.
-# this table is tratified by season, and another table is stratified by week day.
-
-#per lianne, we don't want to just ditch the negative values
-#cal_nox_clean <- cal_nox %>% filter(sample_measurement > 0) #29,521 rows removed!!
-
-
-#create a new variable called "log_conc" for the log transformed concentrations
-#cal_nox_clean <- cal_nox_clean %>%
-#  mutate(log_conc = log(sample_measurement)) %>%
-#  relocate(log_conc, .after = sample_measurement)
-
-#we have negative numbers again, but because of the log transformation
-
-#kable(cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",] %>%
-  group_by(season) %>%
-  summarise(
-    count = n(),
-    min = min(sample_measurement),
-    max = max(sample_measurement),
-    median = median(sample_measurement),
-    GM = geoMean(sample_measurement, na.rm = TRUE),
-    GSD = geoSD(sample_measurement, na.rm = TRUE),
-    AM = mean(sample_measurement, na.rm = TRUE),
-    ASD = sd(sample_measurement, na.rm = TRUE)),
-  digit = 2,
-  caption = "Table 1.0: Summary Statistics for Nitric Oxides (NOx) by Season") %>%
-  kable_styling()
-
-#kable(cal_nox_clean[cal_nox_clean$parameter_name == "Oxides of nitrogen (NOx)",] %>%
-  group_by(dow) %>%
-  summarise(
-    count = n(),
-    min = min(sample_measurement),
-    max = max(sample_measurement),
-    median = median(sample_measurement),
-    GM = geoMean(sample_measurement, na.rm = TRUE),
-    GSD = geoSD(sample_measurement, na.rm = TRUE),
-    AM = mean(sample_measurement, na.rm = TRUE),
-    ASD = sd(sample_measurement, na.rm = TRUE)),
-  digit = 2,
-  caption = "Table 2.0: Summary Statistics for Nitric Oxides (NOx) by Week day") %>%
-  kable_styling()
-```
-
-
-```{r forward select, warning = FALSE, message = FALSE}
-
-#-----model order and CV-----
-
-# apply along length of the vector of names from forward selection
-res1 <- lapply(seq_along(covars_forward), function(i){
-    
-    # define the formula, updated to add a term each time
-    fmla <- as.formula(
-        paste("ln_no2 ~ 1 + ", paste(covars_forward[seq_len(i)], collapse = "+"))) 
-    
-    # in-sample model and estimates
-    in_model <- lm(fmla, data = summer) 
-    
-    # out-of sample model and estimates
-    out_ests <- do_CV(data = summer, id = "stop_id", group = "location", fmla) # I don't have a great sense of what the location variable represents in this data, but there probably is some spacial value to it. Also it's way more than 10 groups, and not random. KW
-    out_results <- get_MSE(out_ests$ln_no2, out_ests$cvpreds)
-    
-    # compile results
-   tibble(n_pred = i,
-           covar = covars_forward[i],
-           in_RMSE = sqrt(mean(in_model$residuals^2)),
-           in_R2 = summary(in_model)$r.squared,
-           out_RMSE = out_results[["RMSE"]],
-           out_R2 = out_results[["MSE_based_R2"]] 
-           )
-    
-    }) %>% 
-    bind_rows()
-
-head(res1)
-
-#length(unique(stop_data_primary$location)). # There are 309 CV groups using this method. (basically each stop location is a group as I understand it.
-
-```
-
-```{r bias.plots}
-#-----bias-var combined plots-----
-
-
-#there are 23 terms in the model. 
-max(res1$out_RMSE[1:23])
-min(res1$out_RMSE[1:23])
-
-y_lim <- 0.8 #need to find what is actually useful for out data. Set at 0.8 for now just to include everything
-
-# create temporary dataframe for plot
-temp <- res1 %>% 
-  
-  # make long dataframe
-  pivot_longer(cols = c(ends_with("_RMSE"), ends_with("_R2")), 
-               names_to = "Source_Estimate", 
-               values_to = "value" ) %>%
-  
-  # separate the "Source" column for in and out of sample
-  separate(col = Source_Estimate, into = c("Source", "Estimate") ) %>% 
-
-  # set high RMSE values to NA, then filter out these values before plotting
-  mutate(value = ifelse(Estimate == "RMSE" & value > y_lim, NA, value)) %>%
-  filter(!is.na(value)) 
-
-#plot looked to be missing some stuff, so I filled it in - KW
-
-combined_plot <- ggplot(data = temp) +
-  geom_point(aes(x = n_pred, y = value, color = Source)) +
-  geom_line(aes(x = n_pred, y = value, color = Source)) +
-  xlab("Model Complexity (# of terms)") +
-  ylab("") +
-  scale_x_continuous(breaks = c(seq(0, 63, 5))) +
-  facet_wrap(~ Estimate, scales = "free_y", ncol = 1, strip.position = "right") +
-  theme_bw() 
-
-#show plot
-combined_plot
-```
-This is good to have as a template, but we should think about the CV groups as well as if we want season spefic or interaction model. 
-
-
-
-```{r generate.random.cv.groups KW}
-#-----generate groups-----
-
-# set the seed to make reproducible
-set.seed(123)
-
-# create vector of CV groups
-  # first generate a vector with values 1:10 equal to the number of dataset rows
-  # then randomize (with argument replace = FALSE)
-CV_grp <- rep(1:10, length.out = nrow(no2_only)) %>% 
-  sample(replace = FALSE)
-#Did this on the whole DF, which I think make sense if we use week_day or type_day as interaction terms in the model
-#would not make sense if we end up doing seperate models for the types of days. 
-
-# now append it to the fall data frame
-no2_only <- mutate(no2_only, rando_CV_grp = CV_grp)
-
-```
-
-```{r}
-#KW
-#repeating the above selection and  cross-validation using the random groups for week_day (still using No2, but can switch out for pM2.5 later)
-
-#-----forward selection using interaction-----#
-
-
-null <- lm(ln_no2 ~ 1*day_type, data = no2_only) #I don't actually know if you can define a null model like this for interaction terms (got this warning on the results: Warning: variable 'day_type' is absent, its contrast will be ignored)
-
-
-covars_all <- str_subset(names(no2_only),"pop_|int_|open_|D2|A1_|A23_|m_to_a1")
-
-# B: now turn this into a formula for the full model in stepwise regression:
-full <- as.formula(paste("ln_no2 ~ ", paste(covars_all, collapse= "+")))
-
-# Using k=2 is comparable to standard AIC.
-# Using log(n), where n is the number of observations, is comparable to BIC.
-forwardreg_day <- step(null, 
-                        scope = list(lower = null, upper = full), 
-                        trace = 0, 
-                        direction = "forward", 
-                        k = 0)
-
-covars_forward2 <- names(forwardreg_day$coefficients) %>%
-  setdiff('(Intercept)')
-
-covars_forward2 #different list than above when just run for summer
-
-#forward selection is what we used the the lab, but she also said it wasn't how you would normally really do it. Do we want to try backwards selection or something else?
-
-```
-
-```{r fit for weekdays, warning = FALSE, message = FALSE}
-
-#-----model order and CV-----
-
-# apply along length of the vector of names from forward selection
-res2 <- lapply(seq_along(covars_forward2), function(i){
-    
-    # define the formula, updated to add a term each time
-    fmla <- as.formula(
-        paste("ln_no2 ~ + ", paste(covars_forward2[seq_len(i)], collapse = "+"))) 
-    
-    # in-sample model and estimates
-    in_model <- lm(fmla, data = no2_only) 
-    
-    # out-of sample model and estimates
-    out_ests <- do_CV(data = no2_only, id = "location", group = "rando_CV_grp", fmla)  #changed the id to location, because that is the unique identifier for WHERE the stop is, which is what I think we want to be able to predict. STOP ID, is unique to the actual time that they stoped at that location each time around. Maybe I'm confused here, but it seems like we want to predict by location?
-    out_results <- get_MSE(out_ests$ln_no2, out_ests$cvpreds)
-    
-    # compile results
-   tibble(n_pred = i,
-           covar = covars_forward2[i],
-           in_RMSE = sqrt(mean(in_model$residuals^2)),
-           in_R2 = summary(in_model)$r.squared,
-           out_RMSE = out_results[["RMSE"]],
-           out_R2 = out_results[["MSE_based_R2"]] 
-           )
-    
-    }) %>% 
-    bind_rows()
-
-head(res2)
-
-
-
-```
-
-```{r bias.plots.weekday.kw}
-#-----bias-var combined plots-----
-
-
-#there are 23 terms in the model. 
-max(res2$out_RMSE[1:23])
-min(res2$out_RMSE[1:23])
-
-y_lim <- 0.8
-
-# create temporary dataframe for plot
-temp2 <- res2 %>% 
-  
-  # make long dataframe
-  pivot_longer(cols = c(ends_with("_RMSE"), ends_with("_R2")), 
-               names_to = "Source_Estimate", 
-               values_to = "value" ) %>%
-  
-  # separate the "Source" column for in and out of sample
-  separate(col = Source_Estimate, into = c("Source", "Estimate") ) %>% 
-
-  # set high RMSE values to NA, then filter out these values before plotting
-  mutate(value = ifelse(Estimate == "RMSE" & value > y_lim, NA, value)) %>%
-  filter(!is.na(value)) 
-
-
-combined_plot2 <- ggplot(data = temp2) +
-  geom_point(aes(x = n_pred, y = value, color = Source)) +
-  geom_line(aes(x = n_pred, y = value, color = Source)) +
-  xlab("Model Complexity (# of terms)") +
-  ylab("") +
-  labs(title = "Bias-Variance TradeOff For Randomly Cross-Validated CV Groups",
-       subtitle = "Type of Day Model") +
-  scale_x_continuous(breaks = c(seq(0, 63, 5))) +
-  facet_wrap(~ Estimate, scales = "free_y", ncol = 1, strip.position = "right") +
-  theme_bw() 
-
-#show plot
-combined_plot2
-```
-
-```{r}
-#KW experimenting with backwards selection
-
-
-#-----backward selection-----#
-
-
-null <- lm(ln_no2 ~ 1, data = no2_only) 
-
-
-covars_all <- str_subset(names(no2_only),"pop_|int_|open_|D2|A1_|A23_|m_to_a1")
-
-# B: now turn this into a formula for the full model in stepwise regression:
-full <- as.formula(paste("ln_no2 ~ ", paste(covars_all, collapse= "+")))
-
-# Fit the full model
-full_model <- lm(full, data = no2_only)
-
-# Using k=2 is comparable to standard AIC. (which is the default here)
-
-backward_reg <- step(full_model, direction='backward', scope=formula(full_model), trace=0)
-
-covars_backward <- names(backward_reg$coefficients) %>%
-  setdiff('(Intercept)')
-
-covars_backward 
-
-backward_reg$anova
-
-backward_reg$coefficients
-
-# I don't really know much about how to interpret this. May not be that useful in its current state. 
-
-
-```
-
-
-```{r}
-
-season_summary <- stop_data_primary %>% group_by(season, location) %>% summarise(count = length(median_value))
-
-range(season_summary$count)
-
-day_summary <- stop_data_primary %>% group_by(day_type, location) %>% summarise(count = length(median_value))
-
-range(day_summary$count)
-
-weekday_summary <- stop_data_primary %>% group_by(week_day, location) %>% summarise(count = length(median_value))
-
-range(weekday_summary$count)
-
-
-```
-
-
 
