@@ -777,7 +777,7 @@ ggplot(data = gold_CV, aes(log_avg, cvpreds)) +
 
 #model we have selected doesn't give the greatest predictions, but that might be fine. We changing the covariates in the model above won't necessitate changing any of the other code. 
 ```
-Figure 4.0 shows the results from our cross validation of our gold standard data set and our common model. Using annual averages to predict across all 69 sensors. The models' MSE_based_R2 is 0.335, using data from across the state of California. We will compare our statewide balanced and seasonal campaigns with these performance statistics. 
+Figure 4.0 shows the results from our cross validation of our gold standard data set and our common model. Using annual averages to predict across all sensors. The models' MSE_based_R2 is 0.335, using data from across the state of California. We will compare our statewide balanced and seasonal campaigns with these performance statistics. 
      
 
 #Repeating above to compare predictions from the st_balanced to predictions from the gold standard
@@ -2502,24 +2502,26 @@ grid.arrange(spring_scatter_la, summer_scatter_la, fall_scatter_la, winter_scatt
 
 # Discussion and Conclusion
 
-**Model Selection** 
-
-We used forward stepwise regression to select model covariates from among the seven used by Mercer et al. (2011) in their common model describing all seasons. We chose to use stepwise regression to select covariates from among the common model covariates rather than incorporating all seven used by Mercer et al. (2011) due to the limited data available in our LA county-specific analysis, which included just 12 sensors. The Mercer et al. (2011) common model covariates were used because of their efficacy in predicting seasonal NOx concentrations in California, as determined through a robust selection process that determined which covariates performed well across all seasons. Although the Mercer et al. (2011) covariates performed reasonably well in the Mercer et al. (2011) analysis, similar covariates in our model explained just small proportion of the variability in NOx predictions, as demonstrated by our small-to-moderate coefficients of determination generated for cross-validated predictions across all seasons. It is likely that some of the covariates not selected for inclusion into our model may have explained a greater portion of the variability in NOx concentrations; this is particularly important to consider, given that our primary analysis focused on the entire state of California, whereas the Mercer et al. (2011) analysis evaluated only Los Angeles. The geographic differences, including potential differences in spatial correlation, could therefore contribute to the varied performance of the covariates across analyses. 
-
-Our use of forward selection stepwise regression for covariate selection was beneficial in providing information on the bias-variance-tradeoff as covariates were systematically incorporated into the model and assessed. Through this process, we were able to objectively select three of the seven Mercer et al. (2011) covariates based on their contributions to model accuracy and variability. Although forward selection was a reasonable choice for model selection based on our goal (i.e. narrowing down covariates from those in the Mercer et al. common model) and the tools available for us, it is possible that another covariate selection method would have provided a stronger prediction model in the present analysis. For example, in Blanco et al. (2022), authors used partial least squares (PLS) regression models to summarize hundreds of geographic covariates, rather than a priori selecting a handful of covariates based on previous findings published in the literature. The use of PLS across hundreds of covariates enhanced the ability of the model to capture variability in NOx concentrations and likely accounted for their improved prediction performance when compared against the present analysis. 
-
-
-
-
 **Statewide Short-Term Dataset Performance**
 
+Our short-term, temporally-balanced dataset produced stronger predictions than any of the season-specific datasets, as indicated by its lower RMSE and higher R^2 values. Approximately 21% of the variation in NOx predictions was explained by the model predictors in the temporally-balanced dataset and, on average, the predicted NOx concentrations were 0.55 log-ppb away from the observed values. When compared against the gold-standard dataset, the short-term temporally-balanced dataset performed reasonably well but showed small reductions in R^2 (0.26 vs. 0.21) and increases in RMSE (0.49 vs. 0.55 log-ppb). 
 
+In season-specific datasets, little to none of the variation in cross-validated NOx predictions was explained by the model predictors, with R^2 values generally hovering around 0.0 (summer, fall, and spring) or 0.1 (winter) when compared against the gold standard dataset. Short-term monitoring campaigns using only summer or spring data consistently under-estimated the gold standard annual average concentrations, whereas short-term campaigns using only winter or fall data consistently over-estimated the gold standard annual average concentrations. 
 
+Taken together, these data suggest that a seasonally-balanced monitoring campaign will predict annual NOx concentrations with improved accuracy compared to a monitoring campaign with data collected in just one season. These results are consistent with prior data demonstrating that NOx concentrations are typically highest in the winter and lowest in the summer and spring (Lange et al. 2022; EPA 2023). They are also consistent with the findings of Blanco et al. (2022), who reported that a temporally-balanced sampling design was important in accurately predicting annual average NOx concentrations during mobile monitoring campaigns.
+
+Notably, all models, including those using the gold standard dataset, had low R^2 values, indicating that just a small proportion of variability in NOx concentrations were explained by model covariates. This could be related to our model selection strategy, which is discussed in greater detail in subsequent sections. Importantly, Blanco et al. (2022) reported improved coefficients of determination compared to the present analysis, though the values were still somewhat low and tended to hover around approximately 0.35 to 0.45. In Blanco et al. (2022), authors included hundreds of geographic covariates in their model related to land-use, road proximity, and population density. The inclusion of a robust set of geographic covariates likely contributed to the improved performance of models in Blanco et al. (2022) versus the present analysis, though low coefficients of determination in both analyses suggest that the increased number of geographic covariates alone do not fully capture the variability in NOx concentrations. It is possible that other temporal or spatial factors uncaptured by the covariates in either analysis are additionally contributing to the observed variability in NOx concentrations. 
 
 **Los Angeles County Short-Term Dataset Performance** 
 
 
 
+
+**Model Selection** 
+
+We used forward stepwise regression to select model covariates from among the seven used by Mercer et al. (2011) in their common model describing all seasons. We chose to use stepwise regression to select covariates from among the common model covariates rather than incorporating all seven used by Mercer et al. (2011) due to the limited data available in our LA county-specific analysis, which included just 12 sensors. The Mercer et al. (2011) common model covariates were used because of their efficacy in predicting seasonal NOx concentrations in California, as determined through a robust selection process that determined which covariates performed well across all seasons. Although the Mercer et al. (2011) covariates performed reasonably well in the Mercer et al. (2011) analysis, similar covariates in our model explained just small proportion of the variability in NOx predictions, as demonstrated by our small-to-moderate coefficients of determination generated for cross-validated predictions across all seasons. It is likely that some of the covariates not selected for inclusion into our model may have explained a greater portion of the variability in NOx concentrations; this is particularly important to consider, given that our primary analysis focused on the entire state of California, whereas the Mercer et al. (2011) analysis evaluated only Los Angeles. The geographic differences, including potential differences in spatial correlation, could therefore contribute to the varied performance of the covariates across analyses. 
+
+Our use of forward selection stepwise regression for covariate selection was beneficial in providing information on the bias-variance-tradeoff as covariates were systematically incorporated into the model and assessed. Through this process, we were able to objectively select three of the seven Mercer et al. (2011) covariates based on their contributions to model accuracy and variability. Although forward selection was a reasonable choice for model selection based on our goal (i.e. narrowing down covariates from those in the Mercer et al. common model) and the statistical tools available to us, it is possible that another covariate selection method would have provided a stronger prediction model in the present analysis. For example, in Blanco et al. (2022), authors used partial least squares (PLS) regression models to summarize hundreds of geographic covariates, rather than a priori selecting a handful of covariates based on previous findings published in the literature. The use of PLS across hundreds of covariates enhanced the ability of the model to capture variability in NOx concentrations and likely accounted for their improved prediction performance when compared against the present analysis. 
 
 **Comparison of Findings to Literature** 
 
@@ -2537,7 +2539,7 @@ Our use of forward selection stepwise regression for covariate selection was ben
 
 **Conclusion** 
 
-
+Our findings are important in informing the sampling design for future monitoring campaigns
 
 
 # Author Contribution Statement (**NOTE add in your contributions below**) 
@@ -2599,6 +2601,10 @@ The data provided the date and week of the year that each sample was taken. To l
 Blanco, M. N., Gassett, A., Gould, T., Doubleday, A., Slager, D. L., Austin, E., ... & Sheppard, L. (2022). Characterization of annual average traffic-related air pollution concentrations in the Greater Seattle Area from a year-long mobile monitoring campaign. Environmental science & technology, 56(16), 11460-11472.
 
 Colorado Department of Public Health & Environment. 2024. Air toxics: monitoring. https://cdphe.colorado.gov/air-toxics/monitoring#:~:text=Mobile%20monitoring%20can%20capture%20%E2%80%9Cspatial,wind%20compared%20to%20stationary%20monitoring Accessed 12/3/2024.
+
+Environmental Protection Agency. 2023. Overview of Nitrogen Dioxide (NO2) Air Quality in the United States. https://www.epa.gov/system/files/documents/2023-06/NO2_2022.pdf 
+
+Lange, K., Richter, A., & Burrows, J. P. (2022). Variability of nitrogen oxide emission fluxes and lifetimes estimated from Sentinel-5P TROPOMI observations. Atmospheric Chemistry and Physics, 22(4), 2745-2767.
 
 Mercer, L. D., Szpiro, A. A., Sheppard, L., Lindström, J., Adar, S. D., Allen, R. W., ... & Kaufman, J. D. (2011). Comparing universal kriging and land-use regression for predicting concentrations of gaseous oxides of nitrogen (NOx) for the Multi-Ethnic Study of Atherosclerosis and Air Pollution (MESA Air). Atmospheric Environment, 45(26), 4412-4420.
 
