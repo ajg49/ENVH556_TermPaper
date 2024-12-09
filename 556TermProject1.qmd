@@ -3551,25 +3551,24 @@ Our use of forward selection stepwise regression for covariate selection was ben
 
 **Comparison of Findings to Literature** 
 
-
+Blanco et al (*2011) analyzed their short-term campaigns versus a gold standard using partial least squares (PLS), and had similar but slightly better results than our short term balanced and gold standard models. Blanco et al’s (2011) gold standard model had a MSE-based R squared of 0.46 and a RMSE of 7.2 ppb. The balanced, short-term model had the best R squared and RMSE out of all of the short-term campaigns, as well (Blanco et al., 2011). Although our gold standard model did not perform quite as well as Blanco et al’s (2011) PLS gold standard model, we believe our results support the same conclusions with the same data. 
 
 
 
 **Strengths and Limitations** 
 
-*poor model fit
-limited monitors in LA for sensitivity 
-lack of spatial coverage
+We did not have a spatially rich data set, so we were limited in where we could predict and where we could restrict to the county level. We did not have enough sensors in counties other than LA county to compare predictions.  The low numbers of sensors in our LA county models could have limited our sensitivity analysis, and may have limited our confidence in the comparison between the LA county short term balanced model and the LA county gold standard model. Our Gold standard model, working with annual aggregates, only had 12 data points, so it may be misleading to consider its predictions the most well-founded predictions compared to the short term balanced model. 
 
+We also did not do a complex model selection, and instead used the previously selected model from Mercer et al (2022) paired with forward, stepwise model selection to further reduce the number of covariates included in our final common model. The subset of our land use covariates to the eight reflecting the mercer et al (2022) common model may have erroneously eliminated covariates that would have explained more of the variation between monitor locations. A more in=-depth model selection approach may have found a better fit to the models.
 
 
 **Broader Implications and Future Research** 
 
-
+future research: Comparing a short term campaign across counties would be an interesting next step to compare the short term balanced and seasonal models’ performances when restricted to different geographic regions in California. However, a different data set may have to be used, with more sensors or a concentration of sensors in counties of interest.
 
 **Conclusion** 
 
-Our findings are important in informing the sampling design for future monitoring campaigns
+Our findings are important in informing the sampling design for future monitoring campaigns. Overall, our findings re-iterate the findings of Blanco et al, 2011, whose methods inspired many of our analysis steps. We see seasonal variability in NOx concentrations at the statewide and LA county level, which leads to the importance of a sampling campaign which samples throughout all seasons. Both at the statewide and LA county level, we see reduced performance of our sampling campaign design when it was restricted to only one season. Our balanced short term sampling campaign performed comparably to our gold-standard model on a statewide and county level, confirming that a sampling campaign can collect a smaller number of samples on which to predict NOx concentrations, so long as the sampling design is temporally balanced. 
 
 
 # Author Contribution Statement (**NOTE add in your contributions below**) 
@@ -3591,7 +3590,7 @@ Writing:
 *Katie:* 
 
 
-*Abbie:*
+*Abbie:* Added to the results, especially with regards to the model selection and selection of model covariates, and seasonal models. Added to the discussion section with overall conclusions, limitations, future research suggestions, and current literature. 
 
 
 **Additional Contributions**
