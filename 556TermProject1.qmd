@@ -77,7 +77,7 @@ In our sensitivty analysis, we repeated our analyses with geographically restric
 
 # Results
 
-In total, 69 sensors in the state of California met the specified inclusion criteria and were included in our NOx prediction analysis. For our analyses specific to Los Angeles county, 12 sensors meeting the inclusion criteria were included.
+In total, 69 sensors in the state of California met the specified inclusion criteria and were included in our NOx prediction analysis. For our analyses specific to Los Angeles county, 12 sensors meeting the inclusion criteria were included. The distribution of NOx concentrations in our data set were log normally distributed, as illustrated in Appendix figure 2. 
 
 ```{r setup, include=FALSE}
 
@@ -317,6 +317,11 @@ max(meas_summary$pct_pos) #100%
 
 ##**Just a thought if we have time - could put a table of monitor characteristics (percenting missigness, etc) in the appendix**##
 ##*KW will make this is everything else comes together. 
+
+sensor_summary <- left_join( meas_summary, max_gap,  by = "native_id") 
+#Abbie put a table of data gaps and sensor criteria in the appendix
+
+
 ```
 
 
@@ -385,9 +390,9 @@ test <- random_sample(nox_only, 28, 72)
 
 #comparing test and sample_df to make sure they are the same
 
-check = sample_df$sample_measurement - test$sample_measurement
-max(check) #0
-min(check) #0
+#check = sample_df$sample_measurement - test$sample_measurement
+#max(check) #0
+#min(check) #0
 #The function works. 
 
 ```
@@ -464,35 +469,9 @@ for (i in 1:n_reps) {
 #Gold Standard Data
 long_term_gold <- annual_avg(nox_only)
 
-#summary statistics
-lt_gold_sum <- long_term_gold %>% summarise(min = min(annual_avg), 
-                                            Q25 = quantile(annual_avg, probs = 0.25), 
-                                            Q50 = quantile(annual_avg, probs = 0.5),
-                                            Q75 = quantile(annual_avg, probs = 0.75),
-                                            max = max(annual_avg),
-                                            mean = mean(annual_avg),
-                                            SD = sd(annual_avg)
-                                            )
-#lt_gold_sum
-      #This matches the number reported in Blanco supplement S5
-
-#summary stats for st_balanced
-st_balanced_sum <- st_balanced %>% summarise(min = min(annual_avg), 
-                                            Q25 = quantile(annual_avg, probs = 0.25), 
-                                            Q50 = quantile(annual_avg, probs = 0.5),
-                                            Q75 = quantile(annual_avg, probs = 0.75),
-                                            max = max(annual_avg),
-                                            mean = mean(annual_avg),
-                                            SD = sd(annual_avg)
-                                            )
-#st_balanced_sum #this would not be expected to match Blanco because we used different seeds
-#summarizing the data from the random samples
-names <- c("Gold Standard (LT)", "ST Balanced")
-kable(cbind(names , rbind(lt_gold_sum, st_balanced_sum)), digits = 2,
-      caption = "Table 1.0: Balanced, Long-term & Short-term Sampling Campaign Summaries") %>% kable_styling()
 
 ```
-  Table 1.0 has a short summary of the data sets for our Gold Standard and short-term balanced models. **maybe this gets moved into the appendix, or we display after we've computed the seasonnal ones as well?**
+
 
 
  
@@ -520,75 +499,6 @@ sum_stats <- function(data) {
 
 ```
 
-```{r gold.standard.variability, warning = FALSE, include = F, echo = F}
-#graphing the distribution of annual averages
-
-
-balanced<- ggplot(st_balanced, aes(x = native_id, y = log_avg)) +
-  geom_boxplot()+
-  ggtitle("Figure 1:Short Term Balanced Sensor Log-transformed Annual Averages \n30 sets of 28 samples per sensor") +
-  ylab("ln(NOx) ln(ppb)")
-
-gold<- ggplot(long_term_gold, aes(x = native_id, y = log_avg)) +
-  geom_point()+
-  ggtitle("Gold Standard Sensor Log-transformed Annual Averages \n1 sample per sensor") +
-  ylab("ln(NOx) ln(ppb)")
-
-raw_data<- ggplot(nox_only, aes(x = native_id, y = log(sample_measurement))) +
-  geom_boxplot()+
-  ggtitle("Raw Data by sensor ID \nLog transformed") +
-  ylab("ln(NOx) ln(ppb)")
-
-grid.arrange(balanced, gold, raw_data)
-
-#I set include = F for this. Maybe we can move to appendix, but I think the plots are just too rough and not really that illustrative of what we want to show.
-#Or just pick on plot and show without grid arrange. 
-```
-
-```{r, echo = F, include = T}
-
-#Kinda crazy how much variability there is using unrestricted random samples
-#We can choose which type of plot we like best - AG
-
-# Abbie commented these histograms and used ggplot to re-make them so aesthetics could be added
-
-#with(st_balanced, hist(annual_avg, breaks = 30, col = "blue", xlab = "NOx ppm" ))  
-#with(st_balanced, hist(log_avg, breaks = 30, col = "seagreen", xlab = "log(NOx ppm)" ))
-
-#with(long_term_gold, hist(annual_avg, breaks = 20, col = "blue", xlab = "NOx ppm" ))
-#with(long_term_gold, hist(log_avg, breaks = 20, col = "seagreen", xlab = "log(NOx ppm)" ))
-
-native <- long_term_gold %>%
-ggplot(aes(annual_avg)) +
-  geom_histogram(aes(y = ..density..), bins = 30, color = "lightblue", fill = "lightblue", alpha = 0.8) +
-  geom_density(color = "purple") +
-  labs(title = " Figure 2.0: Distribution of Annual Average NOx Concentrations",
-       x = "Concentration on native scale (ppb)",
-       y = "density"
-       )
-
-log <- long_term_gold %>%
-ggplot(aes(log_avg)) +
-  geom_histogram(aes(y = ..density..), bins = 30, color = "lightblue", fill = "lightblue", alpha = 0.8) +
-  geom_density(color = "purple") +
-  labs(title = "",
-       x = "Concentration on natural log (ppb) scale",
-       y = "density"
-       )
-
-native + log
-#makes much more sense to work with the data on the log scale
-
-#Should this whole chunk go to the appendix?
-
-```
-*Need to sort this out* Figure out which figures are most informative and move the rest to the appendix. 
-
-Figure 1.0 illustrates the variability in the short-term balanced data set created by randomly sampling across all eligible sensors in California. We see variability within each sensor and across sensors. 
-
-The second graph in Figure 1.0 shows the annual averages for each sensor in the Gold Standard data set. With an annual average for each sensor in the gold standard data set, we are unable to see the variation within each sensor. The bottom plot shows the variation in our raw, NOx only, log-transformed, data before aggregating.  Figure 3.0 appears to show larger variability within each sensor than between sensors. 
-
-Figure 2.0 shows the distribution of data within our Gold Standard data set, with annual NOx averages. Figure 2.0 shows a non-normal distribution and indicates a log-transformed NOx concentrationis best to work with in our data analysis. These distributions were viewed for each data set (balanced and seasonal) and also indicated log transformation was appropriate. These accessory plots can be found in the Appendix.
 
 #putting first map here: can figure out where it fits best and we make decisions about the analysis
 ```{r data.setup.for.map, echo = F, include = F}
@@ -659,7 +569,8 @@ latlong
 
 ```
 
-Figure 1: Shows the monitor locations acrosss California. Colors indicate the annual average NOx concentration in ppb. As seen, the 69 monitor locations are widely distributed across a vast area, and there is not a large amount of variability in annual average conncetration across monitors, with the majority of annual average concentration on the lower end of the scale. The greatest density of monitors as well as the greatest variation in annual averages occures in the Los Angeles metropolitan area, which motivated our sensitivity analysis in this region. *I put the map on the native scale, because it is more intuitive, but it does show a small bit more variation on the log scale. Could change if you think?*
+Figure 1: Shows the monitor locations across California. Colors indicate the annual average NOx concentration in ppb. As seen, the 69 monitor locations are widely distributed across a vast area, and there is not a large amount of variability in annual average concentration across monitors, with the majority of annual average concentration on the lower end of the scale. The greatest density of monitors as well as the greatest variation in annual averages occures in the Los Angeles metropolitan area, which motivated our sensitivity analysis in this region. *I put the map on the native scale, because it is more intuitive, but it does show a small bit more variation on the log scale. Could change if you think?* *I think its more presentable on the native scale so I would argue to keep it like it is* - AG
+
 
 ```{r socal.map, echo = F, include = T}
 #zoomed in on S. CA to try and show more detail in the seasonal variation
@@ -692,7 +603,7 @@ socal_seasons
 
 
 ```
-Figure 2: Zooms in on Monitors in Southern CA and displays seasonal averages for each monitor. In this figure, we can see that there is more variability in fall and winter when conncentrations are higher than there is in spring and summer when concentrations are lower. 
+Figure 2: Zooms in on Monitors in Southern CA and displays seasonal averages for each monitor. This figure includes more than just the 12 sensors we will use in our sensitivity analysis of LA county, but it does allow us to focus on the variability that might impact this restricted data set andthese seasonal models. In this figure, we can see that there is more variability in fall and winter when concentrations are overall higher than there is in spring and summer when concentrations are overall lower lower. 
 
 ```{r, include = F, echo = F}
 #-----generate cross validation group for all analyses-----
@@ -894,18 +805,16 @@ combined_plot2
 ```
 
 
-# Adding Covariates from Mercer et al Common Model
-  The Mercer et al 2011 paper has the following covariates determined in its "common model" with which they assessed seasonal prediction models.
- Covariates:  D2A1 (distance to A1 road), A1_50m (length of A1 road in 50 m buffer), A23_400m (length of A2 or A3 roads within 400 m buffer), Pop_5k (total population within 5,000 m buffer), D2C (Distance to the coast in meters), Int_3k (intense land use within 3,000 m), D2Comm (distance to commercial land).
-  To assess the best fit of these covariates to our data, we ran forward, stepwise selection using k =2 as the penalty on the california nox covariates that matched these mercer et al (2011) covariates the best (a total of 8 covariates). The the stepwise selection returned four covariates (pop_s05000, m_to_coast, m_to_a1, ll_a1_s00050). The Bias Variance plot above shows us that the three-covariate model performed the best on our gold standard data, and so we selected the first three covariates for use in our model. The covariates in this model are:
+**Adding Covariates from Mercer et al 2011 Common Model**
+  The Mercer et al 2011 paper has the following covariates determined in its "common model" with which they assessed seasonal prediction models: D2A1 (distance to A1 road), A1_50m (length of A1 road in 50 m buffer), A23_400m (length of A2 or A3 roads within 400 m buffer), Pop_5k (total population within 5,000 m buffer), D2C (Distance to the coast in meters), Int_3k (intense land use within 3,000 m), D2Comm (distance to commercial land).
+
+To assess the best fit of these covariates to our data, we ran forward, stepwise selection using k =2 as the penalty on the california nox covariates that matched these mercer et al (2011) covariates the best (a total of 8 covariates). This selection returned three covariates for use in our model. The covariates in our common model are:
   
 "pop_s05000" - population within 5,000 m buffer, "m_to_coast" - Distance to the coast in meters, and "m_to_a1" - Distance to a A1 road in meters.  
 
-Figure 3.0 shows that our out-of-sample performance peaks with the first three covariates included in forward selection. 
+Figure 3.0 shows that our out-of-sample performance peaks with the first three covariates included in forward selection and illustrates the appropriate selection of three, rather than four, covariates.. 
 
  
-
-
 ```{r, echo = F, include = F}
 # build regression formula with common model covariates
 
@@ -1056,10 +965,7 @@ st_balanced_scatter <- ggplot(data = st_balanced_CV, aes(x = gold_preds, y = cvp
     coord_fixed() +
     geom_smooth(method = 'lm', se = F, alpha = 0.5, show.legend = FALSE) +
     geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
-    labs(title = "Campaign vs. Gold Standard Cross-validated Predictions", 
-         subtitle = "Balanced Campaigns",
-         x = "Gold Standard predicted ln(NOx) (ln(ppb))",
-         y = " Campaign Predicted ln(NOx) (ln(ppb))",
+    labs(title = "Balanced Campaign \nvs Gold Predictions",
          caption = "1:1 line is dashed") +
     theme_bw()
 
@@ -1075,8 +981,7 @@ st_balanced_boxplot <- ggplot(st_balanced_MSE_long, aes(x = method, y = value, c
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   facet_wrap(~metric) +
-  labs(title = "RMSE and MSE_R2 Comparison",
-       caption = "Method A = Campaign Predictions Compared to Gold Standard Obs\nMethod B = Campaign Predictions Compared to Campaign Observations\nSquare points shows the long-term campaigns performance") +
+  labs(title = "Balanced Comparison") +
   theme_bw() +
   theme(
     plot.caption = element_text(hjust = 0)
@@ -1113,6 +1018,7 @@ st_balanced_obs_v_preds <- ggplot(data = st_balanced_CV, aes(log_avg, cvpreds)) 
 st_balanced_obs_v_preds
 
 ```
+
 
 #------------Season-Specific Prediction Models----------------------------------
 
@@ -1249,8 +1155,9 @@ spring_state_var<- ggplot(st_spring, aes(x = native_id, y = log_avg)) +
 
 #Looks good! Only suggestion is that we just use the annual_avg() function and not add a season_avg() function, because other than the name, they produce the same results. KW
 
-grid.arrange(summer_state_var, fall_state_var, winter_state_var, spring_state_var)
 #if you think these plots are helpful, then we should spend some time fixing them up. I think they are mostly just to help us visualize the data, and can be left out (or put in appendix without the grid arrange)KW
+
+#moved to the appendix - AG
 
 ```
 
@@ -1277,13 +1184,11 @@ st_spring_sum <- sum_stats(st_spring)
 
 Datasets <- c("summer (st)", "fall (st)", "winter (st)", "spring (st)", "balanced (st)", "gold standard (lt)")
 kable(cbind(Datasets , rbind(st_summer_sum, st_fall_sum, st_winter_sum, st_spring_sum, st_balanced_sum, lt_gold_sum)), digits = 2,
-      caption = " Table 2.0: Sampling Campaign NOx (ppb) Summaries") %>%
+      caption = " Table 1.0: Sampling Campaigns NOx (ppb) Summaries") %>%
   kable_styling()
 
 ```
-Table 2.0 summarizes the spread and range of the data randomly sampled for each data set. The Fall and Winter data sets have nearly double the variation as Spring and Summer data sets. As we would expect, the balanced data set has variability in the middle between these four seasonal data sets. 
-
-The figures above show that across all four seasons, the within-sensor variability looks similar, except for spring. The spring data set has less variability within sensor, not just across sensors. 
+Table 2.0 summarizes the spread and range of the data randomly sampled for each data set in our statewide analysis and the gold standard dataset. The Fall and Winter data sets have nearly double the variation as Spring and Summer data sets. As we would expect, the balanced data set has variability in the middle between these four seasonal data sets. As we would expect, the balanced and gold standard data sets have a standard deviation in the middle of our seasonal data sets. 
 
 *I added the gold standard to this. I like this table better and thinks that we can just use it and forget about table 1 - KW*
 
@@ -1293,7 +1198,7 @@ The figures above show that across all four seasons, the within-sensor variabili
 st_summer <-  left_join(st_summer,mercer_cov, by = "native_id" )
 st_fall <-  left_join(st_fall,mercer_cov, by = "native_id" )
 st_winter <-  left_join(st_winter,mercer_cov, by = "native_id" )
-st_spring <-  left_join(st_spring,mercer_cov, by = "native_id" ) #testing the spring data set without the inf. value data point
+st_spring <-  left_join(st_spring,mercer_cov, by = "native_id" ) 
 
 
 ```
@@ -1403,12 +1308,11 @@ st_summer_scatter <- ggplot(data = st_summer_CV, aes(x = gold_preds, y = cvpreds
     coord_fixed() +
     geom_smooth(method = 'lm', se = F, alpha = 0.5, show.legend = FALSE) +
     geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
-    labs(title = "Summer Campaign vs. Gold Standard Cross-validated Predictions", 
-         subtitle = "Balanced Campaigns",
-         x = "Gold Standard predicted ln(NOx) (ln(ppb))",
-         y = "Summer Campaign Predicted ln(NOx) (ln(ppb))",
+    labs(title = "Summer Campaign \nvs Gold Predictions", 
          caption = "1:1 line is dashed") +
-    theme_bw() 
+    theme_bw() +
+  theme(plot.caption = element_text(hjust = 0)
+  )
   
 st_summer_scatter
 
@@ -1422,8 +1326,7 @@ st_summer_boxplot <-  ggplot(st_summer_MSE_long, aes(x = method, y = value, colo
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   facet_wrap(~metric) +
-  labs(title = "RMSE and MSE_R2 Comparison",
-       caption = "Method A = Summer Campaign Predictions Compared to Gold Standard Obs\nMethod B = Summer Campaign Predictions Compared to Summer Campaign Observations\nSquare points shows the long-term campaigns performance") +
+  labs(title = "Summer Comparison") +
   theme_bw() +
   theme(
     plot.caption = element_text(hjust = 0)
@@ -1434,7 +1337,6 @@ st_summer_boxplot <-  ggplot(st_summer_MSE_long, aes(x = method, y = value, colo
 
 
 ```
-Comparing the summer short term sampling campaign to the Gold Standard sampling campaign, we see that the summer model under-predicts NOx concentrations.  
 
 
 
@@ -1525,12 +1427,11 @@ st_fall_scatter <-ggplot(data = st_fall_CV, aes(x = gold_preds, y = cvpreds, col
     coord_fixed() +
     geom_smooth(method = 'lm', se = F, alpha = 0.5, show.legend = FALSE) +
     geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
-    labs(title = "fall Campaign vs. Gold Standard Cross-validated Predictions", 
-         subtitle = "Balanced Campaigns",
-         x = "Gold Standard predicted ln(NOx) (ln(ppb))",
-         y = "fall Campaign Predicted ln(NOx) (ln(ppb))",
+    labs(title = "fallCampaign \nvs Gold Predictions", 
          caption = "1:1 line is dashed") +
-    theme_bw()
+    theme_bw() +
+  theme(plot.caption = element_text(hjust = 0)
+  )
 
 st_fall_scatter
 
@@ -1544,8 +1445,7 @@ st_fall_boxplot <-  ggplot(st_fall_MSE_long, aes(x = method, y = value, color = 
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   facet_wrap(~metric) +
-  labs(title = "RMSE and MSE_R2 Comparison",
-       caption = "Method A = fall Campaign Predictions Compared to Gold Standard Obs\nMethod B = fall Campaign Predictions Compared to fall Campaign Observations\nSquare points shows the long-term campaigns performance") +
+  labs(title = "Fall Comparison") +
   theme_bw() +
   theme(
     plot.caption = element_text(hjust = 0)
@@ -1555,7 +1455,8 @@ st_fall_boxplot
   
 
 ```
-Comparing the fall short term sampling campaign to the Gold Standard sampling campaign, we see that the fall model slightly over-predicts NOx concentrations.  However, this plot shows fairly close predictions to the Gold Standard model. 
+
+
 
 ```{r winter v gold, echo = F, include = F}
 #------------seasonal comparison with  and gold standard-------------
@@ -1644,12 +1545,11 @@ st_winter_scatter <-ggplot(data = st_winter_CV, aes(x = gold_preds, y = cvpreds,
     coord_fixed() +
     geom_smooth(method = 'lm', se = F, alpha = 0.5, show.legend = FALSE) +
     geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
-    labs(title = "winter Campaign vs. Gold standard Cross-validated Predictions", 
-         subtitle = "Balanced Campaigns",
-         x = "Gold Standard predicted ln(NOx) (ln(ppb))",
-         y = "winter Campaign Predicted ln(NOx) (ln(ppb))",
+    labs(title = "winter  Campaign \nvs Gold Predictions", 
          caption = "1:1 line is dashed") +
-    theme_bw()
+    theme_bw() +
+  theme(plot.caption = element_text(hjust = 0)
+  )
 
 st_winter_scatter
 
@@ -1662,8 +1562,7 @@ st_winter_boxplot <- ggplot(st_winter_MSE_long, aes(x = method, y = value, color
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   facet_wrap(~metric) +
-  labs(title = "RMSE and MSE_R2 Comparison",
-       caption = "Method A = winter Campaign Predictions Compared to  Gold standard Obs\nMethod B = winter Campaign Predictions Compared to winter Campaign Observations\nSquare points shows the long-term campaigns performance") +
+  labs(title = "Winter Comparison") +
   theme_bw() +
   theme(
     plot.caption = element_text(hjust = 0)
@@ -1762,12 +1661,11 @@ st_spring_scatter <-ggplot(data = st_spring_CV, aes(x = gold_preds, y = cvpreds,
     coord_fixed() +
     geom_smooth(method = 'lm', se = F, alpha = 0.5, show.legend = FALSE) +
     geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
-    labs(title = "spring Campaign vs. Gold Standard Cross-validated Predictions", 
-         subtitle = "Balanced Campaigns",
-         x = "short term balanced predicted ln(NOx) (ln(ppb))",
-         y = "spring Campaign Predicted ln(NOx) (ln(ppb))",
+    labs(title = "Spring Campaign \nvs Gold Predictions",
          caption = "1:1 line is dashed") +
-    theme_bw()
+    theme_bw() +
+  theme(plot.caption = element_text(hjust = 0)
+  )
 
 st_spring_scatter
 
@@ -1781,10 +1679,7 @@ st_spring_boxplot <- ggplot(st_spring_MSE_long, aes(x = method, y = value, color
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   facet_wrap(~metric) +
-  labs(title = "RMSE and MSE_R2 Comparison",
-       caption = "Method A = spring Campaign Predictions Compared to Gold Standard Obs\n
-       Method B = spring Campaign Predictions Compared to spring Campaign Observations\n
-       Square points shows the long-term campaigns performance") +
+  labs(title = "Spring Comparison") +
   theme_bw() +
   theme(
     plot.caption = element_text(hjust = 0)
@@ -1793,20 +1688,43 @@ st_spring_boxplot <- ggplot(st_spring_MSE_long, aes(x = method, y = value, color
 st_spring_boxplot
 
 ```
-Comparing the spring short term sampling campaign to the Gold Standard sampling campaign, we see that the spring model under-predicts NOx concentrations. The spring model's predictions appear to be the farthest form the gold-standard predictions.
 
 
-```{r, warning = FALSE, incldue = F, echo = F}
+```{r, warning = FALSE, echo = F, message = FALSE}
 
 #summary figures - statewide
 
-grid.arrange(st_spring_boxplot, st_summer_boxplot, st_fall_boxplot, st_winter_boxplot, st_balanced_boxplot, ncol = 3, nrow = 2)
-grid.arrange(st_spring_scatter, st_summer_scatter, st_fall_scatter, st_winter_scatter, st_balanced_scatter, ncol = 3, nrow = 2) 
+Title <- "Statewide Short Term Campaign Performances and Comparison with Gold Standard"
+Methods <- " Method A = Campaign Predictions Compared to Gold Standard Obs\n
+       Method B = Campaign Predictions Compared to its Observations\n
+       Square points shows the Gold Standard's performance"
+
+scatter_legend <- "x = Gold Standard predicted ln(NOx) (ln(ppb))
+         \ny = Short Term Campaign Predicted ln(NOx) (ln(ppb))"
+
+grid.arrange(top = Title, bottom = Methods, grobs= list(st_spring_boxplot, st_summer_boxplot, st_fall_boxplot, st_winter_boxplot, st_balanced_boxplot),
+             ncol = 3, nrow = 3,
+             layout_matrix = rbind(c(1,2,3),
+                                   c(4, 5, NA)))
+
+grid.arrange(top = Title, bottom = scatter_legend, grobs = list(st_spring_scatter, st_summer_scatter, st_fall_scatter, st_winter_scatter,
+                                                                st_balanced_scatter), ncol = 3, nrow = 3,
+             layout_matrix = rbind(c(1,2,3),
+                                   c(4, 5, NA)))
 
 #yikes! :)
 
+#Abbie figured out grid.arrange, and made these much nicer plots.
+
 
 ```
+
+In Figure X.X, the box plot plots, the Balanced campaign is the only short term campaign with a reasonable R squared and reasonable performance in comparison witht he gold standard. The Agreement between the gold standard and the short term seasonal campaigns is very low, with R squared values near zero (pink). The blue boxplots show the cross validated performance statistics for each campaign, which we see hovering around 0.3 with all campaigns.
+
+In figure X.X., the scatter plots show trends in over- or under-prediction by each short term campaign when compared to the gold standard predictions. We can see that the spring and summer models under predict ln(NOx) while the winter and fall models over-predict ln(NOx). The Balanced short term campaign doesn't appear to have a visible trend in over- or under-predicting ln(NOX) concentrations and seems to agree well with the gold standard predictions, with plotted predictions falling right along the 1:1 line. 
+
+
+
 ```{r, echo = F, include = T, fig.height = 7, fig.width = 7}
 
 #trying to make a better plot
@@ -1918,7 +1836,7 @@ st_all_boxplot
 
 la <-left_join(nox_only, mercer_cov, by = "native_id") %>% filter(County == "Los Angeles")
 
-head(la)
+#head(la)
 
 # fixed this so that it is more similar to the other df and takes a lot less time than using all the ca covarites. 
 
@@ -1986,6 +1904,7 @@ names_la <- c("short-term balanced", "long-term balanced")
 # no need to have these all throughut the paper - AG
 
 ```
+
 ```{r la.convariates, include = F, echo = F}
 #--------------------------Common Model on LA datasets------------------#
 
@@ -2127,10 +2046,7 @@ balanced_scatter_la<-ggplot(data = st_la_CV, aes(x = gold_preds_la, y = cvpreds,
     coord_fixed() +
     geom_smooth(method = 'lm', se = F, alpha = 0.5, show.legend = FALSE) +
     geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
-    labs(title = "Long vs. short term balanced Cross-validated Predictions in LA", 
-         subtitle = "Balanced Campaigns",
-         x = "short term balanced predicted ln(NOx) (ln(ppb))",
-         y = "Long term Campaign Predicted ln(NOx) (ln(ppb))",
+    labs(title = "Short term Balanced \nvs Gold Standard Predictions", 
          caption = "1:1 line is dashed") +
     theme_bw()
 
@@ -2140,10 +2056,7 @@ balanced_boxplot_la<- ggplot(st_la_MSE_long, aes(x = method, y = value, color = 
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   facet_wrap(~metric) +
-  labs(title = "RMSE and MSE_R2 Comparison",
-       caption = "Method A = Short-term Balanced Predictions Compared to Gold Standard Obs\n
-       Method B = Short-Term Campaign Predictions Compared to Short-term Campaign Observations\n
-       Square points shows the long-term campaigns performance") +
+  labs(title = "Balanced Comparison") +
   theme_bw()
 
 #NOTE: can someone please confirm that I got the captions right here? -ck Looks OK. We need to update the GOLD mse to just la though. Can do this is the final plot. 
@@ -2290,7 +2203,7 @@ st_spring_la_sum <- sum_stats(st_spring_la)
 
 Datasets <- c("spring (st)","summer (st)", "fall (st)", "winter (st)", "balanced (st)", "gold standard (lt)")
 kable(cbind(Datasets , rbind(st_spring_la_sum, st_summer_la_sum, st_fall_la_sum, st_winter_la_sum, st_la_sum, lt_gold_sum_la)), digits = 2,
-      caption = " Table X.0: Sampling Campaign NOx (ppb) Summaries for Los Angeles") %>%
+      caption = " Table X.0: Sampling Campaign NOx (ppb) Summaries for Los Angeles County") %>%
   kable_styling()
 
 
@@ -2321,9 +2234,6 @@ summary(lm_st_spring_la <- lm(frml, data = st_spring_la))
 
 ```
 
-```{r}
-grid.arrange(summer_LA, fall_LA, winter_LA, spring_LA, balanced_LA )
-```
 
 
 #----------comparing seasonal short term campaigns with Gold Standard data----------------
@@ -2415,10 +2325,7 @@ summer_scatter_la<-ggplot(data = st_summer_CV_la, aes(x = gold_preds_la, y = cvp
     coord_fixed() +
     geom_smooth(method = 'lm', se = F, alpha = 0.5, show.legend = FALSE) +
     geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
-    labs(title = "Summer Campaign vs. short term balanced Cross-validated Predictions", 
-         subtitle = "Balanced Campaigns",
-         x = "short term balanced predicted ln(NOx) (ln(ppb))",
-         y = "Summer Campaign Predicted ln(NOx) (ln(ppb))",
+    labs(title = "Summer Campaign \nvsGold Standard Predictions", 
          caption = "1:1 line is dashed") +
     theme_bw()
 
@@ -2432,10 +2339,7 @@ summer_boxplot_la<- ggplot(st_summer_MSE_long_la, aes(x = method, y = value, col
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   facet_wrap(~metric) +
-  labs(title = "RMSE and MSE_R2 Comparison",
-       caption = "Method A = LA county Summer Campaign Predictions Compared to Gold Standard Obs\n
-       Method B = LA county Summer Campaign Predictions Compared to Summer Campaign Observations\n
-       Square points shows the long-term campaigns performance") +
+  labs(title = "Summer Comparison") +
   theme_bw()
 
 
@@ -2532,10 +2436,7 @@ fall_scatter_la<-ggplot(data = st_fall_CV_la, aes(x = gold_preds_la, y = cvpreds
     coord_fixed() +
     geom_smooth(method = 'lm', se = F, alpha = 0.5, show.legend = FALSE) +
     geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
-    labs(title = "Fall Campaign vs. short term balanced Cross-validated Predictions", 
-         subtitle = "Balanced Campaigns",
-         x = "short term balanced predicted ln(NOx) (ln(ppb))",
-         y = "Fall Campaign Predicted ln(NOx) (ln(ppb))",
+    labs(title = "Fall Campaign \nvs Gold Standard Predictions", 
          caption = "1:1 line is dashed") +
     theme_bw()
 
@@ -2549,10 +2450,7 @@ fall_boxplot_la<- ggplot(st_fall_MSE_long_la, aes(x = method, y = value, color =
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   facet_wrap(~metric) +
-  labs(title = "RMSE and MSE_R2 Comparison",
-       caption = "Method A = LA county Fall Campaign Predictions Compared to Gold Standard Obs\n
-       Method B = LA county Fall Campaign Predictions Compared to Summer Campaign Observations\n
-       Square points shows the long-term campaigns performance") +
+  labs(title = "Fall Comparison") +
   theme_bw()
 
 
@@ -2646,10 +2544,7 @@ winter_scatter_la<- ggplot(data = st_winter_CV_la, aes(x = gold_preds_la, y = cv
     coord_fixed() +
     geom_smooth(method = 'lm', se = F, alpha = 0.5, show.legend = FALSE) +
     geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
-    labs(title = "Winter Campaign vs. short term balanced Cross-validated Predictions", 
-         subtitle = "Balanced Campaigns",
-         x = "short term balanced predicted ln(NOx) (ln(ppb))",
-         y = "Winter Campaign Predicted ln(NOx) (ln(ppb))",
+    labs(title = "Winter Campaign \nvs Gold Standard Predictions", 
          caption = "1:1 line is dashed") +
     theme_bw()
 
@@ -2663,10 +2558,7 @@ winter_boxplot_la<- ggplot(st_winter_MSE_long_la, aes(x = method, y = value, col
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   facet_wrap(~metric) +
-  labs(title = "RMSE and MSE_R2 Comparison",
-       caption = "Method A = LA county Winter Campaign Predictions Compared to Gold Standard Obs\n
-       Method B = LA county Winter Campaign Predictions Compared to Summer Campaign Observations\n
-       Square points shows the long-term campaigns performance") +
+  labs(title = "Winter Comparison") +
   theme_bw()
 
 
@@ -2762,10 +2654,7 @@ spring_scatter_la<-ggplot(data = st_spring_CV_la, aes(x = gold_preds_la, y = cvp
     coord_fixed() +
     geom_smooth(method = 'lm', se = F, alpha = 0.5, show.legend = FALSE) +
     geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
-    labs(title = "Spring Campaign vs. short term balanced Cross-validated Predictions", 
-         subtitle = "Balanced Campaigns",
-         x = "short term balanced predicted ln(NOx) (ln(ppb))",
-         y = "Spring Campaign Predicted ln(NOx) (ln(ppb))",
+    labs(title = "Spring Campaign \nvs Gold Standard Predictions",
          caption = "1:1 line is dashed") +
     theme_bw()
 
@@ -2779,21 +2668,40 @@ spring_boxplot_la<-ggplot(st_spring_MSE_long_la, aes(x = method, y = value, colo
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   facet_wrap(~metric) +
-  labs(title = "RMSE and MSE_R2 Comparison",
-       caption = "Method A = LA county Spring Campaign Predictions Compared to Gold Standard Obs\n
-       Method B = LA county Spring Campaign Predictions Compared to Summer Campaign Observations\n
-       Square points shows the long-term campaigns performance") +
+  labs(title = "Spring Comparison") +
   theme_bw()
 ```
 
 #summary figures - LA County
-```{r, warning = FALSE}
+```{r, warning = FALSE, message = FALSE}
+#summary figures - statewide
 
-grid.arrange(spring_boxplot_la, summer_boxplot_la, fall_boxplot_la, winter_boxplot_la, balanced_boxplot_la, ncol = 3, nrow = 2)
-grid.arrange(spring_scatter_la, summer_scatter_la, fall_scatter_la, winter_scatter_la, balanced_scatter_la, ncol = 3, nrow = 2) 
+Title <- "LA County Short Term Campaign Performances and Comparison with Gold Standard"
+Methods <- " Method A = Campaign Predictions Compared to Gold Standard Obs\n
+       Method B = Campaign Predictions Compared to its Observations\n
+       Square points shows the Gold Standard's performance"
 
+scatter_legend <- "x = Gold Standard predicted ln(NOx) (ln(ppb))
+         \ny = Short Term Campaign Predicted ln(NOx) (ln(ppb))"
+
+grid.arrange(top = Title, bottom = Methods, grobs= list(st_spring_boxplot, st_summer_boxplot, st_fall_boxplot, st_winter_boxplot, st_balanced_boxplot),
+             ncol = 3, nrow = 3,
+             layout_matrix = rbind(c(1,2,3),
+                                   c(4, 5, NA)))
+
+grid.arrange(top = Title, bottom = scatter_legend, grobs = list(st_spring_scatter, st_summer_scatter, st_fall_scatter, st_winter_scatter,
+                                                                st_balanced_scatter), ncol = 3, nrow = 3,
+             layout_matrix = rbind(c(1,2,3),
+                                   c(4, 5, NA)))
 
 ```
+
+Figures X and X both show the restricted LA county models' performances. In figure X, the box plots, we see the same trend we saw with the statewide data sets. The summer and spring models describe nearly zero percent of the variability in the data set (looking at the pink R squared), and the fall and winter models predict some of the variability, but much less than the gold standard model.
+
+Figure X, with scatter plots, shows the same trend that we saw in the statewide data with under- and over- predictions. The summer and spring models under-predict ln(NOX) concentrations, again, while the winter and fall models over-predict. In good news, the short term balanced model continues to agree with the gold standard model and offer comparable R-squared and RMSE statistics. 
+
+
+
 
 #prediction maps using predictions from LUR model in our analysis
 ```{r prediction.maps, echo = F, include = F}
@@ -3074,6 +2982,7 @@ plot(v.uk_Winter, model = m.uk_Winter)
 
 #meh
 ```
+
 
 ```{r, echo = F, include = F}
 
@@ -3589,7 +3498,7 @@ Writing:
 *Katie:* 
 
 
-*Abbie:* Added to the results, especially with regards to the model selection and selection of model covariates, and seasonal models. Added to the discussion section with overall conclusions, limitations, future research suggestions, and current literature. 
+*Abbie:* Added to the results, especially with regards to the model selection and selection of model covariates, and seasonal models. Added to the discussion section with overall conclusions, limitations, future research suggestions, and current literature. final editing of plots and graphs.
 
 
 **Additional Contributions**
@@ -3645,43 +3554,116 @@ United States Census. 2023. QuickFacts Los Angeles County, California. https://w
 
 #---------------------------Reference Code-------------------------------------#
 
+
+Sensors Kept in the Data after applying selection Criteria from Blanco et al (2022).
+```{r, echo = FALSE}
+kable(sensor_summary,
+      col.names = c("Sensor ID", "Count", "Percent of Year with Data", "Percent of Data Positive", "Maximum Data Gap"),
+      digits = 2,
+      caption = "Summary of Sensor Data for SEnsors Meeting Selection Criteria") %>% kable_styling()
+
+```
+
+Statewide Datasets - Gold Standard, Short term balanced, and seasonals
+```{r}
+#summary statistics
+lt_gold_sum <- long_term_gold %>% summarise(min = min(annual_avg), 
+                                            Q25 = quantile(annual_avg, probs = 0.25), 
+                                            Q50 = quantile(annual_avg, probs = 0.5),
+                                            Q75 = quantile(annual_avg, probs = 0.75),
+                                            max = max(annual_avg),
+                                            mean = mean(annual_avg),
+                                            SD = sd(annual_avg)
+                                            )
+#lt_gold_sum
+      #This matches the number reported in Blanco supplement S5
+
+#summary stats for st_balanced
+st_balanced_sum <- st_balanced %>% summarise(min = min(annual_avg), 
+                                            Q25 = quantile(annual_avg, probs = 0.25), 
+                                            Q50 = quantile(annual_avg, probs = 0.5),
+                                            Q75 = quantile(annual_avg, probs = 0.75),
+                                            max = max(annual_avg),
+                                            mean = mean(annual_avg),
+                                            SD = sd(annual_avg)
+                                            )
+#st_balanced_sum #this would not be expected to match Blanco because we used different seeds
+#summarizing the data from the random samples
+names <- c("Gold Standard (LT)", "ST Balanced")
+
+kable(cbind(names , rbind(lt_gold_sum, st_balanced_sum)), digits = 2,
+      caption = "Table 1.0: Balanced, Long-term & Short-term Sampling Campaign Summaries") %>% kable_styling()
+
+```
+
+```{r gold.standard.variability, warning = FALSE, echo = F}
+#graphing the distribution of annual averages
+
+
+balanced<- ggplot(st_balanced, aes(x = native_id, y = log_avg)) +
+  geom_boxplot()+
+  ggtitle("Figure 1:Short Term Balanced Sensor Log-transformed Annual Averages \n30 sets of 28 samples per sensor") +
+  ylab("ln(NOx) ln(ppb)")
+
+gold<- ggplot(long_term_gold, aes(x = native_id, y = log_avg)) +
+  geom_point()+
+  ggtitle("Gold Standard Sensor Log-transformed Annual Averages \n1 sample per sensor") +
+  ylab("ln(NOx) ln(ppb)")
+
+
+grid.arrange(balanced, gold)
+
+grid.arrange(summer_state_var, fall_state_var, winter_state_var, spring_state_var)
+
+
+
+```
+These plots above show the variability in the data from all of the statewide data sets: gold standard, short term balanced, summer, fall, winter, and spring data sets. 
+
 #Break up the histograms by season, look at NOx distribution by seasons
 
-```{r histogram}
 
-#---------------------- Stratified by season----------------------------------#
-#native scale
-#histograms with smoother
-nox_only %>%
-ggplot(aes(sample_measurement)) +
-  geom_histogram(aes(y = ..density..), bins = 40, color = "lightblue", fill = "lightblue", alpha = 0.8) +
+```{r, echo = F, include = T}
+
+#Kinda crazy how much variability there is using unrestricted random samples
+#We can choose which type of plot we like best - AG
+
+# Abbie commented these histograms and used ggplot to re-make them so aesthetics could be added
+
+#with(st_balanced, hist(annual_avg, breaks = 30, col = "blue", xlab = "NOx ppm" ))  
+#with(st_balanced, hist(log_avg, breaks = 30, col = "seagreen", xlab = "log(NOx ppm)" ))
+
+#with(long_term_gold, hist(annual_avg, breaks = 20, col = "blue", xlab = "NOx ppm" ))
+#with(long_term_gold, hist(log_avg, breaks = 20, col = "seagreen", xlab = "log(NOx ppm)" ))
+
+native <- long_term_gold %>%
+ggplot(aes(annual_avg)) +
+  geom_histogram(aes(y = ..density..), bins = 30, color = "lightblue", fill = "lightblue", alpha = 0.8) +
   geom_density(color = "purple") +
-  facet_wrap(~season, scales = "free") +
-  labs(title = "Distribution of NOx by Season",
-       x = "Concentration on native scale",
+  labs(title = " Figure 2.0: Distribution of Annual Average NOx Concentrations",
+       x = "Concentration on native scale (ppb)",
        y = "density"
        )
 
-```
-
-```{r, eval = F}
-
-#log transformed by season
-nox_only %>%
-ggplot( aes(log(sample_measurement))) +
-  geom_histogram(aes(y = ..density..), bins = 40, color = "darkgreen", fill = "darkgreen", alpha = 0.4) +
-  geom_density(color = "green") +
-  facet_wrap(~season, scales = "free") +
-  labs(title = "Distribution of ln(NOx) by Season",
-       x = "Concentration on log scale",
+log <- long_term_gold %>%
+ggplot(aes(log_avg)) +
+  geom_histogram(aes(y = ..density..), bins = 30, color = "lightblue", fill = "lightblue", alpha = 0.8) +
+  geom_density(color = "purple") +
+  labs(title = "",
+       x = "Concentration on natural log (ppb) scale",
        y = "density"
        )
 
-```
+native + log
+#makes much more sense to work with the data on the log scale
 
+#Should this whole chunk go to the appendix?
+
+```
+These histograms support our conclusion to log-transform our data before modeling with it. We see a rather obvious right tail on our native-scale NOx data, in what appears to be a log-normal distribution. The distribution becomes much more normal after log transformation (Right).
 
 #obs vs preds for seasonal statewide models
-```{r basic obs vs preds plot}
+```{r basic obs vs preds plot, echo = FALSE}
 ggplot( st_balanced_CV, aes(x = log_avg, cvpreds)) +
   geom_point() +
   geom_smooth(method = "lm") +
@@ -3725,8 +3707,20 @@ ggplot( st_spring_CV, aes(x = log_avg, cvpreds)) +
 ```
 
 
+```{r, variability across LA county seasonal data sets}
+
+LA_title <- "Variability in LA County Short Term Seasonal Data sets"
+grid.arrange(top = LA_title, grobs = list(summer_LA, fall_LA, winter_LA, spring_LA, balanced_LA ))
+#move to Appendix
+```
+
+
+
+
+
+
 #comparing seasonal short term campaigns with short term balanced campaign
-```{r summer vs balanced}
+```{r summer vs balanced, echo = FALSE}
 #------------seasonal comparison with st balanced and gold standard-------------
 
 #-----------------------------------SUMMER--------------------------------------
@@ -3840,7 +3834,7 @@ ggplot(st_summer_MSE_long, aes(x = method, y = value, color = method)) +
 ```
 
 
-```{r fall vs balanced}
+```{r fall vs balanced, echo = FALSE}
 #------------seasonal comparison with st balanced and gold standard-------------
 
 #-----------------------------------fall--------------------------------------
@@ -3954,7 +3948,7 @@ ggplot(st_fall_MSE_long, aes(x = method, y = value, color = method)) +
 The fall and balanced short term sampling models seem to have decent agreement in their NOx predictions. 
 
 
-```{r winter v balanced}
+```{r winter v balanced, echo = FALSE}
 #------------seasonal comparison with st balanced and gold standard-------------
 
 #-----------------------------------winter--------------------------------------
@@ -4070,7 +4064,7 @@ ggplot(st_winter_MSE_long, aes(x = method, y = value, color = method)) +
 Winter and balanced predictions seem to have pretty decent agreemeent.
 
 
-```{r spring v balanced}
+```{r spring v balanced, echo = FALSE}
 #------------seasonal comparison with st balanced and gold standard-------------
 
 #-----------------------------------spring--------------------------------------
