@@ -102,6 +102,12 @@ if (!is.null(sessionInfo()$otherPkgs)) {
 my_repo <- 'http://cran.r-project.org'
 if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
 
+# **SPH server**: need to install rnaturalearthhires like so on the SPH server
+if (!require("rnaturalearthhires")) {
+    install.packages("rnaturalearthhires", repos = "https://ropensci.r-universe.dev", type = "source")
+} #put this inthe top of the main doc
+
+
 # Load the other packages, installing as needed.
 pacman::p_load(knitr, kableExtra, tidyverse, lubridate, egg, multcomp, modelr, broom, EnvStats, Hmisc,dplyr, tidyr, purrr, ggplot2, stringr, sf, lme4, VCA, gridExtra, ggspatial, maptiles, rnaturalearth, rnaturalearthhires, gstat, prettymapr, patchwork)
 
@@ -2845,13 +2851,7 @@ la_all_campaign_sf <- st_as_sf(la_all_campaign_sf, coords=c('lambert_x','lambert
 #need to change some variable names so that they match our model covariates
 la_grid <- la_grid %>% rename(pop_s05000 = Pop_5000, m_to_coast = D2C, m_to_a1 = D2A1)
 
-# **SPH server**: need to install rnaturalearthhires like so on the SPH server
-if (!require("rnaturalearthhires")) {
-    install.packages("rnaturalearthhires", repos = "https://ropensci.r-universe.dev", type = "source")
-} #put this inthe top of the main doc
 
-library(rnaturalearthhires)
-library(rnaturalearth)
 
 # Download the land polygon data as an sf multipolygon
 # the CRS for this is in lat/long degrees
@@ -2966,7 +2966,6 @@ gold_la_monitors <- st_as_sf(gold_la_monitors, crs = latlong_proj)
 
 # ---- Universal Kriging ----
 
-library(gstat) #need to add at beginning of other file
 
 # Fit the variogram model with multiple options (Exponential, Spherical, Matern)
 # note that this may have convergence issues. If so, you can try selecting one variogram model instead. You can also give it initial values for range, nugget etc. based on looking at the variogram cloud.
