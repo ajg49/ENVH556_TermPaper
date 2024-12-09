@@ -1161,6 +1161,36 @@ spring_state_var<- ggplot(st_spring, aes(x = native_id, y = log_avg)) +
 
 ```
 
+```{r, results='hide',include=FALSE,echo=FALSE}
+#summary statistics
+lt_gold_sum <- long_term_gold %>% summarise(min = min(annual_avg), 
+                                            Q25 = quantile(annual_avg, probs = 0.25), 
+                                            Q50 = quantile(annual_avg, probs = 0.5),
+                                            Q75 = quantile(annual_avg, probs = 0.75),
+                                            max = max(annual_avg),
+                                            mean = mean(annual_avg),
+                                            SD = sd(annual_avg)
+                                            )
+#lt_gold_sum
+      #This matches the number reported in Blanco supplement S5
+
+#summary stats for st_balanced
+st_balanced_sum <- st_balanced %>% summarise(min = min(annual_avg), 
+                                            Q25 = quantile(annual_avg, probs = 0.25), 
+                                            Q50 = quantile(annual_avg, probs = 0.5),
+                                            Q75 = quantile(annual_avg, probs = 0.75),
+                                            max = max(annual_avg),
+                                            mean = mean(annual_avg),
+                                            SD = sd(annual_avg)
+                                            )
+#st_balanced_sum #this would not be expected to match Blanco because we used different seeds
+#summarizing the data from the random samples
+names <- c("Gold Standard (LT)", "ST Balanced")
+
+kable(cbind(names , rbind(lt_gold_sum, st_balanced_sum)), digits = 2,
+      caption = "Table 1.0: Balanced, Long-term & Short-term Sampling Campaign Summaries") %>% kable_styling()
+
+```
 
 
 #quick summary short-term seasonal datasets
@@ -1844,7 +1874,7 @@ la <-left_join(nox_only, mercer_cov, by = "native_id") %>% filter(County == "Los
 ```
 
 
-```{r long term gold standard la dataset. echo = F, include = F}
+```{r long term gold standard la dataset, echo = F, include = F}
 
 #Gold Standard Data for LA
 long_term_gold_la <- annual_avg(la)
@@ -3448,8 +3478,7 @@ Notably, all models, including those using the gold standard dataset, had low R^
 
 **Los Angeles County Short-Term Dataset Performance** 
 
-
-
+Similar trends were observed for our Los Angeles-specific analysis when compared to the statewide analyses. Season-specific datasets continued to under- or over-predict NOx concentrations, with little to none of the variability in gold standard NOx concentrations described by the models with season-specific data. Notably, the Los Angeles analyses included annual aggregate estimates from just 12 sensors. The decreased sample size in this analysis increased the variability of the data compared to the statewide analysis. Additionally, our use of just 12 sensors to represent concentrations across all of Los Angeles county was likely not adequate in capture the true spatial variability in the data. Los Angeles county has a population of more than 9.5 million people across a vast geographic area (U.S. Census 2023), therefore more complex pollution heterogeneity is expected than what could reasonably be captured by 12 sensors. 
 
 **Model Selection** 
 
@@ -3459,27 +3488,29 @@ Our use of forward selection stepwise regression for covariate selection was ben
 
 **Comparison of Findings to Literature** 
 
-Blanco et al (*2011) analyzed their short-term campaigns versus a gold standard using partial least squares (PLS), and had similar but slightly better results than our short term balanced and gold standard models. Blanco et al’s (2011) gold standard model had a MSE-based R squared of 0.46 and a RMSE of 7.2 ppb. The balanced, short-term model had the best R squared and RMSE out of all of the short-term campaigns, as well (Blanco et al., 2011). Although our gold standard model did not perform quite as well as Blanco et al’s (2011) PLS gold standard model, we believe our results support the same conclusions with the same data. 
-
+Blanco et al (2022) analyzed their short-term campaigns versus a gold standard using partial least squares (PLS), and had similar but slightly better results than our short term balanced and gold standard models. Blanco et al’s (2022) gold standard model had a MSE-based R squared of 0.46 and a RMSE of 7.2 ppb. The balanced, short-term model had the best R squared and RMSE out of all of the short-term campaigns, as well (Blanco et al. 2022). Although our gold standard model did not perform quite as well as the Blanco et al. (2022) PLS gold standard model, we believe our results support the same conclusions with the same data. 
 
 
 **Strengths and Limitations** 
 
-We did not have a spatially rich data set, so we were limited in where we could predict and where we could restrict to the county level. We did not have enough sensors in counties other than LA county to compare predictions.  The low numbers of sensors in our LA county models could have limited our sensitivity analysis, and may have limited our confidence in the comparison between the LA county short term balanced model and the LA county gold standard model. Our Gold standard model, working with annual aggregates, only had 12 data points, so it may be misleading to consider its predictions the most well-founded predictions compared to the short term balanced model. 
+A limitation of our analysis is that our dataset was not spatially rich, therefore we were limited in where we could predict and which counties we could evaluate in our subanalyses. We did not have enough sensors in counties other than LA county to compare predictions. The low numbers of sensors in our LA county models could have limited our sensitivity analysis, and may have limited our confidence in the comparison between the LA county short term balanced model and the LA county gold standard model. Our Gold standard model in Los Angeles had just 12 data points for annual aggregate concentration, so it may be misleading to consider its predictions the most well-founded predictions compared to the short term balanced model. 
 
-We also did not do a complex model selection, and instead used the previously selected model from Mercer et al (2022) paired with forward, stepwise model selection to further reduce the number of covariates included in our final common model. The subset of our land use covariates to the eight reflecting the mercer et al (2022) common model may have erroneously eliminated covariates that would have explained more of the variation between monitor locations. A more in=-depth model selection approach may have found a better fit to the models.
+Additionally, as noted earlier, our model selection method was not complex; we simply used the previously selected model from Mercer et al (2011) paired with forward, stepwise model selection to further reduce the number of covariates included in our final common model. The subset of our land use covariates to the eight reflecting the Mercer et al (2011) common model may have erroneously eliminated covariates that would have explained more of the variation between monitor locations. A more in-depth model selection approach may have found a better fit to the models.
 
+Finally, when creating our season-specific datasets, we created seasonal strata by dividing the weeks of the year into four segments based on their numerical order, each with 13 weeks. Though this provided us with a well-balanced and unbiased division of the dataset, there was no distinct scientific or meteorological significance to these cutpoints. In future analyses, we may consider defining season using specific calendrical definitions, looking at cutpoints based on temperature or precipation changes, or based on social behaviors and patterns (e.g. defining summer as when school is out). Although our definition of season was based solely on an even division of the data in temporal order, we feel confident that seasonal trends were reasonably well captured in our data subsets because our data generally followed the seasonal NOx trends observed in prior published data (i.e. lower summer concentrations and higher winter concentrations). 
 
 **Broader Implications and Future Research** 
 
-future research: Comparing a short term campaign across counties would be an interesting next step to compare the short term balanced and seasonal models’ performances when restricted to different geographic regions in California. However, a different data set may have to be used, with more sensors or a concentration of sensors in counties of interest.
+Our findings are important in informing the sampling design for future monitoring campaigns. Our results suggest that future monitoring campaigns must include sampling balanced across all seasons, rather than overrepresenting or restricting to sampling within a single season. This finding provides important insight for future investigators, who will need to incorporate sampling over the course of a year rather than within a more constrained timeframe. Additionally, our findings are valuable in reaffirming that a temporally-balanced dataset can adequately predict long-term annual averages; this reinforces prior findings that suppoted the use of short-term mobile monitoring campaigns to characterize gold standard concentration measurements.
+
+We recommend future research that compares the short-term monitoring campaigns across counties in California. This analysis would be an interesting next step to further compare how the short term balanced and seasonal datasets perform when restricted to different geographic regions in California; this could be especially relevant for counties that have lower annual variability in meteorological parameters. However, a different data set may be necessary for this analysis, as the present dataset was limited in the total number of county-specific sensors outside of Los Angeles.
 
 **Conclusion** 
 
-Our findings are important in informing the sampling design for future monitoring campaigns. Overall, our findings re-iterate the findings of Blanco et al, 2011, whose methods inspired many of our analysis steps. We see seasonal variability in NOx concentrations at the statewide and LA county level, which leads to the importance of a sampling campaign which samples throughout all seasons. Both at the statewide and LA county level, we see reduced performance of our sampling campaign design when it was restricted to only one season. Our balanced short term sampling campaign performed comparably to our gold-standard model on a statewide and county level, confirming that a sampling campaign can collect a smaller number of samples on which to predict NOx concentrations, so long as the sampling design is temporally balanced. 
+Overall, our findings re-iterate the findings of Blanco et al, 2022, whose methods inspired many of our analysis steps. We see seasonal variability in NOx concentrations at the statewide and LA county level, which leads to the importance of a sampling campaign which samples throughout all seasons. Both at the statewide and LA county level, we see reduced performance of our sampling campaign design when it was restricted to only one season. Our balanced short term sampling campaign performed comparably to our gold-standard model on a statewide and county level, confirming that a sampling campaign can collect a smaller number of samples on which to predict NOx concentrations, so long as the sampling design is temporally balanced. 
 
 
-# Author Contribution Statement (**NOTE add in your contributions below**) 
+# Author Contribution Statement
 
 **Core Contributions** 
 
@@ -3493,7 +3524,7 @@ Analysis:
 
 Writing: 
 
-*Callan:* Drafted and revised analysis plans (3 in total); wrote and revised methods section; wrote and revised introduction section; wrote portions of results section; wrote portions of discussion section; wrote portions of conclusion section 
+*Callan:* Drafted and revised analysis plans (3 in total); wrote and revised methods section; wrote and revised introduction section; wrote portions of results section; wrote portions of discussion section
 
 *Katie:* 
 
@@ -3508,29 +3539,6 @@ Writing:
 *Katie:*
 
 *Abbie:*
-
-
-
-
-
-
-
-
-*points to be added into discussion section later (originally earlier in code):*
-
-
-[popping the below from the code to the limitations section for later reference when we write the discussion]
-The data provided the date and week of the year that each sample was taken. To look at seasonal changes in the data, we need to separate the weeks of the year into four seasons. We did this by breaking up the roughly 52 weeks of the year into 4, ~13-week segments. 
-
-    Weeks 13 - 25 of the year are coded as spring
-    weeks 26 - 38 are coded as summer
-    weeks 39 - 50 are coded as autumn
-    and week 51,52 and 1-12 are coded as winter.
-    
-  ** Limitations of this approach. This is based only on diving the year into roughly equal portions based on numerical week. There is no distinct scientific or meteorological significance to the cutoff. Could look at other ways of defining season for more accuracy --- could use specific calendrical definitions, or could look at cut points based on temp or precip. Could also use social cutoffs (e.g. summer is when school is out), as any seasonal differences could be a combination of both social and meteorological phenomena.
-  
-  
-  
 
 
 # Works Cited 
