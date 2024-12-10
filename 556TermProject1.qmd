@@ -797,6 +797,7 @@ combined_plot2
 
 
 **Adding Covariates from Mercer et al 2011 Common Model**
+
   The Mercer et al 2011 paper has the following covariates determined in its "common model" with which they assessed seasonal prediction models: D2A1 (distance to A1 road), A1_50m (length of A1 road in 50 m buffer), A23_400m (length of A2 or A3 roads within 400 m buffer), Pop_5k (total population within 5,000 m buffer), D2C (Distance to the coast in meters), Int_3k (intense land use within 3,000 m), D2Comm (distance to commercial land).
 
 To assess the best fit of these covariates to our data, we ran forward, stepwise selection using k =2 as the penalty on the california nox covariates that matched these mercer et al (2011) covariates the best (a total of 8 covariates). This selection returned three covariates for use in our model. The covariates in our common model are:
@@ -1240,7 +1241,6 @@ summary(lm_st_spring <- lm(frml, data = st_spring))
 ```
 
 
-#----------comparing seasonal short term campaigns with Gold Standard data----------------
 
 ```{r summer vs. gold, echo = F, include = F}
 #------------seasonal comparison with gold standard-------------
@@ -1720,11 +1720,6 @@ st_spring_boxplot
 
 
 
-In Figure X.X, the box plot plots, the Balanced campaign is the only short term campaign with a reasonable R squared and reasonable performance in comparison witht he gold standard. The Agreement between the gold standard and the short term seasonal campaigns is very low, with R squared values near zero (pink). The blue boxplots show the cross validated performance statistics for each campaign, which we see hovering around 0.3 with all campaigns.
-
-In figure X.X., the scatter plots show trends in over- or under-prediction by each short term campaign when compared to the gold standard predictions. We can see that the spring and summer models under predict ln(NOx) while the winter and fall models over-predict ln(NOx). The Balanced short term campaign doesn't appear to have a visible trend in over- or under-predicting ln(NOX) concentrations and seems to agree well with the gold standard predictions, with plotted predictions falling right along the 1:1 line. 
-
-
 
 ```{r, echo = F, include = T, fig.height = 7, fig.width = 7, warning = F, message = F}
 
@@ -1755,23 +1750,23 @@ all_scatter <-ggplot(data = st_all_CV, aes(x = gold_preds, y = cvpreds, color = 
     geom_smooth(method = 'lm', se = F, alpha = 0.4, show.legend = FALSE, linewidth = 0.3) +
     facet_wrap(~season, scales = "free") + 
     geom_abline(linetype = "dashed", slope = 1, intercept = 0, color = "darkgray") +
-    labs(title = "Fig. X: Best fit lines of cross-validated short-term predictions for 30 campaigns\nvs. gold standard predictions for ln(NOx)", 
+    labs(title = "Fig. 5: Best fit lines of cross-validated short-term predictions for 30 campaigns\nvs. gold standard predictions for ln(NOx)", 
          subtitle = "Statewide",
          x = "Gold standard predicted ln(NOx) (ln(ppb))",
          y = "Campaign Predicted ln(NOx) (ln(ppb))",
-         caption = "1:1 line is dashed") 
+         caption = "1:1 line is dashed") +
     theme_bw()
 
 all_scatter
 
 ```
-This figure shows the performance of each of the 30 campaigns in within each short-term sampling design and compare the campaign predictions to the predictions from the gold standard. The balanced design performs well. Summer and spring consistently over predict (predict higher values than the gold standard), and fall and winter underpredict compared to the gold standard. *check my understanding on under andd over prediction*
 
-The scatter plots in Figure 7.0 and the box plots in figure 6.0 compare the performance of the common model on the seasonal and balanced short term data sets, as well as a comparison of the predicted NOx concentrations compared to the gold standard predictions. 
 
-All of the seasonal models perform poorly compared to the gold standard model, but with different trends in their predictions. The Spring and Summer models under-predicted *I think it's over predict. check my thinking, but if you look at the plots, the gold standard would have predicted 2, the summmer model predicts 2.5* NOx compared to the gold standard, while the winter and fall models over-predicted in comparison with the gold standard predictions. 
+The Figure 5 compares the performance of the common model on the seasonal and balanced short term data sets, and compares the predicted ln(NOx) concentrations with the gold standard predictions. This figure shows the performance of each of the 30 campaigns within each short-term sampling design. The balanced design performs well. Summer and spring consistently under-predict (predict lower values than the gold standard), and fall and winter over-predict compared to the gold standard. The slopes across all campaigns and within all campaigns, are similar.  
+
 
 The balanced model and data set performed the most similar to the gold standard model and data set, with no clear over- or under- predictions of NOx and a comparable R squared and RMSE. 
+
 
 #tabulate RMSE and R sqaured for all campaigns:
 
@@ -1785,10 +1780,10 @@ Reg_R2 <- c(mean(st_summer_MSE$reg.R2_a), mean(st_fall_MSE$reg.R2_a), mean(st_wi
 
 kable(rbind(campaigns, RMSE, MSE_R2, Reg_R2),
       digits = 3,
-      caption = "Table 3.0: Performance Statistics of Seasonal and Balanced Sampling Campaigns - Method A") %>% kable_styling()
+      caption = "Table 2.0: Performance Statistics of Seasonal and Balanced Sampling Campaigns - Method A") %>% kable_styling()
 
 ```
-Based on the R squared and RMSE values in Table 3.0 we, we see that the balanced short term data set performed the best out of the short term statewide campaigns. 
+
 
 ```{r, echo = F, include = T, fig.height = 7, fig.width = 7}
 
@@ -1817,7 +1812,7 @@ st_all_boxplot <- ggplot(st_all_MSE_long, aes(x = season, y = value, color = sea
   geom_hline(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "MSE.R2"), aes(yintercept = value, linetype = "dashed"), show.legend = T) +
   geom_hline(data = data.frame(method = c("a", "b"), value = gold_MSE[[3]], metric = "reg.R2"), aes(yintercept = value, linetype = "dotdash"), show.legend = T) +
   facet_grid(metric~method, scales = "free") +
-  labs(title = "RMSE and R2 Comparison",
+  labs(title = "Figure 6: Statewide RMSE and R2 Comparison",
        caption = "Method A = Short-term campaign predictions compared to gold-standard obs\nMethod B = Short-term campaign predictions compared to same campaign observations\nHorizontal lines show the gold-standard performance", 
        x = "Short-term Campaign",
        y = "Value",
@@ -1838,7 +1833,13 @@ st_all_boxplot
 
 ```
 
+In Table 2.0 and Figure 6, the Balanced campaign is the only short term campaign with a reasonable MSE-based R squared and reasonable performance in comparison with the gold standard (Method a in figure 6 compares to Gold standard). This means the agreement between the gold standard and the short term seasonal campaigns is very low, with MSE-based R-squared values near or equal to zero. However, the regression-based R squared summarized in both table 2.0 and figure 6, shows comparable performance across all cohort term campaigns in comparison with the gold standard. 
 
+We see in figure 6 the RMSE gets drastically better with the balanced campaign, with the short term spring campaign having the highest RMSE, both in comparison with the gold standard (method a) and with cross validated statistics in method b. 
+
+**LA-County Sensitivity Analysis**
+
+We restricted our models to 12 sensors in LA county to see how different their performance was when we look at a more specific geographic area within California. 
 
 
 
@@ -2216,12 +2217,12 @@ st_spring_la_sum <- sum_stats(st_spring_la)
 
 Datasets <- c("Spring","Summer", "Fall", "Winter", "Balanced", "Gold-standard")
 kable(cbind(Datasets , rbind(st_spring_la_sum, st_summer_la_sum, st_fall_la_sum, st_winter_la_sum, st_la_sum, lt_gold_sum_la)), digits = 2,
-      caption = " Table X.0: Sampling Campaign NOx (ppb) Summaries for Los Angeles County") %>%
+      caption = " Table 3.0: Sampling Campaign NOx (ppb) Summaries for Los Angeles County") %>%
   kable_styling()
 
 
 ```
-
+Table 3.0 provides summary statistics about the spread of the data in the restricted, LA county data sets. The variability in the data follows the same trends as the statewide data, with spring and summer seasons seeing overall lower NOx concentrations and lower variability. The balanced and gold-standard data sets also lie in the  middle of the range in variability and overall average NOx concentrations. Compared to the statewide data sets, the standard deviations for all campaigns are similar, however the average NOx concentrations are slightly higher in LA county than the statewide data set. 
 
 ```{r season.convariates}
 #--------------------------Common Model on Seasonal Data sets------------------#
@@ -2728,7 +2729,7 @@ all_scatter_la <-ggplot(data = st_all_CV_la, aes(x = gold_preds_la, y = cvpreds,
     geom_smooth(method = 'lm', se = F, alpha = 0.4, show.legend = FALSE, linewidth = 0.3) +
     facet_wrap(~season, scales = "free") + 
     geom_abline(linetype = "dashed", slope = 1, intercept = 0, color = "darkgray") +
-    labs(title = "Fig. X: Best fit lines of cross-validated short-term predictions for 30 campaigns\nvs. gold standard predictions for ln(NOx)", 
+    labs(title = "Fig. 7: Best fit lines of cross-validated short-term predictions for 30 campaigns\nvs. gold standard predictions for ln(NOx)", 
          subtitle = "Restricted to LA County",
          x = "Gold standard predicted ln(NOx) (ln(ppb))",
          y = "Campaign Predicted ln(NOx) (ln(ppb))",
@@ -2737,9 +2738,11 @@ all_scatter_la <-ggplot(data = st_all_CV_la, aes(x = gold_preds_la, y = cvpreds,
 
 all_scatter_la
 
-#definitely a more heterogeneity in slope here (one differene is LOO CV)
+#definitely a more heterogeneity in slope here (one difference is LOO CV)
 
 ```
+
+Figure 7 shows much larger variation in slopes between model runs (n = 30) for the LA county campaigns. The slopes are not consistent across model runs and not consistent between campaigns, unlike the statewide trends we saw. However, spring and summer still seem to under-predict and fall and winter campaigns still seem to over-predict on average. The balanced campaign appears the most in agreement with the gold standard predictions, however with much more variability. 
 
 ```{r, echo = F, include = T, fig.height = 7, fig.width = 7}
 
@@ -2768,7 +2771,7 @@ st_all_boxplot_la <- ggplot(st_all_MSE_la_long, aes(x = season, y = value, color
   geom_hline(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[2]], metric = "MSE.R2"), aes(yintercept = value, linetype = "dashed"), show.legend = T) +
   geom_hline(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[3]], metric = "reg.R2"), aes(yintercept = value, linetype = "dotdash"), show.legend = T) +
   facet_grid(metric~method, scales = "free") +
-  labs(title = "RMSE and R2 Comparison - Los Angeles County",
+  labs(title = "Figure 8: RMSE and R2 Comparison - Los Angeles County",
        caption = "Method A = Short-term campaign predictions compared to gold-standard obs\nMethod B = Short-term campaign predictions compared to same campaign observations\nHorizontal lines show the gold-standard performance", 
        x = "Short-term Campaign",
        y = "Value",
@@ -2790,12 +2793,9 @@ st_all_boxplot_la
 ```
 
 
+Figure 8 shows the R squared (MSE-based and regression-based) and RMSE for two methods: comparing campaign predictions against gold standard predictions (method a) and comparing campaign predictions against campaign observations (method b). We see that the mse-based R squared is very poor for all the seasonal campaigns and even the balanced campaign, both in comparison with gold standard predictions and seasonal observations. 
 
-Figures X and X both show the restricted LA county models' performances. In figure X, the box plots, we see the same trend we saw with the statewide data sets. The summer and spring models describe nearly zero percent of the variability in the data set (looking at the pink R squared), and the fall and winter models predict some of the variability, but much less than the gold standard model.
-
-Figure X, with scatter plots, shows the same trend that we saw in the statewide data with under- and over- predictions. The summer and spring models under-predict ln(NOX) concentrations, again, while the winter and fall models over-predict. In good news, the short term balanced model continues to agree with the gold standard model and offer comparable R-squared and RMSE statistics. 
-
-
+However, the regression-based r squared statistics are more similar between campaigns and show decent agreement with the gold standard and seasonal observations (~ 0.4). The RMSE for method a is a similar trend to the statewide campaigns, with RMSE statistics for the spring and summer models markedly higher than the RMSE for the balanced campaigns. 
 
 
 ```{r prediction.maps, echo = F, include = F}
@@ -3024,7 +3024,7 @@ gold_predict <- g +
   geom_point(data = monitors_df, aes(x = longitude, y = latitude), size = 2, shape = 18, color = "black") + #add the monitors as points just to see. 
   # color friendly color scale
   scale_fill_viridis_c(option = "plasma") + 
-  labs(title = "Map of Los Angeles with Predictions - Gold Standard",
+  labs(title = " Map of Los Angeles with Predictions - Gold Standard",
        col="ln(NOx(ppb))",
        caption = "Diamonds indicate monitor locations",
        x = "",
@@ -3085,12 +3085,12 @@ summer_map <- plot_map(map_data(lm_st_summer))
 fall_map <- plot_map(map_data(lm_st_fall))
 winter_map <- plot_map(map_data(lm_st_winter))
 
-gold_map + labs(title = "Map of Los Angeles with Predictions - Gold")
-balanced_map + labs(title = "Map of Los Angeles with Predictions - Balanced")
-spring_map + labs(title = "Map of Los Angeles with Predictions - Spring")
-summer_map + labs(title = "Map of Los Angeles with Predictions - Summer")
-fall_map + labs(title = "Map of Los Angeles with Predictions - Fall")
-winter_map + labs(title = "Map of Los Angeles with Predictions - Winter")
+gold_map + labs(title = "Figure 9: Map of Los Angeles with Predictions - Gold")
+balanced_map + labs(title = "Figure 10: Map of Los Angeles with Predictions - Balanced")
+spring_map + labs(title = "Figure 11: Map of Los Angeles with Predictions - Spring")
+summer_map + labs(title = "Figure 12: Map of Los Angeles with Predictions - Summer")
+fall_map + labs(title = "Figure 13: Map of Los Angeles with Predictions - Fall")
+winter_map + labs(title = "Figure 14: Map of Los Angeles with Predictions - Winter")
 
 #They all look pretty much the same and aren't interesting. The LA specific ones are much more interesting!
 
@@ -3098,7 +3098,8 @@ winter_map + labs(title = "Map of Los Angeles with Predictions - Winter")
 ```
 
 
-```{r maps.la.model, echo = F, include = T}
+
+```{r maps.la.model, echo = F, include = F}
 #repeat using the LA specific models
 
 la_gold_map <- plot_map(map_data(lm_gold_la))
@@ -3120,7 +3121,7 @@ la_winter_map + labs(title = "Map of Los Angeles with NOx Predictions - Winter")
 
 #I think the faceted plots with ln nox are better for the results, but these might go in the appendix, because they are just cool and really show what is going on. 
 ```
-The color ramps aren’t the same size. Summer is lower over all, but the differences are really seen a long the roads. Winter is the highest (the blue in winter is higher than the yellow in summer), but there is less variation and a peak near downtown.
+The color ramps aren’t the same size. Summer is lower over all, but the differences are really seen along the roads. Winter is the highest (the blue in winter is higher than the yellow in summer), but there is less variation and a peak near downtown.
 Spring and fall are midway in-between with spring being more like summer and fall being more like winter.
 Fall looks the closest to balanced
 
@@ -3169,7 +3170,7 @@ nox_map <- g + # Set map extent and CRS (bounding box error otherwise results in
   # color friendly color scale
   scale_fill_viridis_c(option = "plasma") + 
   facet_wrap(~season) + 
-  labs(title = "Map of Los Angeles with Predicted NOx by Season",
+  labs(title = "Figure 9: Map of Los Angeles with Predicted NOx by Season",
        fill ="NOx (ppb)",
        caption = "Diamonds indicate monitor locations",
        x = "",
