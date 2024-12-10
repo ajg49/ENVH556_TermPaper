@@ -823,6 +823,7 @@ frml <- as.formula(paste("log_avg ~", paste(covars_common, collapse = "+")) )
 summary(lm_gold_standard <- lm(frml, data = long_term_gold))
 
 
+
 ```
 
 
@@ -875,6 +876,9 @@ Figure 4.0 shows the results from our cross validation of our gold standard data
 
 #need to group the st_balanced data by "campaign" before doing regression
 st_balanced <- left_join(st_balanced, mercer_cov, by = "native_id" )
+
+# and st balanced model
+summary(lm_st_balanced <- lm(frml, data = st_balanced))
 
 #apply the save CV groups as used in the gold standard model
 st_balanced <- st_balanced %>% group_by(rep_number) %>% mutate(CV_grp = CV_grp) %>% ungroup()
@@ -1770,18 +1774,26 @@ st_balanced_CV <- st_balanced_CV %>% mutate(season = "Balanced")
 #bind the df into one
 st_all_CV <- rbind(st_balanced_CV, st_spring_CV, st_summer_CV, st_fall_CV, st_winter_CV)
 
+#factor to control the order
+st_all_CV <- st_all_CV %>%
+  mutate(season = factor(season, levels = c("Spring", 
+                                            "Summer", 
+                                            "Fall", 
+                                            "Winter", 
+                                            "Balanced")))
+
 
 all_scatter <-ggplot(data = st_all_CV, aes(x = gold_preds, y = cvpreds, color = as.factor(model_run))) +
     #geom_point(shape = "o", alpha = 0.7, show.legend = FALSE) + #commented out the points to make the plot a little cleaner. 
     lims(x= r, y = r) +
     geom_smooth(method = 'lm', se = F, alpha = 0.4, show.legend = FALSE, linewidth = 0.3) +
     facet_wrap(~season, scales = "free") + 
-    geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
+    geom_abline(linetype = "dashed", slope = 1, intercept = 0, color = "darkgray") +
     labs(title = "Fig. X: Best fit lines of cross-validated short-term predictions for 30 campaigns\nvs. gold standard predictions for ln(NOx)", 
          subtitle = "",
          x = "Gold standard predicted ln(NOx) (ln(ppb))",
          y = "Campaign Predicted ln(NOx) (ln(ppb))",
-         caption = "1:1 line is dashed") +
+         caption = "1:1 line is dashed") 
     theme_bw()
 
 all_scatter
@@ -1826,20 +1838,29 @@ st_balanced_MSE_long <- st_balanced_MSE_long %>% mutate(season = "Balanced")
 
 st_all_MSE_long <- rbind(st_spring_MSE_long, st_summer_MSE_long, st_fall_MSE_long, st_winter_MSE_long, st_balanced_MSE_long)
 
+#factor to control the order
+st_all_MSE_long <- st_all_MSE_long %>%
+  mutate(season = factor(season, levels = c("Spring", 
+                                            "Summer", 
+                                            "Fall", 
+                                            "Winter", 
+                                            "Balanced")))
+
 #replicate blanco figure 3
 st_all_boxplot <- ggplot(st_all_MSE_long, aes(x = season, y = value, color = season)) +
   geom_boxplot() +
   geom_hline(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(yintercept = value, linetype = "dotted"), show.legend = T) +
   geom_hline(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "MSE.R2"), aes(yintercept = value, linetype = "dashed"), show.legend = T) +
+  geom_hline(data = data.frame(method = c("a", "b"), value = gold_MSE[[3]], metric = "reg.R2"), aes(yintercept = value, linetype = "dotdash"), show.legend = T) +
   facet_grid(metric~method, scales = "free") +
-  labs(title = "RMSE and MSE_R2 Comparison",
-       caption = "Method A = spring Campaign Predictions Compared to Gold Standard Obs\nMethod B = spring Campaign Predictions Compared to spring Campaign Observations\nLines show the gold-stanndard performance", 
+  labs(title = "RMSE and R2 Comparison",
+       caption = "Method A = Short-term campaign predictions compared to gold-standard obs\nMethod B = Short-term campaign predictions compared to same campaign observations\nHorizontal lines show the gold-standard performance", 
        x = "Short-term Campaign",
        y = "Value",
        color = "Season") +
   scale_linetype_manual(name='',
-                      labels = c("Gold standard RMSE", "Gold Standard R2"), 
-                      values=c("dotted", "dashed")) +
+                      labels = c("Gold standard RMSE", "Gold Standard MSE-R2", "Gold Standard Reg. R2"), 
+                      values=c("dotted", "dashed", "dotdash")) +
   theme_bw() +
   theme(
     plot.caption = element_text(hjust = 0),
@@ -1849,11 +1870,6 @@ st_all_boxplot <- ggplot(st_all_MSE_long, aes(x = season, y = value, color = sea
 
 st_all_boxplot
 
-
-
-
-
-#
 
 
 ```
@@ -1953,6 +1969,8 @@ long_term_gold_la <- left_join(long_term_gold_la,mercer_cov, by = "native_id")
 
 # in-sample predictions and fit summary
 summary(lm_st_la <- lm(frml, data = st_la)) #short term balanced data set
+
+summary(lm_gold_la <- lm(frml, data = long_term_gold_la)) #short term balanced data set
 
 ```
 
@@ -2235,7 +2253,7 @@ st_spring_la_sum <- sum_stats(st_spring_la)
 
 
 
-Datasets <- c("spring (st)","summer (st)", "fall (st)", "winter (st)", "balanced (st)", "gold standard (lt)")
+Datasets <- c("Spring","Summer", "Fall", "Winter", "Balanced", "Gold-standard")
 kable(cbind(Datasets , rbind(st_spring_la_sum, st_summer_la_sum, st_fall_la_sum, st_winter_la_sum, st_la_sum, lt_gold_sum_la)), digits = 2,
       caption = " Table X.0: Sampling Campaign NOx (ppb) Summaries for Los Angeles County") %>%
   kable_styling()
@@ -2717,7 +2735,7 @@ spring_boxplot_la<-ggplot(st_spring_MSE_la_long, aes(x = method, y = value, colo
 ```
 
 #summary figures - LA County
-```{r, warning = FALSE, message = FALSE}
+```{r, warning = FALSE, message = FALSE, echo = F, include = F}
 #summary figures - statewide
 
 Title <- "LA County Short Term Campaign Performances and Comparison with Gold Standard"
@@ -2739,6 +2757,96 @@ grid.arrange(top = Title, bottom = scatter_legend, grobs = list(st_spring_scatte
                                    c(4, 5, NA)))
 
 ```
+```{r, echo = F, include = T, fig.height = 7, fig.width = 7}
+
+#trying to make a better plot
+
+#add a season column to each one
+st_spring_CV_la <- st_spring_CV_la %>% mutate(season = "Spring")
+st_summer_CV_la <- st_summer_CV_la %>% mutate(season = "Summer")
+st_fall_CV_la <- st_fall_CV_la %>% mutate(season = "Fall")
+st_winter_CV_la <- st_winter_CV_la %>% mutate(season = "Winter")
+st_la_CV <- st_la_CV %>% mutate(season = "Balanced")
+
+#bind the df into one
+st_all_CV_la <- rbind(st_la_CV, st_spring_CV_la, st_summer_CV_la, st_fall_CV_la, st_winter_CV_la)
+
+#factor to control the order
+st_all_CV_la <- st_all_CV_la %>%
+  mutate(season = factor(season, levels = c("Spring", 
+                                            "Summer", 
+                                            "Fall", 
+                                            "Winter", 
+                                            "Balanced")))
+
+
+all_scatter_la <-ggplot(data = st_all_CV_la, aes(x = gold_preds_la, y = cvpreds, color = as.factor(model_run))) +
+    #geom_point(shape = "o", alpha = 0.7, show.legend = FALSE) + #commented out the points to make the plot a little cleaner. 
+    lims(x= r, y = r) +
+    geom_smooth(method = 'lm', se = F, alpha = 0.4, show.legend = FALSE, linewidth = 0.3) +
+    facet_wrap(~season, scales = "free") + 
+    geom_abline(linetype = "dashed", slope = 1, intercept = 0, color = "darkgray") +
+    labs(title = "Fig. X: Best fit lines of cross-validated short-term predictions for 30 campaigns\nvs. gold standard predictions for ln(NOx)", 
+         subtitle = "Restricted to LA County",
+         x = "Gold standard predicted ln(NOx) (ln(ppb))",
+         y = "Campaign Predicted ln(NOx) (ln(ppb))",
+         caption = "1:1 line is dashed") 
+    theme_bw()
+
+all_scatter_la
+
+#definitely a more heterogeneity in slope here (one differene is LOO CV)
+
+```
+```{r, echo = F, include = T, fig.height = 7, fig.width = 7}
+
+#bind the MSE df together for a combined boxplot
+#add a season column to each one
+st_spring_MSE_la_long <- st_spring_MSE_la_long %>% mutate(season = "Spring")
+st_summer_MSE_la_long <- st_summer_MSE_la_long %>% mutate(season = "Summer")
+st_fall_MSE_la_long <- st_fall_MSE_la_long %>% mutate(season = "Fall")
+st_winter_MSE_la_long <- st_winter_MSE_la_long %>% mutate(season = "Winter")
+st_la_MSE_long <- st_la_MSE_long %>% mutate(season = "Balanced")
+
+st_all_MSE_la_long <- rbind(st_spring_MSE_la_long, st_summer_MSE_la_long, st_fall_MSE_la_long, st_winter_MSE_la_long, st_la_MSE_long)
+
+#factor to control the order
+st_all_MSE_la_long <- st_all_MSE_la_long %>%
+  mutate(season = factor(season, levels = c("Spring", 
+                                            "Summer", 
+                                            "Fall", 
+                                            "Winter", 
+                                            "Balanced")))
+
+#replicate blanco figure 3
+st_all_boxplot_la <- ggplot(st_all_MSE_la_long, aes(x = season, y = value, color = season)) +
+  geom_boxplot() +
+  geom_hline(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[1]], metric = "RMSE"), aes(yintercept = value, linetype = "dotted"), show.legend = T) +
+  geom_hline(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[2]], metric = "MSE.R2"), aes(yintercept = value, linetype = "dashed"), show.legend = T) +
+  geom_hline(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[3]], metric = "reg.R2"), aes(yintercept = value, linetype = "dotdash"), show.legend = T) +
+  facet_grid(metric~method, scales = "free") +
+  labs(title = "RMSE and R2 Comparison - Los Angeles County",
+       caption = "Method A = Short-term campaign predictions compared to gold-standard obs\nMethod B = Short-term campaign predictions compared to same campaign observations\nHorizontal lines show the gold-standard performance", 
+       x = "Short-term Campaign",
+       y = "Value",
+       color = "Season") +
+  scale_linetype_manual(name='',
+                      labels = c("Gold standard RMSE", "Gold Standard MSE-R2", "Gold Standard Reg. R2"), 
+                      values=c("dotted", "dashed", "dotdash")) +
+  theme_bw() +
+  theme(
+    plot.caption = element_text(hjust = 0),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank()# Remove x-axis text labels
+  )
+
+st_all_boxplot_la
+
+
+
+```
+
+
 
 Figures X and X both show the restricted LA county models' performances. In figure X, the box plots, we see the same trend we saw with the statewide data sets. The summer and spring models describe nearly zero percent of the variability in the data set (looking at the pink R squared), and the fall and winter models predict some of the variability, but much less than the gold standard model.
 
@@ -2800,8 +2908,15 @@ la_all_campaign_sf <- st_as_sf(la_all_campaign_sf, coords=c('lambert_x','lambert
 ```
 
 ```{r setup.grid, echo = F, include = F}
-#need to change some variable names so that they match our model covariates
-la_grid <- la_grid %>% rename(pop_s05000 = Pop_5000, m_to_coast = D2C, m_to_a1 = D2A1)
+#need to change some variable names so that they match our model covariates 
+la_grid <- la_grid %>% rename(pop_s05000 = Pop_5000, m_to_coast = D2C, m_to_a1 = D2A1) 
+
+#need to transform covars the same as mercer (or untransform mercer)
+
+#attempting to untransform based on the descriptions of the functional variables in Mercer
+la_grid$pop_s05000 <- la_grid$pop_s05000 * 100000 #pop was 1/100000
+la_grid$m_to_coast <- la_grid$m_to_coast * 100000 #dist. in m was 1/100000
+la_grid$m_to_a1 <- 10^(la_grid$m_to_a1) #value was log10 transformed
 
 
 
@@ -2828,7 +2943,7 @@ map_bbox <- la_grid %>%
   # convert from degrees to meters
   st_transform(crs = lambert_proj) %>%
   # add a buffer around the area for visualization purposes
-  st_buffer(dist = 10000) %>%
+  st_buffer(dist = 1000) %>%
   # convert back to original CRS
   st_transform(crs = latlong_proj) %>%
   # take the min/max X/Y
@@ -2909,572 +3024,245 @@ st_crs(gold_la_monitors)
 
 gold_la_monitors <- st_as_sf(gold_la_monitors, crs = latlong_proj)
 
+#df of just monitors to add as points
+monitors_df <- ca_covariates %>% dplyr::select(native_id, latitude, longitude) %>%
+  st_drop_geometry()
+
  
 ```
 
-#making a variogram for UK (we can just say this is part of the sensitivity? I really don't want to spend a lot of time talking about UK...) Or if you think just the point maps are enough, we can skip this . 
+```{r def.mapping.functions, echo = F, include = F}
+#---this section tests out maping predictions using lm and then defintes functions to make it easy to do repeatedly for the different data sets. ---#
 
-```{r, echo = F, include = F}
+#--------- MAIN USE------------#
+#   map_data(model)  => function that takes an lm model and returns a df that can be mapped
+#   plot_map(data)  => function that takes the output from map_data() and then makes a map
 
-# ---- Universal Kriging ----
 
+#include = F because there are some test maps in the this chunk that don't need to be rendered. 
 
-# Fit the variogram model with multiple options (Exponential, Spherical, Matern)
-# note that this may have convergence issues. If so, you can try selecting one variogram model instead. You can also give it initial values for range, nugget etc. based on looking at the variogram cloud.
+#trying regular prediction mapping
 
-#using a loop to do this all at once for the combined data frame
+#fit the model
+#lm_gold_standard <- lm(frml, data = long_term_gold)) #commented out because we already have the model
 
-# Get the unique seasons
-seasons <- unique(la_all_campaign_sf$season)
-# Initialize an empty list to store the results
-var_list <- list()
-model_list <- list()
+la_grid <-st_transform(la_grid, crs = latlong_proj) #change to lat long proj
 
-# Loop through each season
-for (season in seasons) {
-  # Filter the data for the current season
-  season_data <- la_all_campaign_sf %>% filter(season == !!season)
+#predict for new data
+la_grid_gold_pred <- la_grid %>% mutate(preds = predict(lm_gold_standard, la_grid))
+
+la_grid_gold_pred_df <- as.data.frame(st_coordinates(la_grid_gold_pred))
+la_grid_gold_pred_df$lnNOx <- la_grid_gold_pred$preds 
+la_grid_gold_pred_df$NOx <- exp(la_grid_gold_pred$preds)
+
+#function to make pretting the data easy
+map_data <- function(model) { #specify the lm model to use for predicting on la_grid
+  pred_data <- la_grid %>% mutate(preds = predict(model, la_grid)) # generate predictions
+  pred_data_df <- as.data.frame(st_coordinates(pred_data)) #convert to data frame for plotting
+  pred_data_df$lnNOx <- pred_data$preds #add the predictions (ln scale)
+  pred_data_df$NOx <- exp(pred_data$preds) #convert pred to native scale
   
-  # Compute the season variogram
-  season_variogram <- variogram(log_conc ~ pop_s05000 + m_to_coast, data = season_data)
-  
-  # Store the results in the list
-  var_list[[season]] <- data.frame(season = season, season_variogram)
-  
-  # Fit the variogram model
-  model <- fit.variogram(season_variogram, vgm(c("Exp", "Sph", "Mat"), nugget = 0.6)) #suggesting a nug so there are not convergence issues
-  
-  # Store the results in the list
-  model_list[[season]] <- data.frame(season = season, model)
+  return(pred_data_df) #return a df wtih X, Y, lnNOx and NOx
 }
 
-# Combine the results into a single data frame
-m.uk.all <- bind_rows(model_list)
-v.uk.all <- bind_rows(var_list)
+#test the function
 
-# Check result
-print(m.uk.all)
-print(v.uk.all)
+test_df <- map_data(lm_gold_standard) #yay!!
 
-# Plotting fitted variograms faceting by season
-ggplot(v.uk.all, aes(x = dist, y = gamma)) +
-  geom_point() +
-  facet_wrap(~ season) +
-  labs(title = "Variogram by Season",
-       x = "Distance",
-       y = "Semivariance") +
-  theme_minimal()
-
-
-
-#testing with just one to see if my loop was ok
-
-v_test <- la_all_campaign_sf %>% filter(season == "Summer")
-
-v.uk.test <- variogram(log_conc ~ pop_s05000 + m_to_coast + m_to_a1, 
-                  data = v_test # in meters
-                  #cutoff=25e3
-                  )
-
-plot(v.uk.test)
-m.uk <- fit.variogram(v.uk.test, vgm(c("Exp", "Sph", "Mat")))
-
-# Display the selected variogram model parameters
-m.uk
-
-plot(v.uk.test, model = m.uk)
-
-#trying the loop a different way
-
-# Loop through each season
-for (season in seasons) {
-  # Filter the data for the current season
-  season_data <- la_all_campaign_sf %>% filter(season == !!season)
-  
-  # Compute the season variogram
-  season_variogram <- variogram(log_conc ~ pop_s05000 + m_to_coast, data = season_data)
-  
-  # Create a data frame for the variogram results
-  var_name <- paste0("v.uk_", season)
-  assign(var_name, season_variogram)
-  
-  # Fit the variogram model
-  model <- fit.variogram(season_variogram, vgm(c("Exp", "Sph", "Mat"))) # suggesting a nugget to avoid convergence issues
-  
-  # Create a data frame for the model results
-  model_name <- paste0("m.uk_", season)
-  assign(model_name, model)
-}
-
-#plotting for gold
-plot(v.uk_Gold, model = m.uk_Gold)
-
-#plotting for balanced
-plot(v.uk_Balanced, model = m.uk_Balanced)
-
-#plotting for Spring
-plot(v.uk_Spring, model = m.uk_Spring)
-
-#plotting for Summer
-plot(v.uk_Summer, model = m.uk_Summer)
-
-#plotting for Fall
-plot(v.uk_Fall, model = m.uk_Fall)
-
-#plotting for Winter
-plot(v.uk_Winter, model = m.uk_Winter)
-
-#meh
-```
-
-
-```{r, echo = F, include = F}
-
-# Plot to evaluate linearity between log_conc and covars
-
-
-ggplot(la_all_campaign_sf, aes(x = pop_s05000, y = log_conc)) + 
-  geom_point() + 
-  geom_smooth(method = "lm", se = FALSE) +
-  geom_smooth() +
-  facet_wrap(~season) +
-  labs(x = "Population within 5000 meters", y = "Log-transformed NOx", 
-       title = "Relationship between Pop_5000 and ln_nox")
-
-ggplot(la_all_campaign_sf, aes(x = m_to_coast, y = log_conc)) + 
-  geom_point() + 
-  geom_smooth(method = "lm", se = FALSE) +
-  geom_smooth() +
-  facet_wrap(~season) +
-  labs(x = "Distance to Coast (m)", y = "Log-transformed NOx", 
-       title = "Relationship between Distance to Coast and ln_nox")
-
-ggplot(la_all_campaign_sf, aes(x = m_to_a1, y = log_conc)) + 
-  geom_point() + 
-  geom_smooth(method = "lm", se = FALSE) +
-  geom_smooth() +
-  facet_wrap(~season) +
-  labs(x = "Distance to A1 (m)", y = "Log-transformed NOx", 
-       title = "Relationship between Distance to A1 and ln_nox")
-
-#This reminded me that we need to check the units on the distance variables in the grid and what we have here. Will need to transform units for accurate plotting
-
-#Linear relationship is not there, especially for distance to coast, but when I talked to Magali about this on my lab, she said it's really a best practice, but most people ignore it. I don't think she expects us to do anything with this, but we can note it in our appendix. 
-
-```
-
-```{r, echo = F, include = F}
-
-# ---- Universal Kriging Prediction ----
-
-#convert to lambert to match the prediction data
-la_grid <- st_transform(la_grid, crs = lambert_proj) 
-
-# Fit the universal kriging model and predict on the grid
-for (season in seasons) {
-  # Filter the data for the current season
-  season_data <- la_all_campaign_sf %>% filter(season == !!season)
-  
-  # Construct the model variable name and retrieve the model
-  model_name <- paste0("m.uk_", season)
-  model <- get(model_name)
-  
-  #Do the season krige
-  season.kr <- krige(log_conc ~ pop_s05000 + m_to_coast, 
-                 season_data, # CRS in meters
-                 newdata = la_grid, # CRS in meters
-                 model = model)
-  
-  # Create a data frame for the results
-  var_name <- paste0("kr_", season)
-  assign(var_name, season.kr)
-
-}
-
-```
-
-```{r, echo = F, include = F}
-#plotting the UK results
-
-# put these on the native scale
-kr_Gold$var1.pred <- exp(kr_Gold$var1.pred)
-kr_Balanced$var1.pred <- exp(kr_Balanced$var1.pred)
-kr_Spring$var1.pred <- exp(kr_Spring$var1.pred)
-kr_Summer$var1.pred <- exp(kr_Summer$var1.pred)
-kr_Fall$var1.pred <- exp(kr_Fall$var1.pred)
-kr_Winter$var1.pred <- exp(kr_Winter$var1.pred)
-
-# View the results; predictions are stored in `var1.pred`
-
-# Plot UK predictions Gold
-gold_uk_plt <- plot(kr_Gold["var1.pred"], main = "UK Prediction of NOx - Gold Standard")
-
-# Plot UK predictions Balanced
-bal_uk_plt <- plot(kr_Balanced["var1.pred"], main = "UK Prediction of NOx - Balanced")
-
-# Plot UK predictions Spring
-spring_uk_plt <- plot(kr_Spring["var1.pred"], main = "UK Prediction of NOx - Spring")
-
-# Plot UK predictions Summer
-summer_uk_plt <- plot(kr_Summer["var1.pred"], main = "UK Prediction of NOx - Summer")
-
-# Plot UK predictions Fall
-fall_uk_plt <- plot(kr_Fall["var1.pred"], main = "UK Prediction of NOx - Fall")
-
-# Plot UK predictions Winter
-winter_uk_plt <- plot(kr_Winter["var1.pred"], main = "UK Prediction of NOx - Winter")
-
-```
-Uhg. This is kind of a mess - Lianne did say that there wasn't going to be a lot of spatial correlation in these because they are so far apart. I may have wasted a lot of time with the Kriging. Maybe just the monitor location maps are enough?
-
-```{r, echo = F, include = F}
-#I'm already so far down this road I might as well finish
-
-# Calculate standard errors to assess prediction uncertainty across locations
-kr_Gold$se <- sqrt(kr_Gold$var1.var)  # Standard error is the square root of variance
-
-# Plot UK prediction standard errors
-gold_se_plt <- plot(kr_Gold["se"], main = "UK Prediction Error (Standard Error) - Gold")
-
-#not repeating this for all the plots - it's silly
-```
-#Joining the predictions to a basemap
-```{r, echo = F, include = F, echo = F, include = F}
-
-#transform back to lat long for better mappign
-la_grid <- st_transform(la_grid, latlong_proj)
-kr_Gold <- st_transform(kr_Gold, latlong_proj)
-kr_Balanced <- st_transform(kr_Balanced, latlong_proj)
-kr_Spring <- st_transform(kr_Spring, latlong_proj)
-kr_Summer <- st_transform(kr_Summer, latlong_proj)
-kr_Fall <- st_transform(kr_Fall, latlong_proj)
-kr_Winter <- st_transform(kr_Winter, latlong_proj)
-
-# Verify that coordinates in `kr_` and `la_grid` are nearly identical
-# Floating-point precision can cause slight differences, so `all.equal()`, allows for small tolerance levels in comparison, is used instead of `identical()`.
-all.equal(st_coordinates(kr_Gold), st_coordinates(la_grid))  # Expected result: "TRUE" or a message with small differences
-
-# Join LA grid to predictions; do so by nearest feature to avoid precision merging issues
-grid_gold <- st_join(la_grid, kr_Gold, join = st_nearest_feature)
-
-
-# Rename variable for plot
-grid_gold <- grid_gold %>% rename(NOx = var1.pred)
-
-# Verify the join was successful (no NAs in predictions)
-all(!is.na(grid_gold$NOx))  # Should return "TRUE"
-
-#repeat for all the others - Balanced
-# Verify that coordinates in `kr_` and `la_grid` are nearly identical
-all.equal(st_coordinates(kr_Balanced), st_coordinates(la_grid))  
-# Join LA grid to predictions; do so by nearest feature to avoid precision merging issues
-grid_balanced <- st_join(la_grid, kr_Balanced, join = st_nearest_feature)
-# Rename variable for plot
-grid_balanced <- grid_balanced %>% rename(NOx = var1.pred)
-# Verify the join was successful (no NAs in predictions)
-all(!is.na(grid_balanced$NOx))  # Should return "TRUE"
-
-#Spring
-
-# Verify that coordinates in `kr_` and `la_grid` are nearly identical
-all.equal(st_coordinates(kr_Spring), st_coordinates(la_grid))  
-# Join LA grid to predictions; do so by nearest feature to avoid precision merging issues
-grid_spring <- st_join(la_grid, kr_Spring, join = st_nearest_feature)
-# Rename variable for plot
-grid_spring <- grid_spring %>% rename(NOx = var1.pred)
-# Verify the join was successful (no NAs in predictions)
-all(!is.na(grid_spring$NOx))  # Should return "TRUE"
-
-#summer
-# Verify that coordinates in `kr_` and `la_grid` are nearly identical
-all.equal(st_coordinates(kr_Summer), st_coordinates(la_grid))  
-# Join LA grid to predictions; do so by nearest feature to avoid precision merging issues
-grid_summer <- st_join(la_grid, kr_Summer, join = st_nearest_feature)
-# Rename variable for plot
-grid_summer <- grid_summer %>% rename(NOx = var1.pred)
-# Verify the join was successful (no NAs in predictions)
-all(!is.na(grid_summer$NOx))  # Should return "TRUE"
-
-#fall
-
-# Verify that coordinates in `kr_` and `la_grid` are nearly identical
-all.equal(st_coordinates(kr_Fall), st_coordinates(la_grid))  
-# Join LA grid to predictions; do so by nearest feature to avoid precision merging issues
-grid_fall <- st_join(la_grid, kr_Fall, join = st_nearest_feature)
-# Rename variable for plot
-grid_fall <- grid_fall %>% rename(NOx = var1.pred)
-# Verify the join was successful (no NAs in predictions)
-all(!is.na(grid_fall$NOx))  # Should return "TRUE"
-
-#winter
-# Verify that coordinates in `kr_` and `la_grid` are nearly identical
-all.equal(st_coordinates(kr_Winter), st_coordinates(la_grid))  
-# Join LA grid to predictions; do so by nearest feature to avoid precision merging issues
-grid_winter <- st_join(la_grid, kr_Winter, join = st_nearest_feature)
-# Rename variable for plot
-grid_winter <- grid_winter %>% rename(NOx = var1.pred)
-# Verify the join was successful (no NAs in predictions)
-all(!is.na(grid_winter$NOx))  # Should return "TRUE"
-
-
-```
-
-```{r, echo = F, include = F}
-
-# ----- Plot Smooth Gridded Predictions -----
-
-# Convert `new_grid` to a data frame for easier plotting 
-grid_gold_df <- as.data.frame(st_coordinates(grid_gold))
-grid_gold_df$NOx <- grid_gold$NOx
-
-grid_balanced_df <- as.data.frame(st_coordinates(grid_balanced))
-grid_balanced_df$NOx <- grid_balanced$NOx
-
-grid_spring_df <- as.data.frame(st_coordinates(grid_spring))
-grid_spring_df$NOx <- grid_spring$NOx
-
-grid_summer_df <- as.data.frame(st_coordinates(grid_summer))
-grid_summer_df$NOx <- grid_summer$NOx
-
-grid_fall_df <- as.data.frame(st_coordinates(grid_fall))
-grid_fall_df$NOx <- grid_fall$NOx
-
-grid_winter_df <- as.data.frame(st_coordinates(grid_winter))
-grid_winter_df$NOx <- grid_winter$NOx
-
-#df of just monitors to add as points
-monitors <- ca_covariates %>% dplyr::select(native_id, latitude, longitude) %>%
-  st_drop_geometry()
-
-gold <- g + 
+gold_predict <- g + 
   # Set map extent and CRS (bounding box error otherwise results in no background map) 
   coord_sf(xlim = c(map_bbox["xmin"], map_bbox["xmax"]), 
            ylim = c(map_bbox["ymin"], map_bbox["ymax"]), 
            crs = 4326) +  
-  geom_tile(data = grid_gold_df, aes(x = X, y = Y, fill = NOx), 
+  geom_tile(data = test_df, aes(x = X, y = Y, fill = lnNOx), 
             alpha=0.2,
             width = 0.01, height = 0.01 # Adjust width and height as needed
             ) +  
+  geom_point(data = monitors_df, aes(x = longitude, y = latitude), size = 2, shape = 18, color = "black") + #add the monitors as points just to see. 
   # color friendly color scale
   scale_fill_viridis_c(option = "plasma") + 
-  labs(title = "Map of Los Angeles with UK Predictions - Gold",
-       col="NOx (ppb)",
-       x = "",
-       y = ""
-       ) +
-  theme_minimal()
-
-balanced <- g + 
-  # Set map extent and CRS (bounding box error otherwise results in no background map) 
-  coord_sf(xlim = c(map_bbox["xmin"], map_bbox["xmax"]), 
-           ylim = c(map_bbox["ymin"], map_bbox["ymax"]), 
-           crs = 4326) +  
-  geom_tile(data = grid_balanced_df, aes(x = X, y = Y, fill = NOx), 
-            alpha=0.2,
-            width = 0.01, height = 0.01 # Adjust width and height as needed
-            ) +  
-  # color friendly color scale
-  scale_fill_viridis_c(option = "plasma") + 
-  labs(title = "Map of Los Angeles with UK Predictions - Balanced",
-       col="NOx (ppb)",
-       x = "",
-       y = ""
-       ) +
-  theme_minimal()
-
-spring <- g + 
-  # Set map extent and CRS (bounding box error otherwise results in no background map) 
-  coord_sf(xlim = c(map_bbox["xmin"], map_bbox["xmax"]), 
-           ylim = c(map_bbox["ymin"], map_bbox["ymax"]), 
-           crs = 4326) +  
-  geom_tile(data = grid_spring_df, aes(x = X, y = Y, fill = NOx), 
-            alpha=0.2,
-            width = 0.01, height = 0.01 # Adjust width and height as needed
-            ) +  
-  # color friendly color scale
-  scale_fill_viridis_c(option = "plasma") + 
-  labs(title = "Map of Los Angeles with UK Predictions - Spring",
-       col="NOx (ppb)",
-       x = "",
-       y = ""
-       ) +
-  theme_minimal()
-
-summer <- g + 
-  # Set map extent and CRS (bounding box error otherwise results in no background map) 
-  coord_sf(xlim = c(map_bbox["xmin"], map_bbox["xmax"]), 
-           ylim = c(map_bbox["ymin"], map_bbox["ymax"]), 
-           crs = 4326) +  
-  geom_tile(data = grid_summer_df, aes(x = X, y = Y, fill = NOx), 
-            alpha=0.2,
-            width = 0.01, height = 0.01 # Adjust width and height as needed
-            ) +  
-  # color friendly color scale
-  scale_fill_viridis_c(option = "plasma") + 
-  labs(title = "Map of Los Angeles with UK Predictions - Summer",
-       col="NOx (ppb)",
-       x = "",
-       y = ""
-       ) +
-  theme_minimal()
-
-fall <- g + 
-  # Set map extent and CRS (bounding box error otherwise results in no background map) 
-  coord_sf(xlim = c(map_bbox["xmin"], map_bbox["xmax"]), 
-           ylim = c(map_bbox["ymin"], map_bbox["ymax"]), 
-           crs = 4326) +  
-  geom_tile(data = grid_fall_df, aes(x = X, y = Y, fill = NOx), 
-            alpha=0.2,
-            width = 0.01, height = 0.01 # Adjust width and height as needed
-            ) +  
-  # color friendly color scale
-  scale_fill_viridis_c(option = "plasma") + 
-  labs(title = "Map of Los Angeles with UK Predictions - Fall",
-       col="NOx (ppb)",
-       x = "",
-       y = ""
-       ) +
-  theme_minimal()
-
-winter <- g + 
-  # Set map extent and CRS (bounding box error otherwise results in no background map) 
-  coord_sf(xlim = c(map_bbox["xmin"], map_bbox["xmax"]), 
-           ylim = c(map_bbox["ymin"], map_bbox["ymax"]), 
-           crs = 4326) +  
-  geom_tile(data = grid_winter_df, aes(x = X, y = Y, fill = NOx), 
-            alpha=0.2,
-            width = 0.01, height = 0.01 # Adjust width and height as needed
-            ) +  
-  geom_point(data = monitors, aes(x = longitude, y = latitude), size = 2, shape = 18, color = "black") + #add the monitors as points just to see. 
-  # color friendly color scale
-  scale_fill_viridis_c(option = "plasma") + 
-  labs(title = "Map of Los Angeles with UK Predictions - Winter",
-       col="NOx (ppb)",
-       x = "",
-       y = ""
-       ) +
-  theme_minimal()
-
-gold
-balanced
-spring
-summer
-fall
-winter
-
-
-```
-
-```{r, echo = F, include = F}
-#quick repeat just for the lt gold using all 13 monitors in the grid to see if its different enough to be worthwhile
-
-#convert to lambert for distance
-
-gold_la_monitors <- st_transform(gold_la_monitors, crs = lambert_proj)
-la_grid <- st_transform(la_grid, crs = lambert_proj)
-
-v.uk <- variogram(log_conc ~ pop_s05000 + m_to_coast + m_to_a1, 
-                  data = gold_la_monitors # in meters
-                  #cutoff=25e3
-                  )
-
-plot(v.uk)
-
-m.uk <- fit.variogram(v.uk, vgm(c("Exp", "Sph", "Mat")))
-
-#trying to deal with convergence
-m.uk1 <- fit.variogram(v.uk, vgm("Sph", nugget = 0.02, psill = 0.03, range = 1500))
-
-# Display the selected variogram model parameters
-m.uk
-m.uk1 #how is this right? It's just literally the values I gave it
-
-plot(v.uk, model = m.uk) #it's ugly. Not sure what the convergence issues are. It still gave results. 
-
-monitors.kr <- krige(log_conc ~ pop_s05000 + m_to_coast, 
-                 gold_la_monitors, # CRS in meters
-                 newdata = la_grid, # CRS in meters
-                 model = m.uk)
-```
-
-``` {r, echo = F, include = F}
-#making the plot
-
-monitors.kr$var1.pred <- exp(monitors.kr$var1.pred)
-
-# View the results; predictions are stored in `var1.pred`
-
-# Plot UK predictions Gold
-monitors_uk_plt <- plot(monitors.kr["var1.pred"], main = "UK Prediction of NOx - Gold Standard")
-
-# Calculate standard errors to assess prediction uncertainty across locations
-monitors.kr$se <- sqrt(monitors.kr$var1.var)  # Standard error is the square root of variance 
-
-# Plot UK prediction standard errors
-monitors_se_plt <- plot(monitors.kr["se"], main = "UK Prediction Error (Standard Error) - Gold")
-
-#note se is on the log scale and the other is on the native scale
-```
-
-```{r, echo = F, include = F}
-
-#transform back to lat long for better mappign
-la_grid <- st_transform(la_grid, latlong_proj)
-monitors.kr <- st_transform(monitors.kr, latlong_proj)
-
-# Verify that coordinates in `kr_` and `la_grid` are nearly identical
-# Floating-point precision can cause slight differences, so `all.equal()`, allows for small tolerance levels in comparison, is used instead of `identical()`.
-all.equal(st_coordinates(monitors.kr), st_coordinates(la_grid))  # Expected result: "TRUE" or a message with small differences
-
-# Join LA grid to predictions; do so by nearest feature to avoid precision merging issues
-grid_la_monitors <- st_join(la_grid, monitors.kr, join = st_nearest_feature)
-
-
-# Rename variable for plot
-grid_la_monitors <- grid_la_monitors %>% rename(NOx = var1.pred)
-
-# Verify the join was successful (no NAs in predictions)
-all(!is.na(grid_la_monitors$NOx))  # Should return "TRUE"
-
-```
-
-```{r, echo = F, include = F}
-#Finally the plot
-
-# ----- Plot Smooth Gridded Predictions -----
-
-# Convert `new_grid` to a data frame for easier plotting 
-grid_la_monitors_df <- as.data.frame(st_coordinates(grid_la_monitors))
-grid_la_monitors_df$NOx <- grid_la_monitors$NOx
-
-#filtering the monitors that isn't an sf to just the la grid monitors (easier to plot if not as sf since we already ahve geometry)
-monitors <- right_join(monitors, grid_monitors, by = "native_id") %>% st_drop_geometry()
-
-la_all_monitors <- g + 
-  # Set map extent and CRS (bounding box error otherwise results in no background map) 
-  coord_sf(xlim = c(map_bbox["xmin"], map_bbox["xmax"]), 
-           ylim = c(map_bbox["ymin"], map_bbox["ymax"]), 
-           crs = 4326) +  
-  geom_tile(data = grid_la_monitors_df, aes(x = X, y = Y, fill = NOx), 
-            alpha=0.2,
-            width = 0.01, height = 0.01 # Adjust width and height as needed
-            ) +  
-  geom_point(data = monitors, aes(x = longitude, y = latitude), size = 2, shape = 18, color = "black") + #add the monitors as points just to see. 
-  # color friendly color scale
-  scale_fill_viridis_c(option = "plasma") + 
-  labs(title = "Map of Los Angeles with UK Predictions - Gold Standard",
-       col="NOx (ppb)",
+  labs(title = "Map of Los Angeles with Predictions - Gold Standard",
+       col="ln(NOx(ppb))",
        caption = "Diamonds indicate monitor locations",
        x = "",
        y = ""
        ) +
   theme_minimal()
 
-la_all_monitors
+gold_predict
 
-#it's definitely under predicting. Thise values are much lower than the actual annual averages. 
+#function that will plot the map using prepared data from the map_data() function
+#requires a bounding box be already set called map_bbox
+#plots predictions on the native scale
+plot_map <- function(data) { #specify the data to use for the map
+  
+  g <- ggplot() +
+  ggspatial::annotation_map_tile(type = "osm", zoom = 10) +
+  labs(title = "LA Grid with Map") +
+  theme_minimal()
+  
+  plot <- g + # Set map extent and CRS (bounding box error otherwise results in no background map) 
+  coord_sf(xlim = c(map_bbox["xmin"], map_bbox["xmax"]), 
+           ylim = c(map_bbox["ymin"], map_bbox["ymax"]), 
+           crs = 4326) +  
+  geom_tile(data = data, aes(x = X, y = Y, fill = NOx), #plot on native scale
+            alpha=0.2,
+            width = 0.01, height = 0.01 # Adjust width and height as needed
+            ) +  
+  geom_point(data = monitors_df, aes(x = longitude, y = latitude), size = 2, shape = 18, color = "black") + #add the monitors as points just to see. 
+  # color friendly color scale
+  scale_fill_viridis_c(option = "plasma") + 
+  labs(title = "Map of Los Angeles with Predicted NOx",
+       fill ="NOx (ppb)",
+       caption = "Diamonds indicate monitor locations",
+       x = "",
+       y = ""
+       ) +
+  theme_minimal() +
+    theme(panel.border = element_rect(color = "black", fill = NA, size = 1))
+  
+  return(plot) 
+}
 
-#This does look better! Also, I don't want to keep repeating, but I am thinking that we could potentially include the monitors just off the grid, as they may still have some spatiatl correlation with the stuff on the grid....
+test_map <- plot_map(test_df)
+
+test_map + labs(title = "Map of Los Angeles with Predictions - Gold")
+
+```
+
+```{r generate.maps, echo = F, include = F}
+
+#testing using full state models
+
+gold_map <- plot_map(map_data(lm_gold_standard))
+balanced_map <- plot_map(map_data(lm_st_balanced))
+spring_map <- plot_map(map_data(lm_st_spring))
+summer_map <- plot_map(map_data(lm_st_summer))
+fall_map <- plot_map(map_data(lm_st_fall))
+winter_map <- plot_map(map_data(lm_st_winter))
+
+gold_map + labs(title = "Map of Los Angeles with Predictions - Gold")
+balanced_map + labs(title = "Map of Los Angeles with Predictions - Balanced")
+spring_map + labs(title = "Map of Los Angeles with Predictions - Spring")
+summer_map + labs(title = "Map of Los Angeles with Predictions - Summer")
+fall_map + labs(title = "Map of Los Angeles with Predictions - Fall")
+winter_map + labs(title = "Map of Los Angeles with Predictions - Winter")
+
+#They all look pretty much the same and aren't interesting. The LA specific ones are much more interesting!
+
+
+```
+
+```{r maps.la.model, echo = F, include = T}
+#repeat using the LA specific models
+
+la_gold_map <- plot_map(map_data(lm_gold_la))
+la_balanced_map <- plot_map(map_data(lm_st_la))
+la_spring_map <- plot_map(map_data(lm_st_spring_la))
+la_summer_map <- plot_map(map_data(lm_st_summer_la))
+la_fall_map <- plot_map(map_data(lm_st_fall_la))
+la_winter_map <- plot_map(map_data(lm_st_winter_la))
+
+la_gold_map + labs(title = "Map of Los Angeles with NOx Predictions - Gold Standard")
+la_balanced_map + labs(title = "Map of Los Angeles with NOx Predictions - Balanced ")
+la_spring_map + labs(title = "Map of Los Angeles with NOx Predictions - Spring")
+la_summer_map + labs(title = "Map of Los Angeles with NOx Predictions - Summer")
+la_fall_map + labs(title = "Map of Los Angeles with NOx Predictions - Fall")
+la_winter_map + labs(title = "Map of Los Angeles with NOx Predictions - Winter")
+
+
+#so interesting!
+
+#I think the faceted plots with ln nox are better for the results, but these might go in the appendix, because they are just cool and really show what is going on. 
+```
+The color ramps aren’t the same size. Summer is lower over all, but the differences are really seen a long the roads. Winter is the highest (the blue in winter is higher than the yellow in summer), but there is less variation and a peak near downtown.
+Spring and fall are midway in-between with spring being more like summer and fall being more like winter.
+Fall looks the closest to balanced
+
+```{r, fig.height = 7, fig.width = 7, echo = F, include = T}
+
+#trying one more thing to see if it makes the color ramps easier to compare
+
+#generate df only and add the season variable 
+la_gold_map_df <- map_data(lm_gold_la) %>% mutate(season = "Gold")
+la_balanced_map_df <- map_data(lm_st_la) %>% mutate(season = "Balanced")
+la_spring_map_df <- map_data(lm_st_spring_la) %>% mutate(season = "Spring")
+la_summer_map_df <- map_data(lm_st_summer_la) %>% mutate(season = "Summer")
+la_fall_map_df <- map_data(lm_st_fall_la) %>% mutate(season = "Fall")
+la_winter_map_df <- map_data(lm_st_winter_la) %>% mutate(season = "Winter")
+
+#bind into one df
+la_all_map_df <- rbind(la_gold_map_df,
+                       la_balanced_map_df,
+                       la_spring_map_df,
+                       la_summer_map_df,
+                       la_fall_map_df,
+                       la_winter_map_df
+                       )
+
+#create factor variable to control the order in faceting
+
+la_all_map_df <- la_all_map_df %>%
+  mutate(season = factor(season, levels = c("Spring", 
+                                            "Summer", 
+                                            "Fall", 
+                                            "Winter", 
+                                            "Balanced", 
+                                            "Gold")))
+
+#make the map using faceting
+
+nox_map <- g + # Set map extent and CRS (bounding box error otherwise results in no background map) 
+  coord_sf(xlim = c(map_bbox["xmin"], map_bbox["xmax"]), 
+           ylim = c(map_bbox["ymin"], map_bbox["ymax"]), 
+           crs = 4326) +  
+  geom_tile(data = la_all_map_df, aes(x = X, y = Y, fill = NOx), #plot on native scale
+            alpha=0.2,
+            width = 0.01, height = 0.01 # Adjust width and height as needed
+            ) +  
+  geom_point(data = monitors_df, aes(x = longitude, y = latitude), size = 2, shape = 18, color = "black") + #add the monitors as points just to see. 
+  # color friendly color scale
+  scale_fill_viridis_c(option = "plasma") + 
+  facet_wrap(~season) + 
+  labs(title = "Map of Los Angeles with Predicted NOx by Season",
+       fill ="NOx (ppb)",
+       caption = "Diamonds indicate monitor locations",
+       x = "",
+       y = ""
+       ) +
+  theme_void() +
+    theme(panel.border = element_rect(color = "black", fill = NA, size = 1))
+
+#nox_map
+
+#plotting on the same scale squashes variability, because the color ramp isn't long enough. 
+
+#trying the same on ln scale to see if it enhances variability while keeping the scale continuous
+
+lnnox_map <- g + # Set map extent and CRS (bounding box error otherwise results in no background map) 
+  coord_sf(xlim = c(map_bbox["xmin"], map_bbox["xmax"]), 
+           ylim = c(map_bbox["ymin"], map_bbox["ymax"]), 
+           crs = 4326) +  
+  geom_tile(data = la_all_map_df, aes(x = X, y = Y, fill = lnNOx), #plot on native scale
+            alpha=0.2,
+            width = 0.01, height = 0.01 # Adjust width and height as needed
+            ) +  
+  geom_point(data = monitors_df, aes(x = longitude, y = latitude), size = 2, shape = 18, color = "black") + #add the monitors as points just to see. 
+  # color friendly color scale
+  scale_fill_viridis_c(option = "plasma") + 
+  facet_wrap(~season, nrow = 3) +
+  labs(title = "Map of Los Angeles with Predicted ln(NOx) by Season",
+       fill ="ln (NOx (ppb))",
+       caption = "Diamonds indicate monitor locations",
+       x = "",
+       y = ""
+       ) +
+  theme_void() +
+    theme(panel.border = element_rect(color = "black", fill = NA, size = 1))
+
+lnnox_map #like this one a lot. They do look cool on the native scale, but I think this is the best way to show them together and still get the variation without the confusion of different color ramps. 
+
+#this is better and helpful for seeing relative comparison, but I really like th distinctnes on the native scale when the scales aren't set. But is it misleading to have different color scales?
 
 ```
 
@@ -3532,7 +3320,7 @@ Analysis:
 
 *Callan:* Met with professors at office hours to discuss analytical approach; attended all group meetings to discuss analytical approach; drafted first iteration of day-of-week  vs. weekday/weekend predictions with cross-validation and ANOVA (not incorporated: later revised plan); conducted sensitivity analysis for Los Angeles county, including creation of short- and long-term temporally balanced datasets specific to Los Angeles, summarizing short- and long-term temporally balanced datasets within LA, generating LA-specific NOx predictions and taking the first pass at cross-validation, including making a new cross-validation group; calculated R2 and RMSE values for LA-specific NOx predictions
 
-*Katie:*
+*Katie:* Met with professors at office hours and attended all group meetings. CA NOx monitor inclusion criteria validation. Wrote functions for random campaign sampling and data aggregation and summary statistics. Wrote template code for iterating CV function across campaigns and extracting the performance statistics. Figure design and all maps. 
 
 *Abbie:* Met with professors at office hours and attended all group meetings. Set up the Github Project and Repository for the project; Implemented the forward stepwise selection of our model terms. Created the statewide seasonal data sets and models, including the comparisons with the gold standard data sets; created the LA county seasonal data sets and models, including the comparisons with the gold standard data sets; adjustment of our cross validation method for LA county, implementing a leave-one-out method instead of a 10 fold method.
 
@@ -3540,7 +3328,7 @@ Writing:
 
 *Callan:* Drafted and revised analysis plans (3 in total); wrote and revised methods section; wrote and revised introduction section; wrote portions of results section; wrote portions of discussion section
 
-*Katie:* 
+*Katie:* Added to the results, methods, and discussion, especially the portion about maps. Proof reading and editing for consistent interpretation between writing and code output. 
 
 
 *Abbie:* Added to the results, especially with regards to the model selection and selection of model covariates, and seasonal models. Added to the discussion section with overall conclusions, limitations, future research suggestions, and current literature. final editing of plots and graphs.
@@ -3580,7 +3368,7 @@ United States Census. 2023. QuickFacts Los Angeles County, California. https://w
 Sensors Kept in the Data after applying selection Criteria from Blanco et al (2022).
 ```{r, echo = FALSE}
 kable(sensor_summary,
-      col.names = c("Sensor ID", "Count", "Percent of Year with Data", "Percent of Data Positive", "Maximum Data Gap"),
+      col.names = c("Sensor ID", "Count", "Percent of Year with Data", "Percent of Data Positive", "Maximum Data Gap (days)"),
       digits = 2,
       caption = "Summary of Sensor Data for SEnsors Meeting Selection Criteria") %>% kable_styling()
 
