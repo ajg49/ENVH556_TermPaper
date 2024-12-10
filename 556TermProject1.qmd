@@ -49,7 +49,7 @@ Monitors from the California NOx dataset were selected for inclusion in our anal
 
 Covariates were selected for inclusion into our general model for NOx predictions based on their scientific relevance to ambient NOx concentration prediction models, as described in peer-reviewed scientific literature. Specifically, we chose to include the covariates utilized by [Mercer et al. (2011)](https://pmc.ncbi.nlm.nih.gov/articles/PMC3146303/pdf/nihms299256.pdf), in the Snapshot campaign that measured ambient NOx concentrations in Los Angeles across seasons and built prediction models using land-use and geographic covariates. Mercer et al. (2011) selected their prediction model covariates from 65 possible covariates related to population density, land-use intensity, open space land, distance to the coast, distance to industrial sources, distances to various roadways, and lengths of roadways within a given buffer zone. From these potential covariates, Mercer et al. (2011) created a "common model" that had adequate performance in predicting NOx concentrations across all seasons. The covariates included in the Mercer et al. (2011) common model included: distance to commercial pollutant sources, distance to the coast, distance to A1 roadways, population size within 5000 meters, land use intensity within 3000 square kilometers, length of A1 roads within 50 meters, and length of A2 and A3 roads within 400 meters.
 
-For our analyses, we used forward stepwise regression to select covariates for inclusion into our model from those most similar to the seven used by Mercer et al. (2011). The Mercer et al. (2011) covariates were deemed appropriate to use based on the similarities in geographic region, pollutant of interest, land-use covariates, and modeling goals between the present analysis and that described by Mercer et al. (2011). These covariates included: meters to closest commercial and services area, distance to the closest coastline, population density within 5,000 meters, distance to nearest A1 roadway, length of A1 roadway within 500 meters, length of A2 roadway within 1500 meters, length of A3 roadway within 400 meters, and the proportion of mixed urban of built-up land within a 1500 square kilometer buffer. Note that, in some cases, distances and buffers varied between those used by Mercer et al. (2011) and those used by Blanco et al. (2023); in these cases, the closest available covariate distance or buffer was selected. For land-use intensity, the proportion of mixed urban or built-up land within 1500 square kilometers was used in the present analysis, as it was deemed to be likely the most similar to the Mercer et al. (2011) land use intensity covariate. 
+For our analyses, we used forward stepwise regression to select covariates for inclusion into our model from those most similar to the seven used by Mercer et al. (2011). We used a standard penalty of k=2, so as to optimize model fit while limiting complexity. The Mercer et al. (2011) covariates were deemed appropriate to use based on the similarities in geographic region, pollutant of interest, land-use covariates, and modeling goals between the present analysis and that described by Mercer et al. (2011). These covariates included: meters to closest commercial and services area, distance to the closest coastline, population density within 5,000 meters, distance to nearest A1 roadway, length of A1 roadway within 500 meters, length of A2 roadway within 1500 meters, length of A3 roadway within 400 meters, and the proportion of mixed urban of built-up land within a 1500 square kilometer buffer. Note that, in some cases, distances and buffers varied between those used by Mercer et al. (2011) and those used by Blanco et al. (2023); in these cases, the closest available covariate distance or buffer was selected. For land-use intensity, the proportion of mixed urban or built-up land within 1500 square kilometers was used in the present analysis, as it was deemed to be likely the most similar to the Mercer et al. (2011) land use intensity covariate. 
 
 *Gold Standard Sampling Dataset*
 
@@ -77,9 +77,12 @@ In our sensitivity analysis, we repeated our analyses with geographically restri
 
 # Results
 
-In total, 69 monitors in the state of California met the specified inclusion criteria and were included in our NOx prediction analysis (Figure 1). For our analyses specific to Los Angeles county, 12 monitors meeting the inclusion criteria were included. Generally, the statewide monitors were condensed around the major metropolitan areas, with the highest densities observed in or around San Jose, Fresno, and Los Angeles. Higher annual average concentrations tended to occur in the greater Los Angeles region, though some monitors with elevated annual average concentrations were also observed in or around San Jose. 
+**Description of Data and Sensors** 
+
+In total, 69 monitors in the state of California met the specified inclusion criteria and were included in our NOx prediction analysis (Figure 1). For our analyses specific to Los Angeles county, 12 monitors meeting the inclusion criteria were included. Generally, the statewide monitors were condensed around the major metropolitan areas, with the highest densities observed in or around San Jose, Fresno, and Los Angeles. In general, most monitors showed annual average NOx concentrations in the range of 0 to 20 ppb. When present, higher annual average concentrations tended to occur in the greater Los Angeles region, though some monitors with elevated annual average concentrations were also observed in or around San Jose. 
 
 The distribution of NOx concentrations in our data set were log-normally distributed, as illustrated in Appendix figure 2.
+
 
 ```{r setup, include=FALSE}
 
@@ -560,7 +563,9 @@ latlong
 
 ```
 
-Figure 1: Shows the monitor locations across California. Colors indicate the annual average NOx concentration in ppb on the native scale. Note that native scale concentrations are presented rather than concentrations on the natural log scale to enhance interpretability. The 69 monitor locations are widely distributed across a vast area, and there is not a large amount of variability in annual average concentration across monitors, with the majority of annual average concentration on the lower end of the scale. The greatest density of monitors as well as the greatest variation in annual averages occurs in the Los Angeles metropolitan area; this ultimately motivated our sensitivity analysis in this region.
+Figure 1: The locations of the 69 monitors stationed across California. Colors indicate the annual average NOx concentration in ppb on the native scale. Note that native scale concentrations are presented rather than concentrations on the natural log scale to enhance interpretability. 
+
+Figure 2 shows the monitors located in Southern California, including, though not limited to, the 12 monitors included in the Los Angeles sensitivity analysis. Seasonal average NOx concentrations are presented on the native scale for each monitor. On average, NOx concentrations tended to be highest in the winter and fall and lowest in the summer and spring. In the winter and fall, the highest average NOx concentrations tended to occur in areas closer to Los Angeles. As is evident in Figure 2, the between-monitor variability in average NOx concentrations was highest in the winter and fall, whereas average NOx concentrations were more similar between monitors during the summer and spring.
 
 
 ```{r socal.map, echo = F, include = T}
@@ -594,7 +599,7 @@ socal_seasons
 
 
 ```
-Figure 2: Zooms in on Monitors in Southern CA and displays seasonal averages for each monitor. This figure includes more than just the 12 sensors we will use in our sensitivity analysis of LA county, but it does allow us to focus on the variability that might impact this restricted data set andthese seasonal models. In this figure, we can see that there is more variability in fall and winter when concentrations are overall higher than there is in spring and summer when concentrations are overall lower. 
+Figure 2: Monitors located in Southern CA, with seasonal average NOx concentrations displayed for each monitor. This figure includes, but is not limited to, the 12 sensors used in our sensitivity analysis of LA county. 
 
 ```{r, include = F, echo = F}
 #-----generate cross validation group for all analyses-----
@@ -753,7 +758,11 @@ head(res2)
 
 
 ```
+**Model Selection**
 
+From our forward stepwise regression analysis, we selected three covariates from the Mercer et al. (2011) common model for inclusion into our model: "pop_s05000" - population within 5,000 m buffer, "m_to_coast" - Distance to the coast in meters, and "m_to_a1" - Distance to a A1 road in meters. These variables were selected based on their ability to optimize the model fit while limiting the model's overall complexity. 
+
+Figure 3.0 shows that our out-of-sample performance peaks with the first three covariates included in forward selection and illustrates the appropriate selection of three, rather than four, covariates. Specifically, we see that the out-of-sample R^2 decreases and out-of-sample RMSE increases upon the addition of a fourth covariate into the model. 
 
 ```{r bias.plots, echo = F, include = T}
 #-----bias-var combined plots-----
@@ -796,18 +805,7 @@ combined_plot2 <- ggplot(data = temp2) +
 #show plot
 combined_plot2
 ```
-
-
-**Adding Covariates from Mercer et al 2011 Common Model**
-
-  The Mercer et al 2011 paper has the following covariates determined in its "common model" with which they assessed seasonal prediction models: D2A1 (distance to A1 road), A1_50m (length of A1 road in 50 m buffer), A23_400m (length of A2 or A3 roads within 400 m buffer), Pop_5k (total population within 5,000 m buffer), D2C (Distance to the coast in meters), Int_3k (intense land use within 3,000 m), D2Comm (distance to commercial land).
-
-To assess the best fit of these covariates to our data, we ran forward, stepwise selection using k =2 as the penalty on the california nox covariates that matched these mercer et al (2011) covariates the best (a total of 8 covariates). This selection returned three covariates for use in our model. The covariates in our common model are:
-  
-"pop_s05000" - population within 5,000 m buffer, "m_to_coast" - Distance to the coast in meters, and "m_to_a1" - Distance to a A1 road in meters.  
-
-Figure 3.0 shows that our out-of-sample performance peaks with the first three covariates included in forward selection and illustrates the appropriate selection of three, rather than four, covariates.. 
-
+Figure 3: Plots illustrating how the RMSE and R^2 values change upon the addition of covariates into the model for both in-sample (red) and out-of-sample (blue) predictions. Model complexity is represented by integer reflecting the number of covariate predictors included in the model. 
  
 ```{r, echo = F, include = F}
 # build regression formula with common model covariates
@@ -829,7 +827,11 @@ summary(lm_gold_standard <- lm(frml, data = long_term_gold))
 
 ```
 
+**Gold Standard Dataset** 
 
+The predicted versus observed log-NOx concentrations for the cross-validated gold standard dataset are shown in Figure 4. The best-fit line showed noticeable deviations from the 1:1 line, with an attenuated slope approximately half as steep as the 1:1 line. The MSE-based $R^2$ was 0.335 and the cross-validated predictions were, on average, approximately 0.464 log-ppb away from the 'true' observed concentrations. 
+
+The somewhat poor predictive performance of our gold standard model is likely related to the large distances over which the monitors are scatted and as well as limited variability in annual average concentrations. However, the purpose of the analysis was not to select and ideal model for predicting NOx across the state of California, but to assess the performance of short-term campagins in predicting long-term annual averages. We will compare our statewide balanced and seasonal campaigns against the observations from this model and compare their performance statistics relative to these performance statistics. In a true monitoring campaign for epidemiology studies, more time would be spent on model selection, but in this analysis we are more interested in commparitive between campaigns that overall model performance. 
 
 
 ```{r, echo = F, include = T}
