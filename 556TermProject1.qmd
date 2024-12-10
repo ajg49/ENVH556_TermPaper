@@ -3219,6 +3219,149 @@ lnnox_map #like this one a lot. They do look cool on the native scale, but I thi
 
 ```
 
+```{r, echo = F, include = T}
+
+#curious about differences - plots a map that subtracts the differences
+
+#calculate the difference in ln nox predictions between gold standard and each season
+
+#calculate gold standard - seasonal
+la_balanced_map_df$diff_lnnox <- la_gold_map_df$lnNOx - la_balanced_map_df$lnNOx
+la_spring_map_df$diff_lnnox  <- la_gold_map_df$lnNOx - la_spring_map_df$lnNOx
+la_summer_map_df$diff_lnnox  <- la_gold_map_df$lnNOx - la_summer_map_df$lnNOx
+la_fall_map_df$diff_lnnox  <- la_gold_map_df$lnNOx - la_fall_map_df$lnNOx
+la_winter_map_df$diff_lnnox  <- la_gold_map_df$lnNOx - la_winter_map_df$lnNOx
+
+#bind into one df
+la_all_lndiff_df <- rbind(
+                       la_balanced_map_df,
+                       la_spring_map_df,
+                       la_summer_map_df,
+                       la_fall_map_df,
+                       la_winter_map_df
+                       )
+
+#redo factor variable
+la_all_lndiff_df <- la_all_lndiff_df %>%
+  mutate(season = factor(season, levels = c("Spring", 
+                                            "Summer", 
+                                            "Fall", 
+                                            "Winter", 
+                                            "Balanced" 
+                                            )))
+
+difference_map <- g + # Set map extent and CRS (bounding box error otherwise results in no background map) 
+  coord_sf(xlim = c(map_bbox["xmin"], map_bbox["xmax"]), 
+           ylim = c(map_bbox["ymin"], map_bbox["ymax"]), 
+           crs = 4326) +  
+  geom_tile(data = la_all_lndiff_df, aes(x = X, y = Y, fill = -diff_lnnox), # neg sign, because it makes more sense for the high values to be red on the map (positive)
+            alpha=0.2,
+            width = 0.01, height = 0.01 # Adjust width and height as needed
+            ) +  
+  geom_point(data = monitors_df, aes(x = longitude, y = latitude), size = 2, shape = 18, color = "black") + #add the monitors as points just to see. 
+  # color friendly color scale
+  #scale_fill_viridis_c(option = "turbo", end = 0.8) + 
+  scale_fill_gradient2(low="blue", mid="white", high="red", limits = c(-1.6, 0.94)) +
+  facet_wrap(~season, nrow = 3) +
+  labs(title = "Map of Los Angeles with Difference inPredicted ln(NOx) by Season",
+       subtitle = "Campaign predicted ln(NOx) - Gold-standard predicted ln(NOx)",
+       fill ="ln (NOx (ppb))",
+       caption = "Diamonds indicate monitor locations",
+       x = "",
+       y = ""
+       ) +
+  theme_void() +
+    theme(panel.border = element_rect(color = "black", fill = NA, size = 1))
+
+difference_map
+
+
+
+```
+
+```{r, echo = F, include = T}
+
+#maps that explore the relationship wtih population
+
+
+#bind back to LA grid to look a covariate relationships
+
+la_all_lndiff_sf <- st_as_sf(la_all_lndiff_df, coords = c("X", "Y"), crs = latlong_proj) 
+la_all_lndiff_sf <- st_join(la_all_lndiff_sf, la_grid)
+
+a1 <- ggplot(la_all_lndiff_sf, aes(x = m_to_a1, y = -diff_lnnox, color = season)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "lm", color = "black", linewidth = 0.5, se = F) +
+  facet_wrap(~season) +
+  labs(title = "Distance to A1 vs Prediction Differences",
+       subtitle = "Los Angeles",
+       x = "Distance to A1 (m)",
+       y = "Prediction Difference (ln(NOx(ppb))") +
+  theme_bw()
+
+pop <- ggplot(la_all_lndiff_sf, aes(x = pop_s05000/1000, y = -diff_lnnox, color = season)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "lm", color = "black", linewidth = 0.5, se = F) +
+  facet_wrap(~season) +
+  labs(title = "Population in 5000m buffer vs Prediction Differences",
+       subtitle = "Los Angeles",
+       x = "Population in 5k buffer/1000",
+       y = "Prediction Difference (ln(NOx(ppb))",
+       caption = "Population scaled by 1/1000 to fit display on axis better") +
+  theme_bw() +
+  guides(color = "none")
+
+coast <- ggplot(la_all_lndiff_sf, aes(x = m_to_coast, y = -diff_lnnox, color = season)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "lm", color = "black", linewidth = 0.5, se = F) +
+  facet_wrap(~season) +
+  labs(title = "Distance to Coast vs Prediction Differences",
+       subtitle = "Los Angeles",
+       x = "Distance to Coast (m)",
+       y = "Prediction Difference (ln(NOx(ppb))") +
+  theme_bw()
+
+
+pop
+#a1
+#coast
+
+#also want to see if I can map population
+
+#make sure la_grid is on latlong
+la_grid <- st_transform(la_grid, crs = latlong_proj)
+# Extract coordinates
+coords <- st_coordinates(la_grid)
+# Convert to data frame and add coordinates
+la_grid_df <- la_grid %>%
+  st_drop_geometry() %>%
+  mutate(X = coords[, "X"], Y = coords[, "Y"])
+
+population_la <- g + # Set map extent and CRS (bounding box error otherwise results in no background map) 
+  coord_sf(xlim = c(map_bbox["xmin"], map_bbox["xmax"]), 
+           ylim = c(map_bbox["ymin"], map_bbox["ymax"]), 
+           crs = 4326) +  
+  geom_tile(data = la_grid_df, aes(x = X, y = Y, fill = pop_s05000/1000), #plot population
+            alpha=0.2,
+            width = 0.01, height = 0.01 # Adjust width and height as needed
+            ) +  
+  geom_point(data = monitors_df, aes(x = longitude, y = latitude), size = 2, shape = 18, color = "black") + #add the monitors as points just to see. 
+  # color friendly color scale
+  scale_fill_viridis_c(option = "rocket") + 
+  labs(title = "Map of Los Angeles Population Density",
+       subtitle = "Using 5k buffer radius for each grid point",
+       fill = "Population/1000",
+       caption = "Diamonds indicate monitor locations",
+       x = "",
+       y = ""
+       ) +
+  theme_minimal() +
+    theme(panel.border = element_rect(color = "black", fill = NA, size = 1))
+  
+population_la
+
+```
+
 # Discussion and Conclusion
 
 **Statewide Short-Term Dataset Performance**
