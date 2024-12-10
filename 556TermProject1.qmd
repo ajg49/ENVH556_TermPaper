@@ -39,11 +39,11 @@ The California NOx dataset, first described by [Blanco et al. (2023)](https://ww
 
 We developed a general model for NOx predictions to be used across all analyses. We evaluated out-of-sample NOx prediction performances using the general model for our "gold standard" temporally-balanced dataset, our short-term temporally balanced dataset, and our short-term temporally restricted datasets. Predictions from each temporally subset dataset were evaluated against observations from the gold standard data as well as observations from each subset to control for bias in the observations as a result of sampling from temporally restricted data. Details regarding the creation and characteristics of these datasets are provided in subsequent sections. 
 
-For all analyses, NOx concentrations were modeled on the natural log scale based on the methods described by Blanco et al. (2023) and based on our visual inspection of the variable distributions (See Appendix for Distributions). 
+For all analyses, NOx concentrations were modeled on the natural log scale based on the methods described by Blanco et al. (2023) and based on our visual inspection of the variable distributions (See Appendix for distributions). 
 
-*Sensor Selection*
+*Monitor Selection*
 
-Sensors from the California NOx dataset were selected for inclusion in our analysis according to the criteria described by Blanco et al. (2023). These criteria included: (1) limited missingness, such that the sensors included had annual data that was at least 66% complete; (2) limited data gaps, such that data gaps for a particular sensor were less than or equal to 45 days long; and (3) monitors must have positive readings (> 0 ppb) at least 60% of the time. Negative concentration readings were left in the data set, as we interpreted them as true reading close to 0 that reads as negative due to noise or "classical error" in the instrument readings. We restricted the percentage of negative readings in each sensor to ensure that the sensors included had adequate variability in their readings and that annual average concentrations would be positive. 
+Monitors from the California NOx dataset were selected for inclusion in our analysis according to the criteria described by Blanco et al. (2023). These criteria included: (1) limited missingness, such that the monitors included had annual data that was at least 66% complete; (2) limited data gaps, such that data gaps for a particular monitor were less than or equal to 45 days long; and (3) monitors must have positive readings (> 0 ppb) at least 60% of the time. Negative concentration readings were left in the data set, as we interpreted them as true reading close to 0 that reads as negative due to noise or "classical error" in the instrument readings. We restricted the percentage of negative readings in each monitor to ensure that the monitors included had adequate variability in their readings and that annual average concentrations would be positive. 
 
 *Model Selection*
 
@@ -59,25 +59,27 @@ We predicted the annual average NOx concentration using our gold standard sampli
 
 *Short-Term Sampling Dataset*
 
-We created short-term sampling datasets intended to represent mobile monitoring campaigns within short-term sampling periods. Our short-term sampling datasets included temporally balanced and temporally restricted subsets of the data. The temporally balanced subset included randomly selected measurements from all measurements in the gold standard dataset. For our temporally-restricted datasets, we stratified our dataset by season and restricted measurements for each monitoring campaign to a single season; this was intended to simulate a mobile monitoring campaign collecting all data on an expedited timeframe with little seasonal variability in the collected samples. 
+We created short-term sampling datasets intended to represent mobile monitoring campaigns within short-term sampling periods. Our short-term sampling datasets included temporally balanced and temporally restricted subsets of the data. The temporally balanced subset included randomly selected measurements from all monitors in the gold standard dataset. For our temporally-restricted datasets, we stratified our dataset by season and restricted measurements for each monitoring campaign to a single season; this was intended to simulate a mobile monitoring campaign collecting all data on an expedited timeframe with little seasonal variability in the collected samples. 
 
-For each short-term sampling period, we filtered the dataset to include only samples from the specified timeframe, randomly sampled 28 measurements from each monitor, and repeated this random selection 30 times. 28 measurements were selected based on findings in Blanco et al. (2023), which reported that 28 measurements could accurately estimate the annual average of a site (less than or equal to 25% error) and reasonably represented the sampling design of a single mobile monitoring campaigns, which collect repeated samples from a limited number of locations. The random sampling process was repeated 30 total times to provide additional robustness through simulating multiple mobile monitoring campaigns, as described by Blanco et al. (2023). For the short-term campaigns, the 28 sampled measurements from each monitor were aggregated to compute an annual average NOx concentration for that campaign. This "annual average" different from the true annual of average (annual average of the gold standard data), because it was based on only on 28 samples per monitors rather than all available data. 
+For each short-term sampling period, we filtered the dataset to include only samples from the specified timeframe, randomly sampled 28 measurements from each monitor, and repeated this random selection 30 times. 28 measurements were selected based on findings in Blanco et al. (2023), which reported that 28 measurements could accurately estimate the annual average of a site (with less than or equal to 25% error) and reasonably represented the sampling design of a single mobile monitoring campaigns, which collect repeated samples from a limited number of locations. The random sampling process was repeated 30 total times to provide additional robustness through simulating multiple mobile monitoring campaigns, as described by Blanco et al. (2023). For the short-term campaigns, the 28 sampled measurements from each monitor were aggregated to compute an annual average NOx concentration for that campaign. This "annual average" different from the true annual of average (annual average of the gold standard data), because it was based on only on 28 samples per monitor rather than all available data. 
 
-For each short-term sampling dataset, we predicted the expected annual average NOx concentration with 10-fold **do we want to do LOO for all for consistency** cross-validation based on the results from all 30 sampling iterations. 
+For each short-term sampling dataset, we predicted the expected annual average NOx concentration with 10-fold cross-validation based on the results from all 30 sampling iterations. 
 
 *Comparison of Sampling Approaches*
 
-For each of the short-term datasets, we computed the expected value of MSE-based $R^2$ and RMSE based on all 30 sampling iterations comparing the cross-validated predictions from that sampling campaign to the observations from the same campaign.  We additionally computed performance statistics (RMSE and $R^2$) and compared the cross-validated annual average estimates from the temporally-restricted sampling datasets with that estimated using the gold standard sampling dataset. Since we are evaluating the ability of a short-term campaign to predict annual average concentrations (the primary metric of interest for epidemiologic studies), comparing the short-term campaign predictions to the gold standard observations controls for bias in the sampling method itself. 
+For each of the short-term datasets, we computed the expected value of MSE-based $R^2$ and RMSE based on all 30 sampling iterations comparing the cross-validated predictions from that sampling campaign to the observations from the same campaign.  We additionally computed prediction performance statistics (RMSE and $R^2$) and compared the cross-validated annual average estimates from the temporally-restricted sampling datasets with that estimated using the gold standard sampling dataset. Since we are evaluating the ability of a short-term campaign to predict annual average concentrations (the primary metric of interest for epidemiologic studies), comparing the short-term campaign predictions to the gold standard observations controls for bias in the sampling method itself. 
 
-*Sensitivy Analysis: Los Angeles County*
+*Sensitivity Analysis: Los Angeles County*
 
-In our sensitivty analysis, we repeated our analyses with geographically restricted data from a single county to limit the impact of geospatial variability, as NOx concentration measurements likely have strong spatial correlation at the county-level based on shared land-use, policy, and urbanicity within counties. Los Angeles County was selected as the county of interest for our analysis based on its high population density (U.S. Census 2023) and because of its high proportion of sensors included in the underlying California NOx dataset. Because there were fewer sensors in Los Angeles County relative to the statewide dataset, 10-fold cross validation was not possible in this sensitivity analysis. Instead, we used leave-one-out cross validation to validate Los Angeles-specific NOx predictions using the Los Angeles only monitors from the same sampling campaigns used the main analysis. 
+In our sensitivity analysis, we repeated our analyses with geographically restricted data from a single county to limit the impact of geospatial variability, as NOx concentration measurements likely have strong spatial correlation at the county-level based on shared land-use, policy, and urbanicity within counties. Los Angeles County was selected as the county of interest for our analysis based on its high population density (U.S. Census 2023) and because of its high proportion of sensors included in the underlying California NOx dataset. Because there were fewer sensors in Los Angeles County relative to the statewide dataset, 10-fold cross validation was not possible in this sensitivity analysis. Instead, we used leave-one-out cross validation to validate Los Angeles-specific NOx predictions.
 
 
 
 # Results
 
-In total, 69 sensors in the state of California met the specified inclusion criteria and were included in our NOx prediction analysis (Figure 1). For our analyses specific to Los Angeles county, 12 sensors meeting the inclusion criteria were included. The distribution of NOx concentrations in our data set were log-normally distributed, as illustrated in Appendix figure 2. 
+In total, 69 monitors in the state of California met the specified inclusion criteria and were included in our NOx prediction analysis (Figure 1). For our analyses specific to Los Angeles county, 12 monitors meeting the inclusion criteria were included. Generally, the statewide monitors were condensed around the major metropolitan areas, with the highest densities observed in or around San Jose, Fresno, and Los Angeles. Higher annual average concentrations tended to occur in the greater Los Angeles region, though some monitors with elevated annual average concentrations were also observed in or around San Jose. 
+
+The distribution of NOx concentrations in our data set were log-normally distributed, as illustrated in Appendix figure 2.
 
 ```{r setup, include=FALSE}
 
@@ -558,7 +560,7 @@ latlong
 
 ```
 
-Figure 1: Shows the monitor locations across California. Colors indicate the annual average NOx concentration in ppb. As seen, the 69 monitor locations are widely distributed across a vast area, and there is not a large amount of variability in annual average concentration across monitors, with the majority of annual average concentration on the lower end of the scale. The greatest density of monitors as well as the greatest variation in annual averages occures in the Los Angeles metropolitan area, which motivated our sensitivity analysis in this region.
+Figure 1: Shows the monitor locations across California. Colors indicate the annual average NOx concentration in ppb on the native scale. Note that native scale concentrations are presented rather than concentrations on the natural log scale to enhance interpretability. The 69 monitor locations are widely distributed across a vast area, and there is not a large amount of variability in annual average concentration across monitors, with the majority of annual average concentration on the lower end of the scale. The greatest density of monitors as well as the greatest variation in annual averages occurs in the Los Angeles metropolitan area; this ultimately motivated our sensitivity analysis in this region.
 
 
 ```{r socal.map, echo = F, include = T}
@@ -3279,15 +3281,6 @@ Writing:
 
 
 *Abbie:* Added to the results, especially with regards to the model selection and selection of model covariates, and seasonal models. Added to the discussion section with overall conclusions, limitations, future research suggestions, and current literature. final editing of plots and graphs. Review of citations.
-
-
-**Additional Contributions**
-
-*Callan:* reviewed literature for introduction section; reviewed and critiqued content; final editing and proofreading
-
-*Katie:*
-
-*Abbie:*
 
 
 # Works Cited 
