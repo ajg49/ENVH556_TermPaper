@@ -1159,6 +1159,9 @@ spring_state_var<- ggplot(st_spring, aes(x = native_id, y = log_avg)) +
 
 ```
 
+**Short-Term, Temporally-Restricted Datasets** 
+
+
 ```{r, results='hide',include=FALSE,echo=FALSE}
 #summary statistics
 lt_gold_sum <- long_term_gold %>% summarise(min = min(annual_avg), 
