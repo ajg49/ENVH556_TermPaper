@@ -632,12 +632,14 @@ get_MSE <- function(obs,pred) {
     
     # compile output
     result <- c(RMSE = sqrt(MSE_pred),
-                MSE_based_R2 = max(1 - MSE_pred / MSE_obs, 0) 
+                MSE_based_R2 = max(1 - MSE_pred / MSE_obs, 0),
+                reg_based_R2 = max(cor(obs, pred)^2) #abbie added 12/9
                 )
     
     # explicit return (optional)
     return(result)
 }
+
 
 ```
 
@@ -835,8 +837,8 @@ gold_MSE <- get_MSE(gold_CV$log_avg, gold_CV$cvpreds)
 
 #gold_MSE
 
-#RMSE           MSE_based_R2 
-#   0.4644855    0.3346974 
+#       RMSE    MSE_based_R2 reg_based_R2 
+ #  0.4644855    0.3346974    0.3397772 
 
 #plotting the results
 
@@ -929,15 +931,17 @@ for (run in unique(st_balanced_CV$model_run)) {
 st_balanced_MSE <- data.frame(
   model_run = unique(st_balanced_CV$model_run),
   RMSE_a = sapply(results_a, `[`, 1),
-  R2_a = sapply(results_a, `[`, 2),
+  MSE.R2_a = sapply(results_a, `[`, 2),
+  reg.R2_a = sapply(results_a, `[`, 3),
   RMSE_b = sapply(results_b, `[`, 1),
-  R2_b = sapply(results_b, `[`, 2)
+  MSE.R2_b = sapply(results_b, `[`, 2),
+  reg.R2_b = sapply(results_b, `[`, 3)
 )
 
 #pivot longer for plotting
 st_balanced_MSE_long <- st_balanced_MSE %>%
   pivot_longer(
-    cols = c(RMSE_a, R2_a, RMSE_b, R2_b),
+    cols = c(RMSE_a, MSE.R2_a,reg.R2_a, RMSE_b, MSE.R2_b, reg.R2_b),
     names_to = c("metric", "method"),
     names_sep = "_",
     values_to = "value"
@@ -1302,15 +1306,17 @@ for (run in unique(st_summer_CV$model_run)) {
 st_summer_MSE <- data.frame(
   model_run = unique(st_summer_CV$model_run),
   RMSE_a = sapply(results_a, `[`, 1),
-  R2_a = sapply(results_a, `[`, 2),
+  MSE.R2_a = sapply(results_a, `[`, 2),
+  reg.R2_a = sapply(results_a, `[`, 3),
   RMSE_b = sapply(results_b, `[`, 1),
-  R2_b = sapply(results_b, `[`, 2)
+  MSE.R2_b = sapply(results_b, `[`, 2),
+  reg.R2_b = sapply(results_b, `[`, 3)
 )
 
 #pivot longer for plotting
 st_summer_MSE_long <- st_summer_MSE %>%
   pivot_longer(
-    cols = c(RMSE_a, R2_a, RMSE_b, R2_b),
+    cols = c(RMSE_a, MSE.R2_a,reg.R2_a, RMSE_b, MSE.R2_b, reg.R2_b),
     names_to = c("metric", "method"),
     names_sep = "_",
     values_to = "value"
@@ -1421,15 +1427,17 @@ for (run in unique(st_fall_CV$model_run)) {
 st_fall_MSE <- data.frame(
   model_run = unique(st_fall_CV$model_run),
   RMSE_a = sapply(results_a, `[`, 1),
-  R2_a = sapply(results_a, `[`, 2),
+  MSE.R2_a = sapply(results_a, `[`, 2),
+  reg.R2_a = sapply(results_a, `[`, 3),
   RMSE_b = sapply(results_b, `[`, 1),
-  R2_b = sapply(results_b, `[`, 2)
+  MSE.R2_b = sapply(results_b, `[`, 2),
+  reg.R2_b = sapply(results_b, `[`, 3)
 )
 
 #pivot longer for plotting
 st_fall_MSE_long <- st_fall_MSE %>%
   pivot_longer(
-    cols = c(RMSE_a, R2_a, RMSE_b, R2_b),
+    cols = c(RMSE_a, MSE.R2_a,reg.R2_a, RMSE_b, MSE.R2_b, reg.R2_b),
     names_to = c("metric", "method"),
     names_sep = "_",
     values_to = "value"
@@ -1539,15 +1547,17 @@ for (run in unique(st_winter_CV$model_run)) {
 st_winter_MSE <- data.frame(
   model_run = unique(st_winter_CV$model_run),
   RMSE_a = sapply(results_a, `[`, 1),
-  R2_a = sapply(results_a, `[`, 2),
+  MSE.R2_a = sapply(results_a, `[`, 2),
+  reg.R2_a = sapply(results_a, `[`, 3),
   RMSE_b = sapply(results_b, `[`, 1),
-  R2_b = sapply(results_b, `[`, 2)
+  MSE.R2_b = sapply(results_b, `[`, 2),
+  reg.R2_b = sapply(results_b, `[`, 3)
 )
 
 #pivot longer for plotting
 st_winter_MSE_long <- st_winter_MSE %>%
   pivot_longer(
-    cols = c(RMSE_a, R2_a, RMSE_b, R2_b),
+    cols = c(RMSE_a, MSE.R2_a,reg.R2_a, RMSE_b, MSE.R2_b, reg.R2_b),
     names_to = c("metric", "method"),
     names_sep = "_",
     values_to = "value"
@@ -1655,15 +1665,17 @@ for (run in unique(st_spring_CV$model_run)) {
 st_spring_MSE <- data.frame(
   model_run = unique(st_spring_CV$model_run),
   RMSE_a = sapply(results_a, `[`, 1),
-  R2_a = sapply(results_a, `[`, 2),
+  MSE.R2_a = sapply(results_a, `[`, 2),
+  reg.R2_a = sapply(results_a, `[`, 3),
   RMSE_b = sapply(results_b, `[`, 1),
-  R2_b = sapply(results_b, `[`, 2)
+  MSE.R2_b = sapply(results_b, `[`, 2),
+  reg.R2_b = sapply(results_b, `[`, 3)
 )
 
 #pivot longer for plotting
 st_spring_MSE_long <- st_spring_MSE %>%
   pivot_longer(
-    cols = c(RMSE_a, R2_a, RMSE_b, R2_b),
+    cols = c(RMSE_a, MSE.R2_a,reg.R2_a, RMSE_b, MSE.R2_b, reg.R2_b),
     names_to = c("metric", "method"),
     names_sep = "_",
     values_to = "value"
@@ -1792,7 +1804,7 @@ The balanced model and data set performed the most similar to the gold standard 
 
 campaigns <- c("Summer", "Fall", "Winter", "Spring", "Balanced")
 RMSE <- c(mean(st_summer_MSE$RMSE_a), mean(st_fall_MSE$RMSE_a), mean(st_winter_MSE$RMSE_a), mean(st_spring_MSE$RMSE_a), mean(st_balanced_MSE$RMSE_a)) %>% round(digits = 3)
-R2 <- c(mean(st_summer_MSE$R2_a), mean(st_fall_MSE$R2_a), mean(st_winter_MSE$R2_a), mean(st_spring_MSE$R2_a), mean(st_balanced_MSE$R2_a)) %>% round(digits = 3)
+R2 <- c(mean(st_summer_MSE$MSE_R2_a), mean(st_fall_MSE$MSE_R2_a), mean(st_winter_MSE$MSE_R2_a), mean(st_spring_MSE$MSE_R2_a), mean(st_balanced_MSE$MSE_R2_a)) %>% round(digits = 3)
 
 kable(rbind(campaigns, RMSE, R2),
       digits = 3,
@@ -2040,15 +2052,17 @@ for (run in unique(st_la_CV$model_run)) {
 st_la_MSE <- data.frame(
   model_run = unique(st_la_CV$model_run),
   RMSE_a = sapply(results_a, `[`, 1),
-  R2_a = sapply(results_a, `[`, 2),
+  MSE.R2_a = sapply(results_a, `[`, 2),
+  reg.R2_a = sapply(results_a, `[`, 3),
   RMSE_b = sapply(results_b, `[`, 1),
-  R2_b = sapply(results_b, `[`, 2)
+  MSE.R2_b = sapply(results_b, `[`, 2),
+  reg.R2_b = sapply(results_b, `[`, 3)
 )
 
 #pivot longer for plotting
 st_la_MSE_long <- st_la_MSE %>%
   pivot_longer(
-    cols = c(RMSE_a, R2_a, RMSE_b, R2_b),
+    cols = c(RMSE_a, MSE.R2_a,reg.R2_a, RMSE_b, MSE.R2_b, reg.R2_b),
     names_to = c("metric", "method"),
     names_sep = "_",
     values_to = "value"
@@ -2317,17 +2331,19 @@ for (run in unique(st_summer_CV_la$model_run)) {
 
 # Convert the lists to a data frame with separate columns for each method
 st_summer_MSE_la <- data.frame(
-  model_run = unique(st_summer_CV_la$model_run),
+  model_run = unique(st_summer_la_CV$model_run),
   RMSE_a = sapply(results_a, `[`, 1),
-  R2_a = sapply(results_a, `[`, 2),
+  MSE.R2_a = sapply(results_a, `[`, 2),
+  reg.R2_a = sapply(results_a, `[`, 3),
   RMSE_b = sapply(results_b, `[`, 1),
-  R2_b = sapply(results_b, `[`, 2)
+  MSE.R2_b = sapply(results_b, `[`, 2),
+  reg.R2_b = sapply(results_b, `[`, 3)
 )
 
 #pivot longer for plotting
-st_summer_MSE_long_la <- st_summer_MSE_la %>%
+st_summer_MSE_la_long <- st_summer_MSE_la %>%
   pivot_longer(
-    cols = c(RMSE_a, R2_a, RMSE_b, R2_b),
+    cols = c(RMSE_a, MSE.R2_a,reg.R2_a, RMSE_b, MSE.R2_b, reg.R2_b),
     names_to = c("metric", "method"),
     names_sep = "_",
     values_to = "value"
@@ -2428,17 +2444,19 @@ for (run in unique(st_fall_CV_la$model_run)) {
 
 # Convert the lists to a data frame with separate columns for each method
 st_fall_MSE_la <- data.frame(
-  model_run = unique(st_fall_CV_la$model_run),
+  model_run = unique(st_fall_la_CV$model_run),
   RMSE_a = sapply(results_a, `[`, 1),
-  R2_a = sapply(results_a, `[`, 2),
+  MSE.R2_a = sapply(results_a, `[`, 2),
+  reg.R2_a = sapply(results_a, `[`, 3),
   RMSE_b = sapply(results_b, `[`, 1),
-  R2_b = sapply(results_b, `[`, 2)
+  MSE.R2_b = sapply(results_b, `[`, 2),
+  reg.R2_b = sapply(results_b, `[`, 3)
 )
 
 #pivot longer for plotting
-st_fall_MSE_long_la <- st_fall_MSE_la %>%
+st_fall_MSE_la_long <- st_fall_MSE_la %>%
   pivot_longer(
-    cols = c(RMSE_a, R2_a, RMSE_b, R2_b),
+    cols = c(RMSE_a, MSE.R2_a,reg.R2_a, RMSE_b, MSE.R2_b, reg.R2_b),
     names_to = c("metric", "method"),
     names_sep = "_",
     values_to = "value"
@@ -2536,17 +2554,19 @@ for (run in unique(st_winter_CV_la$model_run)) {
 
 # Convert the lists to a data frame with separate columns for each method
 st_winter_MSE_la <- data.frame(
-  model_run = unique(st_winter_CV_la$model_run),
+  model_run = unique(st_winter_la_CV$model_run),
   RMSE_a = sapply(results_a, `[`, 1),
-  R2_a = sapply(results_a, `[`, 2),
+  MSE.R2_a = sapply(results_a, `[`, 2),
+  reg.R2_a = sapply(results_a, `[`, 3),
   RMSE_b = sapply(results_b, `[`, 1),
-  R2_b = sapply(results_b, `[`, 2)
+  MSE.R2_b = sapply(results_b, `[`, 2),
+  reg.R2_b = sapply(results_b, `[`, 3)
 )
 
 #pivot longer for plotting
-st_winter_MSE_long_la <- st_winter_MSE_la %>%
+st_winter_MSE_la_long <- st_winter_MSE_la %>%
   pivot_longer(
-    cols = c(RMSE_a, R2_a, RMSE_b, R2_b),
+    cols = c(RMSE_a, MSE.R2_a,reg.R2_a, RMSE_b, MSE.R2_b, reg.R2_b),
     names_to = c("metric", "method"),
     names_sep = "_",
     values_to = "value"
@@ -2646,17 +2666,19 @@ for (run in unique(st_spring_CV_la$model_run)) {
 
 # Convert the lists to a data frame with separate columns for each method
 st_spring_MSE_la <- data.frame(
-  model_run = unique(st_spring_CV_la$model_run),
+  model_run = unique(st_spring_la_CV$model_run),
   RMSE_a = sapply(results_a, `[`, 1),
-  R2_a = sapply(results_a, `[`, 2),
+  MSE.R2_a = sapply(results_a, `[`, 2),
+  reg.R2_a = sapply(results_a, `[`, 3),
   RMSE_b = sapply(results_b, `[`, 1),
-  R2_b = sapply(results_b, `[`, 2)
+  MSE.R2_b = sapply(results_b, `[`, 2),
+  reg.R2_b = sapply(results_b, `[`, 3)
 )
 
 #pivot longer for plotting
-st_spring_MSE_long_la <- st_spring_MSE_la %>%
+st_spring_MSE_la_long <- st_fall_MSE_la %>%
   pivot_longer(
-    cols = c(RMSE_a, R2_a, RMSE_b, R2_b),
+    cols = c(RMSE_a, MSE.R2_a,reg.R2_a, RMSE_b, MSE.R2_b, reg.R2_b),
     names_to = c("metric", "method"),
     names_sep = "_",
     values_to = "value"
@@ -3779,15 +3801,15 @@ for (run in unique(st_summer_CV$model_run)) {
 st_summer_MSE <- data.frame(
   model_run = unique(st_summer_CV$model_run),
   RMSE_a = sapply(results_a, `[`, 1),
-  R2_a = sapply(results_a, `[`, 2),
+  MSE_R2_a = sapply(results_a, `[`, 2),
   RMSE_b = sapply(results_b, `[`, 1),
-  R2_b = sapply(results_b, `[`, 2)
+  MSE_R2_b = sapply(results_b, `[`, 2)
 )
 
 #pivot longer for plotting
 st_summer_MSE_long <- st_summer_MSE %>%
   pivot_longer(
-    cols = c(RMSE_a, R2_a, RMSE_b, R2_b),
+    cols = c(RMSE_a, MSE_R2_a, RMSE_b, MSE_R2_b),
     names_to = c("metric", "method"),
     names_sep = "_",
     values_to = "value"
@@ -3893,15 +3915,15 @@ for (run in unique(st_fall_CV$model_run)) {
 st_fall_MSE <- data.frame(
   model_run = unique(st_fall_CV$model_run),
   RMSE_a = sapply(results_a, `[`, 1),
-  R2_a = sapply(results_a, `[`, 2),
+  MSE_R2_a = sapply(results_a, `[`, 2),
   RMSE_b = sapply(results_b, `[`, 1),
-  R2_b = sapply(results_b, `[`, 2)
+  MSE_R2_b = sapply(results_b, `[`, 2)
 )
 
 #pivot longer for plotting
 st_fall_MSE_long <- st_fall_MSE %>%
   pivot_longer(
-    cols = c(RMSE_a, R2_a, RMSE_b, R2_b),
+    cols = c(RMSE_a, MSE_R2_a, RMSE_b, MSE_R2_b),
     names_to = c("metric", "method"),
     names_sep = "_",
     values_to = "value"
@@ -4007,15 +4029,15 @@ for (run in unique(st_winter_CV$model_run)) {
 st_winter_MSE <- data.frame(
   model_run = unique(st_winter_CV$model_run),
   RMSE_a = sapply(results_a, `[`, 1),
-  R2_a = sapply(results_a, `[`, 2),
+  MSE_R2_a = sapply(results_a, `[`, 2),
   RMSE_b = sapply(results_b, `[`, 1),
-  R2_b = sapply(results_b, `[`, 2)
+  MSE_R2_b = sapply(results_b, `[`, 2)
 )
 
 #pivot longer for plotting
 st_winter_MSE_long <- st_winter_MSE %>%
   pivot_longer(
-    cols = c(RMSE_a, R2_a, RMSE_b, R2_b),
+    cols = c(RMSE_a, MSE_R2_a, RMSE_b, MSE_R2_b),
     names_to = c("metric", "method"),
     names_sep = "_",
     values_to = "value"
@@ -4123,15 +4145,15 @@ for (run in unique(st_spring_CV$model_run)) {
 st_spring_MSE <- data.frame(
   model_run = unique(st_spring_CV$model_run),
   RMSE_a = sapply(results_a, `[`, 1),
-  R2_a = sapply(results_a, `[`, 2),
+  MSE_R2_a = sapply(results_a, `[`, 2),
   RMSE_b = sapply(results_b, `[`, 1),
-  R2_b = sapply(results_b, `[`, 2)
+  MSE_R2_b = sapply(results_b, `[`, 2)
 )
 
 #pivot longer for plotting
 st_spring_MSE_long <- st_spring_MSE %>%
   pivot_longer(
-    cols = c(RMSE_a, R2_a, RMSE_b, R2_b),
+    cols = c(RMSE_a, MSE_R2_a, RMSE_b, MSE_R2_b),
     names_to = c("metric", "method"),
     names_sep = "_",
     values_to = "value"
