@@ -972,7 +972,7 @@ st_balanced_scatter
 st_balanced_boxplot <- ggplot(st_balanced_MSE_long, aes(x = method, y = value, color = method)) +
   geom_boxplot() +
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
-  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "MSE.R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   facet_wrap(~metric) +
   labs(title = "Balanced Comparison") +
   theme_bw() +
@@ -1349,7 +1349,7 @@ st_summer_scatter
 st_summer_boxplot <-  ggplot(st_summer_MSE_long, aes(x = method, y = value, color = method)) +
   geom_boxplot() +
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
-  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "MSE.R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   facet_wrap(~metric) +
   labs(title = "Summer Comparison") +
   theme_bw() +
@@ -1470,7 +1470,7 @@ st_fall_scatter
 st_fall_boxplot <-  ggplot(st_fall_MSE_long, aes(x = method, y = value, color = method)) +
   geom_boxplot() +
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
-  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "MSE.R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   facet_wrap(~metric) +
   labs(title = "Fall Comparison") +
   theme_bw() +
@@ -1589,7 +1589,7 @@ st_winter_scatter
 st_winter_boxplot <- ggplot(st_winter_MSE_long, aes(x = method, y = value, color = method)) +
   geom_boxplot() +
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
-  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "MSE.R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   facet_wrap(~metric) +
   labs(title = "Winter Comparison") +
   theme_bw() +
@@ -1708,7 +1708,7 @@ st_spring_scatter
 st_spring_boxplot <- ggplot(st_spring_MSE_long, aes(x = method, y = value, color = method)) +
   geom_boxplot() +
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
-  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "MSE.R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   facet_wrap(~metric) +
   labs(title = "Spring Comparison") +
   theme_bw() +
@@ -1804,9 +1804,10 @@ The balanced model and data set performed the most similar to the gold standard 
 
 campaigns <- c("Summer", "Fall", "Winter", "Spring", "Balanced")
 RMSE <- c(mean(st_summer_MSE$RMSE_a), mean(st_fall_MSE$RMSE_a), mean(st_winter_MSE$RMSE_a), mean(st_spring_MSE$RMSE_a), mean(st_balanced_MSE$RMSE_a)) %>% round(digits = 3)
-R2 <- c(mean(st_summer_MSE$MSE_R2_a), mean(st_fall_MSE$MSE_R2_a), mean(st_winter_MSE$MSE_R2_a), mean(st_spring_MSE$MSE_R2_a), mean(st_balanced_MSE$MSE_R2_a)) %>% round(digits = 3)
+MSE_R2 <- c(mean(st_summer_MSE$MSE.R2_a), mean(st_fall_MSE$MSE.R2_a), mean(st_winter_MSE$MSE.R2_a), mean(st_spring_MSE$MSE.R2_a), mean(st_balanced_MSE$MSE.R2_a)) %>% round(digits = 3)
+Reg_R2 <- c(mean(st_summer_MSE$reg.R2_a), mean(st_fall_MSE$reg.R2_a), mean(st_winter_MSE$reg.R2_a), mean(st_spring_MSE$reg.R2_a), mean(st_balanced_MSE$reg.R2_a)) %>% round(digits = 3)
 
-kable(rbind(campaigns, RMSE, R2),
+kable(rbind(campaigns, RMSE, MSE_R2, Reg_R2),
       digits = 3,
       caption = "Table 3.0: Performance Statistics of Seasonal and Balanced Sampling Campaigns - Method A") %>% kable_styling()
 
@@ -1829,7 +1830,7 @@ st_all_MSE_long <- rbind(st_spring_MSE_long, st_summer_MSE_long, st_fall_MSE_lon
 st_all_boxplot <- ggplot(st_all_MSE_long, aes(x = season, y = value, color = season)) +
   geom_boxplot() +
   geom_hline(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(yintercept = value, linetype = "dotted"), show.legend = T) +
-  geom_hline(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "R2"), aes(yintercept = value, linetype = "dashed"), show.legend = T) +
+  geom_hline(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "MSE.R2"), aes(yintercept = value, linetype = "dashed"), show.legend = T) +
   facet_grid(metric~method, scales = "free") +
   labs(title = "RMSE and MSE_R2 Comparison",
        caption = "Method A = spring Campaign Predictions Compared to Gold Standard Obs\nMethod B = spring Campaign Predictions Compared to spring Campaign Observations\nLines show the gold-stanndard performance", 
@@ -2087,7 +2088,7 @@ balanced_scatter_la<-ggplot(data = st_la_CV, aes(x = gold_preds_la, y = cvpreds,
 balanced_boxplot_la<- ggplot(st_la_MSE_long, aes(x = method, y = value, color = method)) +
   geom_boxplot() +
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
-  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "MSE.R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   facet_wrap(~metric) +
   labs(title = "Balanced Comparison") +
   theme_bw()
@@ -2331,7 +2332,7 @@ for (run in unique(st_summer_CV_la$model_run)) {
 
 # Convert the lists to a data frame with separate columns for each method
 st_summer_MSE_la <- data.frame(
-  model_run = unique(st_summer_la_CV$model_run),
+  model_run = unique(st_summer_CV_la$model_run),
   RMSE_a = sapply(results_a, `[`, 1),
   MSE.R2_a = sapply(results_a, `[`, 2),
   reg.R2_a = sapply(results_a, `[`, 3),
@@ -2369,10 +2370,10 @@ summer_scatter_la<-ggplot(data = st_summer_CV_la, aes(x = gold_preds_la, y = cvp
     #looks a lot like the balanced predictions from the Blanco paper. 
 
 #replicate blanco figure 3
-summer_boxplot_la<- ggplot(st_summer_MSE_long_la, aes(x = method, y = value, color = method)) +
+summer_boxplot_la<- ggplot(st_summer_MSE_la_long, aes(x = method, y = value, color = method)) +
   geom_boxplot() +
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
-  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[2]], metric = "MSE.R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   facet_wrap(~metric) +
   labs(title = "Summer Comparison") +
   theme_bw()
@@ -2444,7 +2445,7 @@ for (run in unique(st_fall_CV_la$model_run)) {
 
 # Convert the lists to a data frame with separate columns for each method
 st_fall_MSE_la <- data.frame(
-  model_run = unique(st_fall_la_CV$model_run),
+  model_run = unique(st_fall_CV_la$model_run),
   RMSE_a = sapply(results_a, `[`, 1),
   MSE.R2_a = sapply(results_a, `[`, 2),
   reg.R2_a = sapply(results_a, `[`, 3),
@@ -2482,16 +2483,18 @@ fall_scatter_la<-ggplot(data = st_fall_CV_la, aes(x = gold_preds_la, y = cvpreds
     #looks a lot like the balanced predictions from the Blanco paper. 
 
 #replicate blanco figure 3
-fall_boxplot_la<- ggplot(st_fall_MSE_long_la, aes(x = method, y = value, color = method)) +
+fall_boxplot_la<- ggplot(st_fall_MSE_la_long, aes(x = method, y = value, color = method)) +
   geom_boxplot() +
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
-  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[2]], metric = "MSE.R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   facet_wrap(~metric) +
   labs(title = "Fall Comparison") +
   theme_bw()
 
 
 ```
+
+
 #Winter LA County LOO and Model Comparison
 ```{r}
 
@@ -2554,7 +2557,7 @@ for (run in unique(st_winter_CV_la$model_run)) {
 
 # Convert the lists to a data frame with separate columns for each method
 st_winter_MSE_la <- data.frame(
-  model_run = unique(st_winter_la_CV$model_run),
+  model_run = unique(st_winter_CV_la$model_run),
   RMSE_a = sapply(results_a, `[`, 1),
   MSE.R2_a = sapply(results_a, `[`, 2),
   reg.R2_a = sapply(results_a, `[`, 3),
@@ -2592,10 +2595,10 @@ winter_scatter_la<- ggplot(data = st_winter_CV_la, aes(x = gold_preds_la, y = cv
     #looks a lot like the balanced predictions from the Blanco paper. 
 
 #replicate blanco figure 3
-winter_boxplot_la<- ggplot(st_winter_MSE_long_la, aes(x = method, y = value, color = method)) +
+winter_boxplot_la<- ggplot(st_winter_MSE_la_long, aes(x = method, y = value, color = method)) +
   geom_boxplot() +
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
-  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[2]], metric = "MSE.R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   facet_wrap(~metric) +
   labs(title = "Winter Comparison") +
   theme_bw()
@@ -2666,7 +2669,7 @@ for (run in unique(st_spring_CV_la$model_run)) {
 
 # Convert the lists to a data frame with separate columns for each method
 st_spring_MSE_la <- data.frame(
-  model_run = unique(st_spring_la_CV$model_run),
+  model_run = unique(st_spring_CV_la$model_run),
   RMSE_a = sapply(results_a, `[`, 1),
   MSE.R2_a = sapply(results_a, `[`, 2),
   reg.R2_a = sapply(results_a, `[`, 3),
@@ -2676,7 +2679,7 @@ st_spring_MSE_la <- data.frame(
 )
 
 #pivot longer for plotting
-st_spring_MSE_la_long <- st_fall_MSE_la %>%
+st_spring_MSE_la_long <- st_spring_MSE_la %>%
   pivot_longer(
     cols = c(RMSE_a, MSE.R2_a,reg.R2_a, RMSE_b, MSE.R2_b, reg.R2_b),
     names_to = c("metric", "method"),
@@ -2689,7 +2692,7 @@ st_spring_MSE_la_long <- st_fall_MSE_la %>%
 r <- st_spring_CV_la %>% dplyr::select(gold_preds_la, cvpreds) %>% range()
 
 
-spring_scatter_la<-ggplot(data = st_spring_CV_la, aes(x = gold_preds_la, y = cvpreds, color = as.factor(model_run))) +
+spring_scatter_la<-ggplot(data = st_spring_MSE_la_long, aes(x = gold_preds_la, y = cvpreds, color = as.factor(model_run))) +
     geom_point(shape = "o", alpha = 0.7, show.legend = FALSE) +
     lims(x= r, y = r) +
     coord_fixed() +
@@ -2704,10 +2707,10 @@ spring_scatter_la<-ggplot(data = st_spring_CV_la, aes(x = gold_preds_la, y = cvp
     #looks a lot like the balanced predictions from the Blanco paper. 
 
 #replicate blanco figure 3
-spring_boxplot_la<-ggplot(st_spring_MSE_long_la, aes(x = method, y = value, color = method)) +
+spring_boxplot_la<-ggplot(st_spring_MSE_la_long, aes(x = method, y = value, color = method)) +
   geom_boxplot() +
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
-  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[2]], metric = "MSE.R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   facet_wrap(~metric) +
   labs(title = "Spring Comparison") +
   theme_bw()
@@ -3841,7 +3844,7 @@ ggplot(data = st_summer_CV, aes(x = st_balanced_preds, y = cvpreds, color = as.f
 ggplot(st_summer_MSE_long, aes(x = method, y = value, color = method)) +
   geom_boxplot() +
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
-  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "MSE.R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   facet_wrap(~metric) +
   labs(title = "RMSE and MSE_R2 Comparison",
        caption = "Method A = Summer Campaign Predictions Compared to short term balanced Obs\n
@@ -3955,7 +3958,7 @@ ggplot(data = st_fall_CV, aes(x = st_balanced_preds, y = cvpreds, color = as.fac
 ggplot(st_fall_MSE_long, aes(x = method, y = value, color = method)) +
   geom_boxplot() +
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
-  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "MSE.R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   facet_wrap(~metric) +
   labs(title = "RMSE and MSE_R2 Comparison",
        caption = "Method A = fall Campaign Predictions Compared to short term balanced Obs\n
@@ -4069,7 +4072,7 @@ ggplot(data = st_winter_CV, aes(x = st_balanced_preds, y = cvpreds, color = as.f
 ggplot(st_winter_MSE_long, aes(x = method, y = value, color = method)) +
   geom_boxplot() +
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
-  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "MSE.R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   facet_wrap(~metric) +
   labs(title = "RMSE and MSE_R2 Comparison",
        caption = "Method A = winter Campaign Predictions Compared to short term balanced Obs\n
@@ -4185,7 +4188,7 @@ ggplot(data = st_spring_CV, aes(x = st_balanced_preds, y = cvpreds, color = as.f
 ggplot(st_spring_MSE_long, aes(x = method, y = value, color = method)) +
   geom_boxplot() +
   geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
-  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "MSE.R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
   facet_wrap(~metric) +
   labs(title = "RMSE and MSE_R2 Comparison",
        caption = "Method A = spring Campaign Predictions Compared to short term balanced Obs\n
