@@ -33,7 +33,7 @@ In this analysis, we use the California NOx dataset described by Blanco et al. (
 
 **Dataset Description**
 
-The California NOx dataset, first described by [Blanco et al. (2023)](https://www.nature.com/articles/s41370-022-00470-5#MOESM1), includes NOx concentration measurements collected from 69 California Air Quality System (AQS) sites in 2016. Measurements were collected every hour, enabling the evaluation of temporal trends in NOx concentrations across both short- and long-term timescales. Land-use, roadway proximity, and population density covariates (N=321 in total **I think there are over 800?**) were additionally available in the dataset.  
+The California NOx dataset, first described by [Blanco et al. (2023)](https://www.nature.com/articles/s41370-022-00470-5#MOESM1), includes NOx concentration measurements collected from 69 California Air Quality System (AQS) sites in 2016. Measurements were collected every hour, enabling the evaluation of temporal trends in NOx concentrations across both short- and long-term timescales. Land-use, roadway proximity, and population density covariates were additionally available in the dataset.  
 
 **Overview of Statistical Approach** 
 
@@ -77,7 +77,7 @@ In our sensitivty analysis, we repeated our analyses with geographically restric
 
 # Results
 
-In total, 69 sensors in the state of California met the specified inclusion criteria and were included in our NOx prediction analysis. For our analyses specific to Los Angeles county, 12 sensors meeting the inclusion criteria were included. The distribution of NOx concentrations in our data set were log normally distributed, as illustrated in Appendix figure 2. 
+In total, 69 sensors in the state of California met the specified inclusion criteria and were included in our NOx prediction analysis (Figure 1). For our analyses specific to Los Angeles county, 12 sensors meeting the inclusion criteria were included. The distribution of NOx concentrations in our data set were log-normally distributed, as illustrated in Appendix figure 2. 
 
 ```{r setup, include=FALSE}
 
@@ -448,16 +448,6 @@ for (i in 1:n_reps) {
   st_balanced <- rbind(st_balanced, annual_avg_data)
 }
 
-# Checking Abbie's Understanding:
-# this chunk randomly grabs 28 samples from each of the sensors. 
-# it computes an annual average based on only these 28 samples for all 69 sensors. 
-# this is repeated 30 times, so there are 30  annual averages based on thirty different 
-# sets of samples for each of the 69 sensors.
-# katie please check if I interpreted this right!
-
-## Yes, that is exactly right! - KW
-
-
 ```
 
 
@@ -500,7 +490,6 @@ sum_stats <- function(data) {
 ```
 
 
-#putting first map here: can figure out where it fits best and we make decisions about the analysis
 ```{r data.setup.for.map, echo = F, include = F}
 #THis chuck sets up the data for the maps. It is independent of all our other df except for "nox_only" and "ca_covariates" so it can get moved anywhere after those variables are created. 
 #get just the geographic variabiles needed from the covariate file
@@ -569,7 +558,7 @@ latlong
 
 ```
 
-Figure 1: Shows the monitor locations across California. Colors indicate the annual average NOx concentration in ppb. As seen, the 69 monitor locations are widely distributed across a vast area, and there is not a large amount of variability in annual average concentration across monitors, with the majority of annual average concentration on the lower end of the scale. The greatest density of monitors as well as the greatest variation in annual averages occures in the Los Angeles metropolitan area, which motivated our sensitivity analysis in this region. *I put the map on the native scale, because it is more intuitive, but it does show a small bit more variation on the log scale. Could change if you think?* *I think its more presentable on the native scale so I would argue to keep it like it is* - AG
+Figure 1: Shows the monitor locations across California. Colors indicate the annual average NOx concentration in ppb. As seen, the 69 monitor locations are widely distributed across a vast area, and there is not a large amount of variability in annual average concentration across monitors, with the majority of annual average concentration on the lower end of the scale. The greatest density of monitors as well as the greatest variation in annual averages occures in the Los Angeles metropolitan area, which motivated our sensitivity analysis in this region.
 
 
 ```{r socal.map, echo = F, include = T}
@@ -603,7 +592,7 @@ socal_seasons
 
 
 ```
-Figure 2: Zooms in on Monitors in Southern CA and displays seasonal averages for each monitor. This figure includes more than just the 12 sensors we will use in our sensitivity analysis of LA county, but it does allow us to focus on the variability that might impact this restricted data set andthese seasonal models. In this figure, we can see that there is more variability in fall and winter when concentrations are overall higher than there is in spring and summer when concentrations are overall lower lower. 
+Figure 2: Zooms in on Monitors in Southern CA and displays seasonal averages for each monitor. This figure includes more than just the 12 sensors we will use in our sensitivity analysis of LA county, but it does allow us to focus on the variability that might impact this restricted data set andthese seasonal models. In this figure, we can see that there is more variability in fall and winter when concentrations are overall higher than there is in spring and summer when concentrations are overall lower. 
 
 ```{r, include = F, echo = F}
 #-----generate cross validation group for all analyses-----
