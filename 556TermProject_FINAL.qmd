@@ -1,0 +1,3606 @@
+---
+title: "CA NOx Term Project"
+authors: "Callan, Abbie, and Katie - ENV H 556"
+format:
+  html:
+    df_print: "paged"
+    fig_caption: yes
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    self-contained: true #save images etc. in this file (vs folders)
+execute:
+  echo: false
+  cache: false
+  echo.comments: false
+  message: false
+  warning: false
+  
+---
+
+This document was rendered on `r format(Sys.time(), '%B %d, %Y')`.
+---
+
+# Introduction and Purpose
+
+Nitrogen oxides (NOx) are gaseous compounds commonly found in air pollution. Although NOx are generated through both natural and anthropogenic sources, human activities account for the majority of ambient NOx concentrations [(EPA 2024;)](https://www.epa.gov/no2-pollution/basic-information-about-no2) [Zhang et al. 2003;](https://www.pnas.org/doi/10.1073/pnas.252763799) [(ATSDR 2002;](https://www.atsdr.cdc.gov/toxfaqs/tfacts175.pdf) [(EPA 1999)](https://www3.epa.gov/ttncatc1/dir1/fnoxdoc.pdf). Motor vehicles are a major source of anthropogenic NOx, accounting for approximately half of all emissions related to human activities [(EPA 1999)](https://www3.epa.gov/ttncatc1/dir1/fnoxdoc.pdf). Power plants also contribute a substantial fraction (~20%) of the total estimated annual anthropogenic NOx emissions [(EPA 1999)](https://www3.epa.gov/ttncatc1/dir1/fnoxdoc.pdf).
+
+Traffic-related air pollutants (TRAP), such as NOx, can have diurnal and seasonal trends related to temporal vehicular traffic patterns [(Blanco et al. 2023)](https://www.nature.com/articles/s41370-022-00470-5#MOESM1). Measurements of TRAP must therefore appropriately reflect the relevant temporal period that they are intended to represent. Traditionally, air pollution is measured through stationary area monitors, which provide continuous air concentration data over long time scales from a single location [(CDPHE 2024)](https://cdphe.colorado.gov/air-toxics/monitoring#:~:text=Mobile%20monitoring%20can%20capture%20%E2%80%9Cspatial,wind%20compared%20to%20stationary%20monitoring.). Mobile monitoring is another effective air pollution measurement strategy that can be used to evaluate air concentrations across a wide set of geographic areas. During mobile monitoring, vehicles equipped with air sampling equipment drive through areas and provide real-time measurements of air pollution across a series of stops (CDPHE 2024). Mobile monitoring is an especially advantageous air monitoring strategy due to its spatial flexibility, which can provide data on areas not well-represented by stationary monitoring sites (CDPHE 2024). Despite its spatial advantages, mobile monitoring is more resource intensive than stationary monitoring and therefore provides a more temporally limited set of air monitoring data (CDPHE 2024). 
+
+In this analysis, we use the California NOx dataset described by Blanco et al. (2023) to simulate a series of temporally-restricted mobile monitoring campaigns and compare their prediction performances against that of a long-term, temporally-balanced "gold standard" dataset representing what might be achieved with a stationary air monitor. We aimed to assess how well NOx predictions from short-term mobile monitoring campaigns aligned with the "gold standard" dataset and whether the inclusion or omission of specific temporal windows impacted prediction performance. In support of this aim, we compared the performance of a "gold standard" temporally-balanced statewide dataset with a (1) short-term, temporally-balanced statewide dataset; and (2) short-term, seasonally-restricted statewide datasets. Additionally, we repeated this analysis when all data were instead restricted to Los Angeles county to assess how the comparisons differed in the presence of reduced geospatial variability. Ultimately, these results can be used to inform future TRAP monitoring campaigns through signaling the importance of temporally-balanced sampling designs and underscoring which key temporal windows must be included in mobile monitoring sampling events. 
+
+# Methods 
+
+**Dataset Description**
+
+The California NOx dataset, first described by [Blanco et al. (2023)](https://www.nature.com/articles/s41370-022-00470-5#MOESM1), includes NOx concentration measurements collected from 69 California Air Quality System (AQS) sites in 2016. Measurements were collected every hour, enabling the evaluation of temporal trends in NOx concentrations across both short- and long-term timescales. Land-use, roadway proximity, and population density covariates were additionally available in the dataset.  
+
+**Overview of Statistical Approach** 
+
+We developed a general model for NOx predictions to be used across all analyses. We evaluated out-of-sample NOx prediction performances using the general model for our "gold standard" temporally-balanced dataset, our short-term temporally balanced dataset, and our short-term temporally restricted datasets. Predictions from each temporally subset dataset were evaluated against observations from the gold standard data as well as observations from each subset to control for bias in the observations as a result of sampling from temporally restricted data. Details regarding the creation and characteristics of these datasets are provided in subsequent sections. 
+
+For all analyses, NOx concentrations were modeled on the natural log scale based on the methods described by Blanco et al. (2023) and based on our visual inspection of the variable distributions (See Appendix for distributions). 
+
+*Monitor Selection*
+
+Monitors from the California NOx dataset were selected for inclusion in our analysis according to the criteria described by Blanco et al. (2023). These criteria included: (1) limited missingness, such that the monitors included had annual data that was at least 66% complete; (2) limited data gaps, such that data gaps for a particular monitor were less than or equal to 45 days long; and (3) monitors must have positive readings (> 0 ppb) at least 60% of the time. Negative concentration readings were left in the data set, as we interpreted them as true reading close to 0 that reads as negative due to noise or "classical error" in the instrument readings. We restricted the percentage of negative readings in each monitor to ensure that the monitors included had adequate variability in their readings and that annual average concentrations would be positive. 
+
+*Model Selection*
+
+Covariates were selected for inclusion into our general model for NOx predictions based on their scientific relevance to ambient NOx concentration prediction models, as described in peer-reviewed scientific literature. Specifically, we chose to include the covariates utilized by [Mercer et al. (2011)](https://pmc.ncbi.nlm.nih.gov/articles/PMC3146303/pdf/nihms299256.pdf), in the Snapshot campaign that measured ambient NOx concentrations in Los Angeles across seasons and built prediction models using land-use and geographic covariates. Mercer et al. (2011) selected their prediction model covariates from 65 possible covariates related to population density, land-use intensity, open space land, distance to the coast, distance to industrial sources, distances to various roadways, and lengths of roadways within a given buffer zone. From these potential covariates, Mercer et al. (2011) created a "common model" that had adequate performance in predicting NOx concentrations across all seasons. The covariates included in the Mercer et al. (2011) common model included: distance to commercial pollutant sources, distance to the coast, distance to A1 roadways, population size within 5000 meters, land use intensity within 3000 square kilometers, length of A1 roads within 50 meters, and length of A2 and A3 roads within 400 meters.
+
+For our analyses, we used forward stepwise regression to select covariates for inclusion into our model from those most similar to the seven used by Mercer et al. (2011). We used a standard penalty of k=2, so as to optimize model fit while limiting complexity. The Mercer et al. (2011) covariates were deemed appropriate to use based on the similarities in geographic region, pollutant of interest, land-use covariates, and modeling goals between the present analysis and that described by Mercer et al. (2011). These covariates included: meters to closest commercial and services area, distance to the closest coastline, population density within 5,000 meters, distance to nearest A1 roadway, length of A1 roadway within 500 meters, length of A2 roadway within 1500 meters, length of A3 roadway within 400 meters, and the proportion of mixed urban of built-up land within a 1500 square kilometer buffer. Note that, in some cases, distances and buffers varied between those used by Mercer et al. (2011) and those used by Blanco et al. (2023); in these cases, the closest available covariate distance or buffer was selected. For land-use intensity, the proportion of mixed urban or built-up land within 1500 square kilometers was used in the present analysis, as it was deemed to be likely the most similar to the Mercer et al. (2011) land use intensity covariate. 
+
+*Gold Standard Sampling Dataset*
+
+To make our temporally-balanced "gold standard" sampling dataset, we included all measurements from monitors that met our pre-defined inclusion criteria. The gold standard dataset therefore reflected an ideal sampling mechanism, representing sample collection at every hour on every day in all seasons during 2016. As noted by Blanco et al. (2023), the gold standard dataset is reasonably representative of the measurements one might obtain from annual stationary air monitoring. All measurements from each monitor were aggregated into an annual average NOx concentration in ppb for each monitor. 
+
+We predicted the annual average NOx concentration using our gold standard sampling dataset with 10-fold cross-validation. We computed the MSE-based $R^2$, regression-based $R^2$, and RMSE characterizing the model fit and accuracy within this dataset. 
+
+*Short-Term Sampling Dataset*
+
+We created short-term sampling datasets intended to represent mobile monitoring campaigns within short-term sampling periods. Our short-term sampling datasets included temporally balanced and temporally restricted subsets of the data. The temporally balanced subset included randomly selected measurements from all monitors in the gold standard dataset. For our temporally-restricted datasets, we stratified our dataset by season and restricted measurements for each monitoring campaign to a single season; this was intended to simulate a mobile monitoring campaign collecting all data on an expedited timeframe with little seasonal variability in the collected samples. 
+
+For each short-term sampling period, we filtered the dataset to include only samples from the specified timeframe, randomly sampled 28 measurements from each monitor, and repeated this random selection 30 times. 28 measurements were selected based on findings in Blanco et al. (2023), which reported that 28 measurements could accurately estimate the annual average of a site (with less than or equal to 25% error) and reasonably represented the sampling design of a single mobile monitoring campaigns, which collect repeated samples from a limited number of locations. The random sampling process was repeated 30 total times to provide additional robustness through simulating multiple mobile monitoring campaigns, as described by Blanco et al. (2023). For the short-term campaigns, the 28 sampled measurements from each monitor were aggregated to compute an annual average NOx concentration for that campaign. This "annual average" different from the true annual of average (annual average of the gold standard data), because it was based on only on 28 samples per monitor rather than all available data. 
+
+For each short-term sampling dataset, we predicted the expected annual average NOx concentration with 10-fold cross-validation based on the results from all 30 sampling iterations. 
+
+*Comparison of Sampling Approaches*
+
+For each of the short-term datasets, we computed the expected value of MSE-based $R^2$ and RMSE based on all 30 sampling iterations comparing the cross-validated predictions from that sampling campaign to the observations from the same campaign.  We additionally computed prediction performance statistics (RMSE and $R^2$) and compared the cross-validated annual average estimates from the temporally-restricted sampling datasets with that estimated using the gold standard sampling dataset. Since we are evaluating the ability of a short-term campaign to predict annual average concentrations (the primary metric of interest for epidemiologic studies), comparing the short-term campaign predictions to the gold standard observations controls for bias in the sampling method itself. 
+
+*Sensitivity Analysis: Los Angeles County*
+
+In our sensitivity analysis, we repeated our analyses with geographically restricted data from a single county to limit the impact of geospatial variability, as NOx concentration measurements likely have strong spatial correlation at the county-level based on shared land-use, policy, and urbanicity within counties. Los Angeles County was selected as the county of interest for our analysis based on its high population density (U.S. Census 2023) and because of its high proportion of sensors included in the underlying California NOx dataset. Because there were fewer sensors in Los Angeles County relative to the statewide dataset, 10-fold cross validation was not possible in this sensitivity analysis. Instead, we used leave-one-out cross validation to validate Los Angeles-specific NOx predictions.
+
+We had access to a geospatial grid of the Los Angeles area with covariates from the Mercer et al. common model. As part of the sensitivity analysis, after fitting our LUR model for each of the LA datasets, the model was used to predict out-of-sample at new locations on the grid and the predictions were then plotted on a map. To visualize systematic prediction differences between models, the gridded predictions from the gold-standard were subtracted from the predictions of each of the short-term gridded predictions, and the differences were plotted to visualize differences in model performance across locations. 
+
+
+# Results
+
+**Description of Data and Sensors** 
+
+In total, 69 monitors in the state of California met the specified inclusion criteria and were included in our NOx prediction analysis (Figure 1). For our analyses specific to Los Angeles county, 12 monitors meeting the inclusion criteria were included. Generally, the statewide monitors were condensed around the major metropolitan areas, with the highest densities observed in or around San Jose, Fresno, and Los Angeles. In general, most monitors showed annual average NOx concentrations in the range of 0 to 20 ppb. Higher annual average concentrations tended to occur in the greater Los Angeles region, though some monitors with elevated annual average concentrations were also observed in or around San Jose. 
+
+The distribution of NOx concentrations in our data set were log-normally distributed, as illustrated in Appendix figure 2.
+
+
+```{r setup, include=FALSE}
+
+#-----setup-----
+
+# clear work space of all objects and unload all extra (non-base) packages
+rm(list = ls(all = TRUE))
+if (!is.null(sessionInfo()$otherPkgs)) {
+    res <- suppressWarnings(
+        lapply(paste('package:', names(sessionInfo()$otherPkgs), sep=""),
+               detach, character.only=TRUE, unload=TRUE, force=TRUE))
+   
+}
+
+```
+
+```{r load.libraries.pacman, echo=FALSE, include=FALSE, eval=TRUE}
+
+#-----load libraries pacman-----
+
+# Load pacman into memory, installing as needed
+my_repo <- 'http://cran.r-project.org'
+if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
+
+# **SPH server**: need to install rnaturalearthhires like so on the SPH server
+if (!require("rnaturalearthhires")) {
+    install.packages("rnaturalearthhires", repos = "https://ropensci.r-universe.dev", type = "source")
+} #put this inthe top of the main doc
+
+
+# Load the other packages, installing as needed.
+pacman::p_load(knitr, kableExtra, tidyverse, lubridate, egg, multcomp, modelr, broom, EnvStats, Hmisc,dplyr, tidyr, purrr, ggplot2, stringr, sf, lme4, VCA, gridExtra, ggspatial, maptiles, rnaturalearth, rnaturalearthhires, gstat, prettymapr, patchwork)
+
+
+```
+
+
+```{r read.data, echo=FALSE, include=FALSE}
+#-----read data from a website--------
+
+# create data directory if it does not exist
+dir.create(file.path("Datasets"),
+           showWarnings = FALSE,
+           recursive = TRUE)
+data_path <- file.path("Datasets")
+grid.file <- "la_grid_3_5_19.csv"
+grid.path <- file.path(data_path, grid.file)
+
+# read in ca nox air pollution concentrations from mobile monitoring
+# download it from the web and save locallyif the file does not already exist
+# read data; download if necessary
+cal_nox <- read_rds(file.path("https://zenodo.org/records/14166411/files/nox_hourly.rda?download=1", 
+                                 output_file_path = file.path("Datasets", "nox_hourly.rda"))) %>% rename_with(~ tolower(gsub(".","_", .x, fixed=TRUE)))
+
+#view the data
+glimpse(cal_nox)
+summary(cal_nox)
+
+length(unique(cal_nox$native_id)) #73 locations
+
+unique(cal_nox$parameter_name) #3 different measurements NO, NO2, NOX
+
+
+#importing covariate data
+                              
+ca_covariates <- read_rds(file.path("https://zenodo.org/records/14166411/files/site_covariates.rda?download=1"))
+
+#glimpse(ca_covariates) #too long!
+
+#going to do the attaching later because it creates such a huge df
+
+#importing grid data
+
+
+# save coordinate systems as variables
+  # WGS84 latitude-longitude
+latlong_proj <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+  # Lambert Conic projection (meters)
+lambert_proj <- "+proj=lcc +lat_1=33 +lat_2=45 +lat_0=39 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs"
+
+if (!file.exists(grid.path)) {
+    url <- paste("https://faculty.washington.edu/sheppard/envh556/Datasets", 
+                 grid.file, sep = '/')
+    download.file(url = url, destfile = grid.path)
+}
+
+if (file.exists(grid.path)) {
+    la_grid <- read_csv(file = grid.path)
+} else warning(paste("Can't find", grid.file, "!"))
+
+# Check initial class of la_grid
+class(la_grid)
+
+# Filter out rows with -Inf in D2A1, remove redundant lambert columns, and convert to sf
+la_grid <- la_grid %>%
+  filter(D2A1 != -Inf) %>%
+  dplyr::select(-lambert_x, -lambert_y) %>%
+  st_as_sf(coords = c('longitude', 'latitude'), crs = latlong_proj)  
+
+#making the covariates data a sf 
+
+ca_covariates <- st_as_sf(ca_covariates, coords = c("longitude", "latitude", crs = latlong_proj)) 
+
+
+  
+
+
+```
+
+
+
+```{r create.strata, echo =F, include = F}
+
+#adding variables to use for subsetting
+
+cal_nox <- cal_nox %>%
+  mutate(day_time = case_when(
+    hour(date) > 4 & hour(date) <= 9 ~ "Morning",
+    hour(date) > 9 & hour(date) <= 16 ~ "Midday",
+    hour(date) > 16 & hour(date) <= 21 ~ "Evening",
+    hour(date) > 21 | hour(date) <= 4 ~ "Night"
+  ), .after = hour) %>%
+  mutate(season = factor(season, levels = c("Morning", "Midday", "Evening", "Night")))
+
+#I made these cuts off very rough estimates based on data distribution. We probably want to fine tune our scientific rationale for doing so and readjust if warranted. KW
+
+#fixing the season variable because there were a lot of NA
+
+cal_nox <- cal_nox %>%
+  mutate(season = case_when(
+    week(date) > 12 & week(date) <= 25 ~ "Spring",
+    week(date) > 25 & week(date) <= 38 ~ "Summer",
+    week(date) > 38 & week(date) <= 50 ~ "Fall",
+    week(date) > 50 | week(date) <= 12 ~ "Winter"
+  )) %>%
+  mutate(season = factor(season, levels = c("Spring", "Summer", "Fall", "Winter")))
+
+
+#summarizing by Day of the Week
+cal_nox<- cal_nox %>%
+  mutate(weekday2 = as.character(weekday) %>%
+           str_replace(pattern = "TRUE",
+                       replacement = "Weekday") %>%
+         str_replace(pattern = "FALSE",
+                     replacement = "Weekend"), .after = weekday)
+
+
+```
+
+```{r, add.covars, echo = F, include = F}
+
+#Attaching covariates to the data with all the temporal variables added. Use this if needed for model selection
+# combine files
+cal_nox_covars <- left_join(cal_nox, ca_covariates, by="native_id")
+```
+
+
+
+```{r cleaning.data, echo = F, include = F}
+
+#cleaning the data for sampling per the Blanco et al. paper
+
+#create a df that is only NOX
+
+nox_only <- cal_nox %>% filter(parameter_name == "Oxides of nitrogen (NOx)")
+
+
+length(unique(nox_only$native_id)) #There are 69 monitors here, so we lost a couple when we filtered it to NOX only (there were 73 monitors when NO and NO2 were also included). 
+
+#determining missingness
+lapply(nox_only, function(i){ 
+   tibble( 
+          # sum missing
+          n_miss = sum(is.na(i)), 
+          
+          # percent missing
+          perc_miss = round(n_miss/length(i) * 100, 1)
+          )
+   }) %>% 
+   # bind list
+   bind_rows(.id = "variable")
+# There are no NA values, but not sure if there is a complete record for each monitor
+
+#calculate the total number of expected measurements per monitor
+
+#check the range of the data
+min(nox_only$date)
+max(nox_only$date)
+#The data ranges from "2016-01-01 00:00:00 PST" to "2016-12-31 23:00:00 PST"
+
+#confirm 2016 is a leap year
+leap_year(2016) # it is, and there are 366 DOY
+
+#expected number of measurements per monitor: 366 days * 24 measurements/day
+meas <- 366 *24 #expect 8784 measurements/monitor if there are no gaps for the year
+
+meas_summary <- nox_only %>% 
+  group_by(native_id) %>% 
+  summarise(
+    count = n(), 
+    pct_total = n()/meas*100, 
+    pct_pos = sum(sample_measurement > 0)/n()*100)
+
+min(meas_summary$pct_total) #77.8% of the year
+max(meas_summary$pct_total) #96.9% of the year
+
+#all of this meets the first criteria in the Blanco paper, which is to have reading >66% of the year
+
+#second criteria from Blanco: data gaps <= 45 days long
+
+# Initialize a dataframe
+max_gap <- data.frame(native_id=unique(nox_only$native_id), max_gap=NA)
+
+# Loop over the monitors to calculate the maximum gap in measurements in days
+for(i in 1:nrow(max_gap)){
+  data.i <- subset(nox_only, native_id == max_gap$native_id[i])
+  data.i <- data.i[order(data.i$doy), ]  # Ensure data is sorted by 'doy'
+  
+  gaps <- diff(data.i$doy)  # Calculate the differences between consecutive days
+  max_gap$max_gap[i] <- max(gaps, na.rm = TRUE)  # Store the maximum gap
+}
+
+max(max_gap$max_gap) #maximum number of consecutive days w/o measurements is 36
+
+#based on blanco criteria there is no need to eliminate any monitors
+
+#Third Blanco criteria is that the monitor sampled for 40% of the time during the two week period used in "common design" sampling models. Will implement this later if we choose to do a 2 weeks sampling window. 
+
+#Fourth Blanco critera is the monitor is >0 60% of the time. 
+
+min(meas_summary$pct_pos) #70.6%
+max(meas_summary$pct_pos) #100%
+
+#no need to eliminate any monitors based on this criteria. 
+
+#No monitors were eliminated based on this cleaning. 
+
+##**Just a thought if we have time - could put a table of monitor characteristics (percenting missigness, etc) in the appendix**##
+##*KW will make this is everything else comes together. 
+
+sensor_summary <- left_join( meas_summary, max_gap,  by = "native_id") 
+#Abbie put a table of data gaps and sensor criteria in the appendix
+
+
+```
+
+
+```{r,random.sampling fxn, echo = F, include = F}
+#per Blanco, we will pick 28 samples per monitor. The Gold Standard sample, will be distributed across the whole year. We will then do temporally restricted samples to see how they compare
+
+#create factor to make subsetting in the loop easier for resample
+nox_only$native_id_fact <- factor(nox_only$native_id)
+
+size = 28 #per Blanco, the number of samples taken from each monitor
+monitors = length(unique(nox_only$native_id)) #number of monitors in the data
+
+# Initialize a dataframe to store the sample that is the same columns as the original nox_only df and enough rows for the desired sampling
+sample_df <- data.frame(matrix(NA, nrow = size*monitors, ncol = ncol(nox_only)))
+colnames(sample_df) <- colnames(nox_only)
+
+set.seed(72) #seed for reproducability
+# Initialize a row index for sample_df
+row_index <- 1
+
+for(i in 1:monitors) {
+  data.i <- subset(nox_only, native_id_fact == unique(nox_only$native_id_fact)[i])
+  sample_indices <- sample(1:nrow(data.i), size, replace = FALSE) # Take 'size' random samples from each monitor
+  
+  for(j in sample_indices) {
+    sample_df[row_index, ] <- data.i[j, ]
+    row_index <- row_index + 1
+  }
+}
+sample_df$date <- as_datetime(sample_df$date) #make sure the date column stays in the right format in the new df. 
+
+#head(sample_df) #Worked!
+
+#Parameter name was a factor, so it only saved the number and not the name, but who cares (in the original df as imported before filtering 1 = NO2, 2 = NO, 3 = NOX)
+
+#now writing it as function that will be easy to use
+
+random_sample <- function(data, size, seed) {  #specify the data frame and the number of samples to take from each monitor
+  data$native_id_fact <- factor(data$native_id)
+  monitors <- length(unique(data$native_id)) # number of monitors in the data
+  
+  # Initialize a dataframe to store the sample that has the same columns as the original data and enough rows for the desired sampling
+  sample_df <- data.frame(matrix(NA, nrow = size * monitors, ncol = ncol(data)))
+  colnames(sample_df) <- colnames(data)
+  
+  set.seed(seed) # seed for reproducibility
+  # Initialize a row index for sample_df
+  row_index <- 1
+  
+  for(i in 1:monitors) {
+    data.i <- subset(data, native_id == unique(data$native_id)[i])
+    sample_indices <- sample(1:nrow(data.i), size, replace = FALSE) # Take 'size' random samples from each monitor
+    
+    for(j in sample_indices) {
+      sample_df[row_index, ] <- data.i[j, ]
+      row_index <- row_index + 1
+    }
+  }
+  
+  sample_df$date <- as_datetime(sample_df$date) # make sure the date column stays in the right format in the new df.
+  
+  return(sample_df)
+}
+
+test <- random_sample(nox_only, 28, 72)
+
+#comparing test and sample_df to make sure they are the same
+
+#check = sample_df$sample_measurement - test$sample_measurement
+#max(check) #0
+#min(check) #0
+#The function works. 
+
+```
+
+
+```{r annual.avg, echo = FALSE, include = F}
+#------------#Writing a function to aggregate data to the annual level--------------#
+
+#function to take the annual average concentration of any dataframe
+annual_avg <- function(data) {
+  annual <- data %>% group_by(native_id) %>% summarise(annual_avg = mean(sample_measurement), log_avg = log(mean(sample_measurement)))
+  return(annual)
+}
+
+#testing the function does what i want to to
+test1 <- test %>% group_by(native_id) %>% summarise(annual_avg = mean(sample_measurement), log_avg = log(mean(sample_measurement)))
+
+test2 <- annual_avg(test)
+
+check = test1$annual_avg - test2$annual_avg
+max(check) #0
+min(check) #0
+#The function works. 
+
+check2 = test1$log_avg - test2$log_avg
+max(check2) #0
+min(check2) #0
+
+
+```
+
+
+
+```{r st.balanced, echo = F, include = F}
+
+#taking a bunch of random samples for the short-term balanced data
+# short term random samples meant to represent a balanced mobile monitoring campaign.
+# Initialize the short-term balanced data frame
+st_balanced <- data.frame()
+
+n_reps <- 30  # number of random df simulations to run
+
+for (i in 1:n_reps) {
+  seed <- i * 4  # generating a different seed for each simulation
+  sampled_data <- random_sample(nox_only, 28, seed)
+  annual_avg_data <- annual_avg(sampled_data)
+  
+  # Add seed and rep_number columns
+  annual_avg_data$seed <- seed
+  annual_avg_data$rep_number <- i
+  
+  # Append to dataframe
+  st_balanced <- rbind(st_balanced, annual_avg_data)
+}
+
+```
+
+
+
+```{r, echo = F, include = T}
+#Creating Gold Standard Data - 
+#summary stats for long-term gold and st balanced. 
+
+#Gold Standard Data
+long_term_gold <- annual_avg(nox_only)
+
+
+```
+
+
+
+ 
+```{r, summary stats, echo = F, include = F}
+
+#writing a function for calculating summary statistics of an annual average df.
+#function to make summary stats easier
+sum_stats <- function(data) {
+  summary <- data %>% summarise(min = min(annual_avg), 
+                                            Q25 = quantile(annual_avg, probs = 0.25), 
+                                            Q50 = quantile(annual_avg, probs = 0.5),
+                                            Q75 = quantile(annual_avg, probs = 0.75),
+                                            max = max(annual_avg),
+                                            mean = mean(annual_avg),
+                                            SD = sd(annual_avg)
+                                            )
+  return(summary)
+  
+}
+
+#testing
+#sum_stats(st_balanced)
+
+#yay!!
+
+```
+
+
+```{r data.setup.for.map, echo = F, include = F}
+#THis chuck sets up the data for the maps. It is independent of all our other df except for "nox_only" and "ca_covariates" so it can get moved anywhere after those variables are created. 
+#get just the geographic variabiles needed from the covariate file
+ 
+geom <- ca_covariates %>% dplyr::select("native_id", "lambert_x", "lambert_y", "County") #using lambert b/c I had trouble with the lat long for some reason
+
+#get an annual dataset. (This is the same as the long_term gold) just repeated here, so the maps don't interfere with other analysis
+annual_sf <- nox_only %>% 
+  group_by(native_id) %>%
+  summarise(annual_avg = mean(sample_measurement)) 
+
+#getting a combined seasonal file that will allow for a faceted season map
+
+seasonal_sf <- nox_only %>% group_by(native_id, season) %>%
+  summarise(seasonal_avg = mean(sample_measurement))
+
+#joing to the geometry
+annual_sf <- left_join(annual_sf, geom, by = "native_id")
+seasonal_sf <- left_join(seasonal_sf, geom, by = "native_id")
+
+
+#convert the df to sf files (creating seperate sf for lambert and lat long prog to experiment maps)
+annual_lam_sf <- st_as_sf(annual_sf, coords=c('lambert_x','lambert_y'), crs=lambert_proj)
+annual_latlong_sf <- st_transform(annual_lam_sf, crs = latlong_proj)
+seasonal_lam_sf <- st_as_sf(seasonal_sf, coords=c('lambert_x','lambert_y'), crs=lambert_proj)
+seasonal_latlong_sf <- st_transform(seasonal_lam_sf, crs = latlong_proj)
+
+```
+
+```{r monitor.location.maps, echo = F, include = T}
+
+
+#plotting annual averages as points on the monitors with color scale and testing lambert vs latlong crs
+
+#adding lat_long limits and fixing up the map
+
+#getting the boundaries of the extent 
+
+lat_bbox <- st_bbox(annual_latlong_sf)
+#print(lat_bbox)
+
+#setting limits based on the bbox 
+lon_limits <- c(-124.5, -114)
+lat_limits <- c(32.5, 42)
+
+#MAP 1
+
+#same map but with the axis limits adjusted to frame CA
+latlong <- ggplot(data = annual_latlong_sf , aes(fill = annual_avg)) + 
+  ggspatial::annotation_map_tile("osm", alpha = 0.7) +  # Add the basemap first
+  ggspatial::annotation_scale(location = "bl", width_hint = 0.3, unit_category = "imperial") +  # Scale in miles
+  ggspatial::annotation_north_arrow(location = "tr", which_north = "true", height = unit(1, "cm"),
+  width = unit(1, "cm"),) +  # North arrow
+  geom_sf(size = 3, alpha = 0.6, shape = 21, color = "black") +  # Plot the monitors, adding alpha
+  scale_fill_viridis_c(option = "plasma") +  # Apply the viridis color scale
+  labs(title = "Fig. 1: CA Monitor Locations \nwith Annual Average NOx Concentration",
+       fill = "NOx ppb",
+       caption = "WGS84 projection") +
+  coord_sf(xlim = lon_limits, ylim = lat_limits) + # Set the axis limits
+  theme_void() +
+  theme(
+    panel.border = element_rect(color = "black", fill = NA)
+  )
+
+latlong
+
+```
+
+Figure 1: The locations of the 69 monitors stationed across California. Colors indicate the annual average NOx concentration in ppb on the native scale. Note that native scale concentrations are presented rather than concentrations on the natural log scale to enhance interpretability. 
+
+Figure 2 shows the monitors located in Southern California, including, though not limited to, the 12 monitors included in the Los Angeles sensitivity analysis. Seasonal average NOx concentrations are presented on the native scale for each monitor. On average, NOx concentrations tended to be highest in the winter and fall and lowest in the summer and spring. In the winter and fall, the highest average NOx concentrations tended to occur in areas closer to Los Angeles. As is evident in Figure 2, the between-monitor variability in average NOx concentrations was highest in the winter and fall, whereas average NOx concentrations were more similar between monitors during the summer and spring.
+
+
+```{r socal.map, echo = F, include = T}
+#zoomed in on S. CA to try and show more detail in the seasonal variation
+
+#filter to so_cal only (can redefine what me mean by SCal later, but this is a maximum swath of counties)
+counties <- c("Los Angeles", "Orange", "Riverside", "San Diego", "Ventura", "Santa Barbara", "San Bernardino") #list counties
+socal_latlong_sf <- seasonal_latlong_sf %>% filter(County %in% counties)
+
+#set new limits
+socal_bbox = st_bbox(socal_latlong_sf)
+#socal_bbox
+socal_lon_limits <- c(-120.5, -116)
+socal_lat_limits <- c(32.5, 35)
+
+socal_seasons <- ggplot(data = socal_latlong_sf , aes(fill = seasonal_avg)) + 
+  ggspatial::annotation_map_tile("osm", alpha = 0.7) +  # Add the basemap first
+  geom_sf(size = 2.5, alpha = 0.7, shape = 21, color = "black") +  # Plot the monitors, adding alpha
+  scale_fill_viridis_c(option = "plasma") +  # Apply the viridis color scale
+  facet_wrap(~season) + 
+  labs(title = "Fig. 2: Southern CA Monitor Locations with Seasonal Average NOx Concentration",
+       fill = "NOx ppb",
+       caption = "WGS84 projection") +
+  coord_sf(xlim = socal_lon_limits, ylim = socal_lat_limits) + # Set the axis limits
+  theme_void() +
+  theme(
+    panel.border = element_rect(color = "black", fill = NA)
+  )
+
+socal_seasons
+
+
+```
+Figure 2: Monitors located in Southern CA, with seasonal average NOx concentrations displayed for each monitor. This figure includes, but is not limited to, the 12 sensors used in our sensitivity analysis of LA county. 
+
+```{r, include = F, echo = F}
+#-----generate cross validation group for all analyses-----
+
+# set the seed to make reproducible
+set.seed(123)
+
+# create vector of CV groups
+  # first generate a vector with values 1:10 equal to the number of dataset rows
+  # then randomize (with argument replace = FALSE)
+CV_grp <- rep(1:10, length.out = nrow(long_term_gold)) %>% 
+  sample(replace = FALSE)
+
+
+# now append it to the cal_nox_clean data frame
+long_term_gold <- mutate(long_term_gold, CV_grp = CV_grp)
+
+```
+
+
+```{r define get_MSE, include = F, echo = F}
+#-----define get_MSE function-----
+
+# This is a function to get the MSE, RMSE, MSE-based R2
+get_MSE <- function(obs,pred) {
+    # obs is the outcome variable
+    # pred is the prediction from a model
+     
+    # mean of obs
+    obs_avg <- mean(obs)
+    
+    # MSE of obs (for R2 denominator)
+    MSE_obs <- mean((obs-obs_avg)^2)
+    
+    # MSE of predictions
+    MSE_pred <- mean((obs - pred)^2)
+    
+    # compile output
+    result <- c(RMSE = sqrt(MSE_pred),
+                MSE_based_R2 = max(1 - MSE_pred / MSE_obs, 0),
+                reg_based_R2 = max(cor(obs, pred)^2) #abbie added 12/9
+                )
+    
+    # explicit return (optional)
+    return(result)
+}
+
+
+```
+
+
+```{r define.CV.function, include = F, echo = F}
+#-----define CV function-----
+
+do_CV <- function(data, id = "id", group = "group", formula) {
+ 
+  lapply(unique(data[[group]]), function(this_group){
+    
+    # fit the "common" model to the training set (without this group)
+    CV_lm <- lm(formula, data = data[data[[group]] != this_group,])
+    
+    # generate predictions for this group using training model
+    data[data[[group]] == this_group,] %>%
+      mutate(cvpreds = predict(CV_lm, newdata = .) %>% unname())
+    
+    # recombine data from all clusters and sort by ID column
+    # note use of ".data[[ ]]" to return the value of variable id
+  }) %>% bind_rows() %>% arrange(.data[[id]])
+  
+  # return the dataset (the last-evaluated object is always returned by default)
+}
+
+```
+
+
+```{r covariates, include = F, echo = F}
+
+mercer_cov <- ca_covariates %>%
+  dplyr::select("native_id", "m_to_a1", "m_to_coast", "m_to_comm","pop_s05000", "ll_a1_s00050", "ll_a2_s00400", "ll_a3_s00400", "lu_industcomm_p05000", "County", "geometry")
+
+
+
+```
+
+
+
+
+```{r forward selection - gold standard, echo = F, include = F}
+
+# forward, stepwise selection with common model covariates
+
+#-----forward selection using interaction-----#
+long_term_gold <- left_join(long_term_gold,mercer_cov, by = "native_id" )
+
+
+null <- lm(log_avg ~ 1, data = long_term_gold)
+
+
+covars_all <- str_subset(names(long_term_gold),"pop_|int_|open_|ll_|m_to_")
+
+# B: now turn this into a formula for the full model in stepwise regression:
+full <- as.formula(paste("log_avg ~ ", paste(covars_all, collapse= "+")))
+
+# Using k=2 is comparable to standard AIC.
+forwardreg_day <- step(null, 
+                        scope = list(lower = null, upper = full), 
+                        trace = 0, 
+                        direction = "forward", 
+                        k = 2)
+
+covars_forward2 <- names(forwardreg_day$coefficients) %>%
+  setdiff('(Intercept)')
+
+covars_forward2 #different list than above when just run for summer
+
+
+
+```
+
+
+```{r cv in forward selection, warning = FALSE, message = FALSE, echo = F, include = F}
+#gold-standard dataset for model selection
+
+#-----model order and CV-----
+
+# apply along length of the vector of names from forward selection
+res2 <- lapply(seq_along(covars_forward2), function(i){
+    
+    # define the formula, updated to add a term each time
+    fmla <- as.formula(
+        paste("log_avg ~ + ", paste(covars_forward2[seq_len(i)], collapse = "+"))) 
+    
+    # in-sample model and estimates
+    in_model <- lm(fmla, data = long_term_gold) 
+    
+    # out-of sample model and estimates
+    out_ests <- do_CV(data = long_term_gold, id = "native_id", group = "CV_grp", fmla)  
+    out_results <- get_MSE(out_ests$log_avg, out_ests$cvpreds)
+    
+    # compile results
+   tibble(n_pred = i,
+           covar = covars_forward2[i],
+           in_RMSE = sqrt(mean(in_model$residuals^2)),
+           in_R2 = summary(in_model)$r.squared,
+           out_RMSE = out_results[["RMSE"]],
+           out_R2 = out_results[["MSE_based_R2"]] 
+           )
+    
+    }) %>% 
+    bind_rows()
+
+head(res2)
+
+#I don't understand the purpose of this chunk? - KW
+
+
+
+```
+**Model Selection**
+
+From our forward stepwise regression analysis, we selected three covariates from the Mercer et al. (2011) common model for inclusion into our model: "pop_s05000" - population within 5,000 m buffer, "m_to_coast" - Distance to the coast in meters, and "m_to_a1" - Distance to a A1 road in meters. These variables were selected based on their ability to optimize the model fit while limiting the model's overall complexity. 
+
+Figure 3.0 shows that our out-of-sample performance peaks with the first three covariates included in forward selection and illustrates the appropriate selection of three, rather than four, covariates. Specifically, we see that the out-of-sample $R^2$ decreases and out-of-sample RMSE increases upon the addition of a fourth covariate into the model. 
+
+```{r bias.plots, echo = F, include = T}
+#-----bias-var combined plots-----
+
+
+#there are 4 terms in the model. 
+#max(res2$out_RMSE[1:4])
+#min(res2$out_RMSE[1:4])
+
+y_lim <- 0.5
+
+# create temporary dataframe for plot
+temp2 <- res2 %>% 
+  
+  # make long dataframe
+  pivot_longer(cols = c(ends_with("_RMSE"), ends_with("_R2")), 
+               names_to = "Source_Estimate", 
+               values_to = "value" ) %>%
+  
+  # separate the "Source" column for in and out of sample
+  separate(col = Source_Estimate, into = c("Source", "Estimate") ) %>% 
+
+  # set high RMSE values to NA, then filter out these values before plotting
+  mutate(value = ifelse(Estimate == "RMSE" & value > y_lim, NA, value)) %>%
+  filter(!is.na(value)) 
+
+
+combined_plot2 <- ggplot(data = temp2) +
+  geom_point(aes(x = n_pred, y = value, color = Source)) +
+  geom_line(aes(x = n_pred, y = value, color = Source)) +
+  xlab("Model Complexity (# of terms)") +
+  ylab("") +
+  labs(title = "Figure 3.0: Bias-Variance Trade-Off For 10-fold Cross-Validated CV Groups",
+       subtitle = "Mercer Common Model Covariates") +
+  #scale_x_continuous(breaks = c(seq(0, 63, 5))) +
+  facet_wrap(~ Estimate, scales = "free_y", ncol = 1, strip.position = "right") +
+  scale_color_discrete(labels = c('In-sample', 'Out-of-sample')) +
+  theme_bw() 
+
+#show plot
+combined_plot2
+```
+Figure 3: Plots illustrating how the RMSE and $R^2$ values change upon the addition of covariates into the model for both in-sample (red) and out-of-sample (blue) predictions. Model complexity is represented by integer reflecting the number of covariate predictors included in the model. 
+ 
+```{r, echo = F, include = F}
+# build regression formula with common model covariates
+
+covars_common <- c("pop_s05000" ,"m_to_coast" ,"m_to_a1")
+frml <- as.formula(paste("log_avg ~", paste(covars_common, collapse = "+")) )
+
+```
+
+
+```{r, include = FALSE, echo = F}
+
+#Running the prediction model on the lt_gold  - mercer
+
+# in-sample predictions and fit summary
+summary(lm_gold_standard <- lm(frml, data = long_term_gold))
+
+
+
+```
+
+**Gold Standard Dataset** 
+
+The predicted versus observed log-NOx concentrations for the cross-validated gold standard dataset are shown in Figure 4. The best-fit line showed noticeable deviations from the 1:1 line, with an attenuated slope approximately half as steep as the 1:1 line. The MSE-based $R^2$ was 0.335 and the cross-validated predictions were, on average, approximately 0.464 log-ppb away from the 'true' observed concentrations. 
+
+
+```{r, echo = F, include = T}
+
+#Doing CV on the gold_standard model
+gold_CV <- do_CV(long_term_gold, id = "native_id", group = "CV_grp", formula = frml)
+
+gold_MSE <- get_MSE(gold_CV$log_avg, gold_CV$cvpreds)
+
+#gold_MSE
+
+#       RMSE    MSE_based_R2 reg_based_R2 
+ #  0.4644855    0.3346974    0.3397772 
+
+#plotting the results
+
+# get range for plot
+r <- gold_CV %>% dplyr::select(log_avg, cvpreds) %>% range()
+
+
+ggplot(data = gold_CV, aes(log_avg, cvpreds)) +
+    geom_point(shape = "o", alpha = 0.8) +
+    lims(x= r, y = r) +
+    coord_fixed() +
+    geom_smooth(method = 'lm', se = F, aes(color = "red")) +
+    geom_abline(aes(slope = 1, intercept = 0, color = "blue")) +
+    labs(title = "Figure 4.0: Model predictions vs. observed ln(NOx)\nn Cross-validated", 
+         subtitle = "Gold Standard Data",
+         x = "Observed ln(NOx) (ln(ppb))",
+         y = "Predicted ln(NOx) (ln(ppb))",
+         caption = "RMSE = 0.464 MSE-based R2 = 0.335") + 
+    scale_colour_manual(name='',
+                      labels = c("1:1 Line", "Best-Fit Line"), 
+                      values=c("blue", "red")) +
+    theme_bw()
+
+
+#model we have selected doesn't give the greatest predictions, but that might be fine. We changing the covariates in the model above won't necessitate changing any of the other code. 
+```
+Figure 4: Scatter plot of predicted versus observed log-NOx concentrations (log-ppb) with 1:1 (blue) and best fit (red) lines, with the corresponding RMSE (0.464 log-ppb) and MSE-based $R^2$ (0.335).
+
+**NOTE: Abbie: I moved comments about the prediction performance and why we think it was not good to the discussion section**
+
+
+
+
+```{r st_balanced, echo = F, include = F}
+
+#Repeating above to compare predictions from the st_balanced to predictions from the gold standard
+
+#need to group the st_balanced data by "campaign" before doing regression
+st_balanced <- left_join(st_balanced, mercer_cov, by = "native_id" )
+
+# and st balanced model
+summary(lm_st_balanced <- lm(frml, data = st_balanced))
+
+#apply the save CV groups as used in the gold standard model
+st_balanced <- st_balanced %>% group_by(rep_number) %>% mutate(CV_grp = CV_grp) %>% ungroup()
+
+#in sample-predictions
+fitted_models = st_balanced %>% group_by(rep_number) %>% do(model = lm(frml, data = .))
+
+#cross-validated predictions treating each sample "campaign" separately
+st_balanced_CV <- st_balanced %>% group_by(rep_number) %>% do(model = do_CV(data = ., id = "native_id", group = "CV_grp", formula = frml))
+#produces a df for each result
+
+#next step is to restructure the result back into a single long_df
+
+st_balanced_CV <- st_balanced_CV %>% rename(model_run = rep_number) #change column name so there isn't a conflict when I unnest it
+
+st_balanced_CV <- st_balanced_CV %>%
+  unnest(cols = c(model))
+
+#appending the predictions from the gold_standard to the st_balanced_CV df for comparison
+gold_preds <- gold_CV %>%
+  dplyr::select("native_id", "cvpreds") %>% rename(gold_preds = cvpreds)
+st_balanced_CV <- left_join(st_balanced_CV, gold_preds, by = "native_id" )
+
+
+#calculating the RMSE and R2 two ways
+  #a) comparing the campaign predictions to the observations from the gold standard 
+  #b) comparing the predictions from each campaign to the observations from that campaign
+
+#need to append the observations from the gold-standard to do method a
+
+gold_obs <- gold_CV %>%
+  dplyr::select("native_id", "log_avg") %>% rename(gold_obs = log_avg)
+st_balanced_CV <- left_join(st_balanced_CV, gold_obs, by = "native_id" )
+
+# Initialize empty lists to store the results for both methods
+results_a <- list()
+results_b <- list()
+
+# Loop through each unique model_run
+for (run in unique(st_balanced_CV$model_run)) {
+  # Filter the data for the current model_run
+  data_subset <- st_balanced_CV %>% filter(model_run == run)
+  
+  # Calculate the MSE for method A
+  mse_result_a <- get_MSE(data_subset$gold_obs, data_subset$cvpreds)
+  results_a[[run]] <- mse_result_a
+  
+  # Calculate the MSE for method B
+  mse_result_b <- get_MSE(data_subset$log_avg, data_subset$cvpreds)
+  results_b[[run]] <- mse_result_b
+}
+
+# Convert the lists to a data frame with separate columns for each method
+st_balanced_MSE <- data.frame(
+  model_run = unique(st_balanced_CV$model_run),
+  RMSE_a = sapply(results_a, `[`, 1),
+  MSE.R2_a = sapply(results_a, `[`, 2),
+  reg.R2_a = sapply(results_a, `[`, 3),
+  RMSE_b = sapply(results_b, `[`, 1),
+  MSE.R2_b = sapply(results_b, `[`, 2),
+  reg.R2_b = sapply(results_b, `[`, 3)
+)
+
+#pivot longer for plotting
+st_balanced_MSE_long <- st_balanced_MSE %>%
+  pivot_longer(
+    cols = c(RMSE_a, MSE.R2_a,reg.R2_a, RMSE_b, MSE.R2_b, reg.R2_b),
+    names_to = c("metric", "method"),
+    names_sep = "_",
+    values_to = "value"
+  ) 
+
+#Plotting (replicate figure 1 in blanco paper)
+# get range for plot
+r <- st_balanced_CV %>% dplyr::select(gold_preds, cvpreds) %>% range()
+
+
+st_balanced_scatter <- ggplot(data = st_balanced_CV, aes(x = gold_preds, y = cvpreds, color = as.factor(model_run))) +
+    geom_point(shape = "o", alpha = 0.7, show.legend = FALSE) +
+    lims(x= r, y = r) +
+    coord_fixed() +
+    geom_smooth(method = 'lm', se = F, alpha = 0.5, show.legend = FALSE) +
+    geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
+    labs(title = "Balanced Campaign \nvs Gold Predictions",
+         caption = "1:1 line is dashed") +
+    theme_bw()
+
+st_balanced_scatter
+
+
+#This needs some aesthetic adjustments: choose between dots or lines, pick a color scale that's helpful, get rid of the funky legend, but it's cool!!
+    #looks a lot like the balanced predictions from the Blanco paper. 
+
+#replicate blanco figure 3
+st_balanced_boxplot <- ggplot(st_balanced_MSE_long, aes(x = method, y = value, color = method)) +
+  geom_boxplot() +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "MSE.R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  facet_wrap(~metric) +
+  labs(title = "Balanced Comparison") +
+  theme_bw() +
+  theme(
+    plot.caption = element_text(hjust = 0)
+  )
+
+st_balanced_boxplot
+
+#This is also not bad. It will need some fancification, as well as adjustment when we start to add other campaigns, but it's an ok start. 
+
+#Need to also add the in-sample R2, which I can do later.
+
+#probably want to turn some of the above stuff into functions, because it is going to be a lot of cut and paste to do this for different data sets multiple times. 
+
+# get range for plot
+r <- st_balanced_CV %>% dplyr::select(log_avg, cvpreds) %>% range()
+
+
+st_balanced_obs_v_preds <- ggplot(data = st_balanced_CV, aes(log_avg, cvpreds)) +
+    geom_point(shape = "o", alpha = 0.8) +
+    lims(x= r, y = r) +
+    coord_fixed() +
+    geom_smooth(method = 'lm', se = F, aes(color = "red")) +
+    geom_abline(aes(slope = 1, intercept = 0, color = "blue")) +
+    labs(title = "Figure 4.0: Model predictions vs. observed ln(NOx)\n Cross-validated 10- fold", 
+         subtitle = "Short-Term Balanced Data",
+         x = "Observed ln(NOx) (ln(ppb))",
+         y = "Predicted ln(NOx) (ln(ppb))") + 
+    scale_colour_manual(name='',
+                      labels = c("1:1 Line", "Best-Fit Line"), 
+                      values=c("blue", "red")) +
+    theme_bw() 
+  
+
+st_balanced_obs_v_preds
+
+```
+
+
+
+``` {r seasonal strata}
+#----------create season-specific strata---------------
+
+summer <- nox_only[nox_only$season == "Summer",]
+
+fall <- nox_only[nox_only$season == "Fall",]
+
+winter <- nox_only[nox_only$season == "Winter",] 
+
+spring <- nox_only[nox_only$season == "Spring",]
+
+
+
+```
+
+
+
+```{r seasonal.avg, echo = FALSE, include = F, eval = F}
+#Writing a function to aggregate data to the seasonal level -seasonal dataset
+
+#function to take the annual average concentration of any dataframe
+seasonal_avg <- function(data) {
+  seasonal <- data %>% group_by(native_id) %>% summarise(seasonal_avg = mean(sample_measurement), log_avg = log(mean(sample_measurement)))
+  return(seasonal)
+}
+
+#I set evalu = F on this. I am going to use the annual_avg() function, because I want the column names to all be names the same thing when I bind them together for the plots. 
+
+```
+
+
+```{r seasonal datasets2, echo = F, include = F}
+
+
+#random_sample() (data, size, seed)
+#----------summer----------------------------------------------
+# Initialize the short-term balanced data frame
+st_summer <- data.frame()
+
+n_reps <- 30  # number of random df simulations to run
+
+for (i in 1:n_reps) {
+  seed <- i * 4  # generating a different seed for each simulation
+  sampled_data <- random_sample(summer, 28, seed)
+  summer_avg_data <- annual_avg(sampled_data)
+  
+  # Add seed and rep_number columns
+  summer_avg_data$seed <- seed
+  summer_avg_data$rep_number <- i
+  
+  # Append to st summer df
+  st_summer <- rbind(st_summer, summer_avg_data)
+}
+summer_state_var<-ggplot(st_summer, aes(x = native_id, y = log_avg)) +
+  geom_boxplot() +
+  ggtitle("Summer") +
+  labs(x = "monitors",
+       y = "ln (NOx (ppb))") +
+  theme(axis.text.x = element_blank(),
+    axis.ticks.x = element_blank())
+
+#----------fall----------------------------------------------
+# Initialize the short-term balanced data frame
+st_fall <- data.frame()
+
+n_reps <- 30  # number of random df simulations to run
+
+for (i in 1:n_reps) {
+  seed <- i * 4  # generating a different seed for each simulation
+  sampled_data <- random_sample(fall, 28, seed)
+  fall_avg_data <- annual_avg(sampled_data)
+  
+  # Add seed and rep_number columns
+  fall_avg_data$seed <- seed
+  fall_avg_data$rep_number <- i
+  
+  # Append to st fall df
+  st_fall <- rbind(st_fall, fall_avg_data)
+}
+fall_state_var<-ggplot(st_fall, aes(x = native_id, y = log_avg)) +
+  geom_boxplot() +
+  ggtitle("Fall") +
+  labs(x = "monitors",
+       y = "ln (NOx (ppb))") +
+  theme(axis.text.x = element_blank(),
+    axis.ticks.x = element_blank())
+
+#------------Winter--------------------------------------------
+st_winter <- data.frame()
+
+n_reps <- 30  # number of random df simulations to run
+
+for (i in 1:n_reps) {
+  seed <- i * 4  # generating a different seed for each simulation
+  sampled_data <- random_sample(winter, 28, seed)
+  winter_avg_data <- annual_avg(sampled_data)
+  
+  # Add seed and rep_number columns
+  winter_avg_data$seed <- seed
+  winter_avg_data$rep_number <- i
+  
+  # Append to st winter df
+  st_winter <- rbind(st_winter, winter_avg_data)
+}
+winter_state_var<-ggplot(st_winter, aes(x = native_id, y = log_avg)) +
+  geom_boxplot() +
+  ggtitle("Winter") +
+  labs(x = "monitors",
+       y = "ln (NOx (ppb))") +
+  theme(axis.text.x = element_blank(),
+    axis.ticks.x = element_blank())
+
+#------------Spring--------------------------------------------
+st_spring <- data.frame()
+
+n_reps <- 30  # number of random df simulations to run
+
+for (i in 1:n_reps) {
+  seed <- i * 4  # generating a different seed for each simulation
+  sampled_data <- random_sample(spring, 28, seed)
+  spring_avg_data <- annual_avg(sampled_data)
+  
+  # Add seed and rep_number columns
+  spring_avg_data$seed <- seed
+  spring_avg_data$rep_number <- i
+  
+  # Append to st spring df
+  st_spring <- rbind(st_spring, spring_avg_data)
+}
+
+spring_state_var<- ggplot(st_spring, aes(x = native_id, y = log_avg)) +
+  geom_boxplot() +
+  ggtitle("Spring") +
+  labs(x = "monitors",
+       y = "ln (NOx (ppb))") +
+  theme(axis.text.x = element_blank(),
+    axis.ticks.x = element_blank())
+
+# this should be the same length as the st_balanced dataframe
+#True - AG
+
+#Looks good! Only suggestion is that we just use the annual_avg() function and not add a season_avg() function, because other than the name, they produce the same results. KW
+
+#if you think these plots are helpful, then we should spend some time fixing them up. I think they are mostly just to help us visualize the data, and can be left out (or put in appendix without the grid arrange)KW
+
+#moved to the appendix - AG
+
+```
+
+**Short-Term, Temporally-Restricted Datasets** 
+
+Table 1 descriptively summarizes NOx concentrations for each dataset used in our analysis, including the short-term seasonal datasets, the short-term temporally-balanced dataset, and the long-term gold standard datset. The annual average NOx concentrations in the fall and winter had standard deviations nearly twice those observed in the summer and spring; this was consistent with the wider range of NOx concentrations observed at monitors during the fall and winter seasons. The mean and median NOx concentrations are noticeably different across seasons, though there is strong agreement in the central tendencies of the short-term balanced and long-term gold standard datasets. 
+ 
+
+```{r, results='hide',include=FALSE,echo=FALSE}
+#summary statistics
+lt_gold_sum <- long_term_gold %>% summarise(min = min(annual_avg), 
+                                            Q25 = quantile(annual_avg, probs = 0.25), 
+                                            Q50 = quantile(annual_avg, probs = 0.5),
+                                            Q75 = quantile(annual_avg, probs = 0.75),
+                                            max = max(annual_avg),
+                                            mean = mean(annual_avg),
+                                            SD = sd(annual_avg)
+                                            )
+#lt_gold_sum
+      #This matches the number reported in Blanco supplement S5
+
+#summary stats for st_balanced
+st_balanced_sum <- st_balanced %>% summarise(min = min(annual_avg), 
+                                            Q25 = quantile(annual_avg, probs = 0.25), 
+                                            Q50 = quantile(annual_avg, probs = 0.5),
+                                            Q75 = quantile(annual_avg, probs = 0.75),
+                                            max = max(annual_avg),
+                                            mean = mean(annual_avg),
+                                            SD = sd(annual_avg)
+                                            )
+#st_balanced_sum #this would not be expected to match Blanco because we used different seeds
+#summarizing the data from the random samples
+names <- c("Gold Standard (LT)", "ST Balanced")
+
+kable(cbind(names , rbind(lt_gold_sum, st_balanced_sum)), digits = 2,
+      caption = "Table 1.0: Balanced, Long-term & Short-term Sampling Campaign Summaries") %>% kable_styling()
+
+```
+
+
+```{r, echoo = F, include = T}
+#summary stats for each season
+
+st_summer_sum <- sum_stats(st_summer) 
+
+#st_summer_sum
+
+st_fall_sum <- sum_stats(st_fall) 
+#st_fall_sum 
+
+st_winter_sum <- sum_stats(st_winter)
+#st_winter_sum 
+
+st_spring_sum <- sum_stats(st_spring) 
+#st_spring_sum
+
+
+
+Datasets <- c("spring (st)", "summer (st)", "fall (st)", "winter (st)", "balanced (st)", "gold standard (lt)")
+kable(cbind(Datasets , rbind(st_spring_sum, st_summer_sum, st_fall_sum, st_winter_sum, st_balanced_sum, lt_gold_sum)), digits = 2,
+      caption = " Table 1.0: Sampling Campaigns NOx (ppb) Summaries") %>%
+  kable_styling()
+
+```
+Table 1: Descriptive statistics summarizing the central tendencies and variability of NOx concentrations (ppb) across seasons and within the short- and long-term temporally-balanced datasets. 
+
+
+```{r season.convariates2, echo = F, include = F}
+#--------------------------Common Model on Seasonal Data sets------------------#
+#adding the covariates to the gold standard data to do some predictions
+st_summer <-  left_join(st_summer,mercer_cov, by = "native_id" )
+st_fall <-  left_join(st_fall,mercer_cov, by = "native_id" )
+st_winter <-  left_join(st_winter,mercer_cov, by = "native_id" )
+st_spring <-  left_join(st_spring,mercer_cov, by = "native_id" ) 
+
+
+```
+
+
+```{r, include = FALSE, echo = F}
+
+#running the regression for each model 
+
+#we don't need to include these summaries in the html
+# in-sample predictions and fit summary
+summary(lm_st_summer <- lm(frml, data = st_summer))
+summary(lm_st_fall <- lm(frml, data = st_fall))
+summary(lm_st_winter <- lm(frml, data = st_winter))
+summary(lm_st_spring <- lm(frml, data = st_spring)) 
+
+
+```
+
+
+
+```{r summer vs. gold, echo = F, include = F}
+#------------seasonal comparison with gold standard-------------
+
+#-----------------------------------SUMMER--------------------------------------
+#need to group the st_summer data by "campaign" before doing regression
+
+#apply the save CV groups as used in the gold standard model
+st_summer <- st_summer %>% group_by(rep_number) %>% mutate(CV_grp = CV_grp) %>% ungroup()
+
+#in sample-predictions
+fitted_models = st_summer %>% group_by(rep_number) %>% do(model = lm(frml, data = .))
+
+#cross-validated predictions treating each sample "campaign" separately
+st_summer_CV <- st_summer %>% group_by(rep_number) %>% do(model = do_CV(data = ., id = "native_id", group = "CV_grp", formula = frml))
+#produces a df for each result
+
+#next step is to restructure the result back into a single long_df
+
+st_summer_CV <- st_summer_CV %>% rename(model_run = rep_number) #change column name so there isn't a conflict when I unnest it
+
+st_summer_CV <- st_summer_CV %>%
+  unnest(cols = c(model))
+
+#---compare st_summer with gold-----------------------------------------#
+#appending the predictions from the balanced short term campaign to the st_summer_CV df for comparison
+gold_preds <- gold_CV %>%
+  dplyr::select("native_id", "cvpreds") %>% rename(gold_preds = cvpreds)  #select "model run" as well as native_id
+st_summer_CV <- left_join(st_summer_CV, gold_preds, by = "native_id" ) #to have unique identifiers we need both native id and model run. AG
+
+
+#calculating the RMSE and R2 two ways
+  #a) comparing the campaign predictions to the observations from the gold standard 
+  #b) comparing the predictions from each campaign to the observations from that campaign
+
+#need to append the observations from the balanced short term campaign to do method a
+
+gold_obs <- gold_CV %>%
+  dplyr::select("native_id", "log_avg") %>% rename(gold_obs = log_avg)
+st_summer_CV <- left_join(st_summer_CV, gold_obs, by = "native_id" ) #to have unique identifiers we need both native id and model run. AG
+
+# Initialize empty lists to store the results for both methods
+results_a <- list()
+results_b <- list()
+
+# Loop through each unique model_run
+for (run in unique(st_summer_CV$model_run)) {
+  # Filter the data for the current model_run
+  data_subset <- st_summer_CV %>% filter(model_run == run)
+  
+  # Calculate the MSE for method A
+  mse_result_a <- get_MSE(data_subset$gold_obs, data_subset$cvpreds)
+  results_a[[run]] <- mse_result_a
+  
+  # Calculate the MSE for method B
+  mse_result_b <- get_MSE(data_subset$log_avg, data_subset$cvpreds)
+  results_b[[run]] <- mse_result_b
+}
+
+# Convert the lists to a data frame with separate columns for each method
+st_summer_MSE <- data.frame(
+  model_run = unique(st_summer_CV$model_run),
+  RMSE_a = sapply(results_a, `[`, 1),
+  MSE.R2_a = sapply(results_a, `[`, 2),
+  reg.R2_a = sapply(results_a, `[`, 3),
+  RMSE_b = sapply(results_b, `[`, 1),
+  MSE.R2_b = sapply(results_b, `[`, 2),
+  reg.R2_b = sapply(results_b, `[`, 3)
+)
+
+#pivot longer for plotting
+st_summer_MSE_long <- st_summer_MSE %>%
+  pivot_longer(
+    cols = c(RMSE_a, MSE.R2_a,reg.R2_a, RMSE_b, MSE.R2_b, reg.R2_b),
+    names_to = c("metric", "method"),
+    names_sep = "_",
+    values_to = "value"
+  ) 
+
+#Plotting (replicate figure 1 in blanco paper)
+# get range for plot
+r <- st_summer_CV %>% dplyr::select(gold_preds, cvpreds) %>% range()
+
+
+st_summer_scatter <- ggplot(data = st_summer_CV, aes(x = gold_preds, y = cvpreds, color = as.factor(model_run))) +
+    geom_point(shape = "o", alpha = 0.7, show.legend = FALSE) +
+    lims(x= r, y = r) +
+    coord_fixed() +
+    geom_smooth(method = 'lm', se = F, alpha = 0.5, show.legend = FALSE) +
+    geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
+    labs(title = "Summer Campaign \nvs Gold Predictions", 
+         caption = "1:1 line is dashed") +
+    theme_bw() +
+  theme(plot.caption = element_text(hjust = 0)
+  )
+  
+st_summer_scatter
+
+
+#This needs some aesthetic adjustments: choose between dots or lines, pick a color scale that's helpful, get rid of the funky legend, but it's cool!!
+    #looks a lot like the balanced predictions from the Blanco paper. 
+
+#replicate blanco figure 3
+st_summer_boxplot <-  ggplot(st_summer_MSE_long, aes(x = method, y = value, color = method)) +
+  geom_boxplot() +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "MSE.R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  facet_wrap(~metric) +
+  labs(title = "Summer Comparison") +
+  theme_bw() +
+  theme(
+    plot.caption = element_text(hjust = 0)
+  )
+
+
+  st_summer_boxplot
+
+
+```
+
+
+
+```{r fall vs gold, echo = F, include = F}
+#------------seasonal comparison with gold standard-------------
+
+#-----------------------------------fall--------------------------------------
+#need to group the st_fall data by "campaign" before doing regression
+
+#apply the save CV groups as used in the gold standard model
+st_fall <- st_fall %>% group_by(rep_number) %>% mutate(CV_grp = CV_grp) %>% ungroup()
+
+#in sample-predictions
+fitted_models = st_fall %>% group_by(rep_number) %>% do(model = lm(frml, data = .))
+
+#cross-validated predictions treating each sample "campaign" separately
+st_fall_CV <- st_fall %>% group_by(rep_number) %>% do(model = do_CV(data = ., id = "native_id", group = "CV_grp", formula = frml))
+#produces a df for each result
+
+#next step is to restructure the result back into a single long_df
+
+st_fall_CV <- st_fall_CV %>% rename(model_run = rep_number) #change column name so there isn't a conflict when I unnest it
+
+st_fall_CV <- st_fall_CV %>%
+  unnest(cols = c(model))
+
+#---compare st_fall with gold-----------------------------------------#
+#appending the predictions from the balanced short term campaign to the st_fall_CV df for comparison
+gold_preds <- gold_CV %>%
+  dplyr::select("native_id", "cvpreds") %>% rename(gold_preds = cvpreds)  #select "model run" as well as native_id
+st_fall_CV <- left_join(st_fall_CV, gold_preds, by = "native_id" ) #to have unique identifiers we need both native id and model run. AG
+
+
+#calculating the RMSE and R2 two ways
+  #a) comparing the campaign predictions to the observations from the gold standard 
+  #b) comparing the predictions from each campaign to the observations from that campaign
+
+#need to append the observations from the balanced short term campaign to do method a
+
+gold_obs <- gold_CV %>%
+  dplyr::select("native_id", "log_avg") %>% rename(gold_obs = log_avg)
+st_fall_CV <- left_join(st_fall_CV, gold_obs, by = "native_id" ) #to have unique identifiers we need both native id and model run. AG
+
+# Initialize empty lists to store the results for both methods
+results_a <- list()
+results_b <- list()
+
+# Loop through each unique model_run
+for (run in unique(st_fall_CV$model_run)) {
+  # Filter the data for the current model_run
+  data_subset <- st_fall_CV %>% filter(model_run == run)
+  
+  # Calculate the MSE for method A
+  mse_result_a <- get_MSE(data_subset$gold_obs, data_subset$cvpreds)
+  results_a[[run]] <- mse_result_a
+  
+  # Calculate the MSE for method B
+  mse_result_b <- get_MSE(data_subset$log_avg, data_subset$cvpreds)
+  results_b[[run]] <- mse_result_b
+}
+
+# Convert the lists to a data frame with separate columns for each method
+st_fall_MSE <- data.frame(
+  model_run = unique(st_fall_CV$model_run),
+  RMSE_a = sapply(results_a, `[`, 1),
+  MSE.R2_a = sapply(results_a, `[`, 2),
+  reg.R2_a = sapply(results_a, `[`, 3),
+  RMSE_b = sapply(results_b, `[`, 1),
+  MSE.R2_b = sapply(results_b, `[`, 2),
+  reg.R2_b = sapply(results_b, `[`, 3)
+)
+
+#pivot longer for plotting
+st_fall_MSE_long <- st_fall_MSE %>%
+  pivot_longer(
+    cols = c(RMSE_a, MSE.R2_a,reg.R2_a, RMSE_b, MSE.R2_b, reg.R2_b),
+    names_to = c("metric", "method"),
+    names_sep = "_",
+    values_to = "value"
+  ) 
+
+#Plotting (replicate figure 1 in blanco paper)
+# get range for plot
+r <- st_fall_CV %>% dplyr::select(gold_preds, cvpreds) %>% range()
+
+
+st_fall_scatter <-ggplot(data = st_fall_CV, aes(x = gold_preds, y = cvpreds, color = as.factor(model_run))) +
+    geom_point(shape = "o", alpha = 0.7, show.legend = FALSE) +
+    lims(x= r, y = r) +
+    coord_fixed() +
+    geom_smooth(method = 'lm', se = F, alpha = 0.5, show.legend = FALSE) +
+    geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
+    labs(title = "fallCampaign \nvs Gold Predictions", 
+         caption = "1:1 line is dashed") +
+    theme_bw() +
+  theme(plot.caption = element_text(hjust = 0)
+  )
+
+st_fall_scatter
+
+
+#This needs some aesthetic adjustments: choose between dots or lines, pick a color scale that's helpful, get rid of the funky legend, but it's cool!!
+    #looks a lot like the balanced predictions from the Blanco paper. 
+
+#replicate blanco figure 3
+st_fall_boxplot <-  ggplot(st_fall_MSE_long, aes(x = method, y = value, color = method)) +
+  geom_boxplot() +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "MSE.R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  facet_wrap(~metric) +
+  labs(title = "Fall Comparison") +
+  theme_bw() +
+  theme(
+    plot.caption = element_text(hjust = 0)
+  )
+
+st_fall_boxplot
+  
+
+```
+
+
+
+```{r winter v gold, echo = F, include = F}
+#------------seasonal comparison with  and gold standard-------------
+
+#-----------------------------------winter--------------------------------------
+#need to group the st_winter data by "campaign" before doing regression
+
+#apply the save CV groups as used in the gold standard model
+st_winter <- st_winter %>% group_by(rep_number) %>% mutate(CV_grp = CV_grp) %>% ungroup()
+
+#in sample-predictions
+fitted_models = st_winter %>% group_by(rep_number) %>% do(model = lm(frml, data = .))
+
+#cross-validated predictions treating each sample "campaign" separately
+st_winter_CV <- st_winter %>% group_by(rep_number) %>% do(model = do_CV(data = ., id = "native_id", group = "CV_grp", formula = frml))
+#produces a df for each result
+
+#next step is to restructure the result back into a single long_df
+
+st_winter_CV <- st_winter_CV %>% rename(model_run = rep_number) #change column name so there isn't a conflict when I unnest it
+
+st_winter_CV <- st_winter_CV %>%
+  unnest(cols = c(model))
+
+#---compare st_winter with gold-----------------------------------------#
+#appending the predictions from the balanced short term campaign to the st_winter_CV df for comparison
+gold_preds <- gold_CV %>%
+  dplyr::select("native_id", "cvpreds") %>% rename(gold_preds = cvpreds) 
+st_winter_CV <- left_join(st_winter_CV, gold_preds, by = "native_id" ) 
+
+
+#calculating the RMSE and R2 two ways
+  #a) comparing the campaign predictions to the observations from the gold standard 
+  #b) comparing the predictions from each campaign to the observations from that campaign
+
+#need to append the observations from the balanced short term campaign to do method a
+
+gold_obs <- gold_CV %>%
+  dplyr::select("native_id", "log_avg") %>% rename(gold_obs = log_avg)
+st_winter_CV <- left_join(st_winter_CV, gold_obs, by = "native_id" ) 
+
+# Initialize empty lists to store the results for both methods
+results_a <- list()
+results_b <- list()
+
+# Loop through each unique model_run
+for (run in unique(st_winter_CV$model_run)) {
+  # Filter the data for the current model_run
+  data_subset <- st_winter_CV %>% filter(model_run == run)
+  
+  # Calculate the MSE for method A
+  mse_result_a <- get_MSE(data_subset$gold_obs, data_subset$cvpreds)
+  results_a[[run]] <- mse_result_a
+  
+  # Calculate the MSE for method B
+  mse_result_b <- get_MSE(data_subset$log_avg, data_subset$cvpreds)
+  results_b[[run]] <- mse_result_b
+}
+
+# Convert the lists to a data frame with separate columns for each method
+st_winter_MSE <- data.frame(
+  model_run = unique(st_winter_CV$model_run),
+  RMSE_a = sapply(results_a, `[`, 1),
+  MSE.R2_a = sapply(results_a, `[`, 2),
+  reg.R2_a = sapply(results_a, `[`, 3),
+  RMSE_b = sapply(results_b, `[`, 1),
+  MSE.R2_b = sapply(results_b, `[`, 2),
+  reg.R2_b = sapply(results_b, `[`, 3)
+)
+
+#pivot longer for plotting
+st_winter_MSE_long <- st_winter_MSE %>%
+  pivot_longer(
+    cols = c(RMSE_a, MSE.R2_a,reg.R2_a, RMSE_b, MSE.R2_b, reg.R2_b),
+    names_to = c("metric", "method"),
+    names_sep = "_",
+    values_to = "value"
+  ) 
+
+#Plotting (replicate figure 1 in blanco paper)
+# get range for plot
+r <- st_winter_CV %>% dplyr::select(gold_preds, cvpreds) %>% range()
+
+
+st_winter_scatter <-ggplot(data = st_winter_CV, aes(x = gold_preds, y = cvpreds, color = as.factor(model_run))) +
+    geom_point(shape = "o", alpha = 0.7, show.legend = FALSE) +
+    lims(x= r, y = r) +
+    coord_fixed() +
+    geom_smooth(method = 'lm', se = F, alpha = 0.5, show.legend = FALSE) +
+    geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
+    labs(title = "winter  Campaign \nvs Gold Predictions", 
+         caption = "1:1 line is dashed") +
+    theme_bw() +
+  theme(plot.caption = element_text(hjust = 0)
+  )
+
+st_winter_scatter
+
+#This needs some aesthetic adjustments: choose between dots or lines, pick a color scale that's helpful, get rid of the funky legend, but it's cool!!
+    #looks a lot like the balanced predictions from the Blanco paper. 
+
+#replicate blanco figure 3
+st_winter_boxplot <- ggplot(st_winter_MSE_long, aes(x = method, y = value, color = method)) +
+  geom_boxplot() +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "MSE.R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  facet_wrap(~metric) +
+  labs(title = "Winter Comparison") +
+  theme_bw() +
+  theme(
+    plot.caption = element_text(hjust = 0)
+  )
+
+st_winter_boxplot
+
+```
+
+
+
+```{r spring v gold, echo = F, include = F}
+#------------seasonal comparison with st balanced and gold standard-------------
+
+#-----------------------------------spring--------------------------------------
+#need to group the st_spring data by "campaign" before doing regression
+
+#apply the save CV groups as used in the gold standard model
+st_spring <- st_spring %>% group_by(rep_number) %>% mutate(CV_grp = CV_grp) %>% ungroup()
+
+#in sample-predictions
+fitted_models = st_spring %>% group_by(rep_number) %>% do(model = lm(frml, data = .))
+
+#cross-validated predictions treating each sample "campaign" separately
+st_spring_CV <- st_spring %>% group_by(rep_number) %>% do(model = do_CV(data = ., id = "native_id", group = "CV_grp", formula = frml))
+#produces a df for each result
+
+#next step is to restructure the result back into a single long_df
+
+st_spring_CV <- st_spring_CV %>% rename(model_run = rep_number) #change column name so there isn't a conflict when I unnest it
+
+st_spring_CV <- st_spring_CV %>%
+  unnest(cols = c(model))
+
+#---compare st_spring with gold-----------------------------------------#
+#appending the predictions from the balanced short term campaign to the st_spring_CV df for comparison
+gold_preds <- gold_CV %>%
+  dplyr::select("native_id", "cvpreds") %>% rename(gold_preds = cvpreds)  #select "model run" as well as native_id
+st_spring_CV <- left_join(st_spring_CV, gold_preds, by = "native_id" ) #to have unique identifiers we need both native id and model run. AG
+
+
+#calculating the RMSE and R2 two ways
+  #a) comparing the campaign predictions to the observations from the gold standard 
+  #b) comparing the predictions from each campaign to the observations from that campaign
+
+#need to append the observations from the balanced short term campaign to do method a
+
+gold_obs <- gold_CV %>%
+  dplyr::select("native_id", "log_avg") %>% rename(gold_obs = log_avg)
+st_spring_CV <- left_join(st_spring_CV, gold_obs, by = "native_id" )
+
+# Initialize empty lists to store the results for both methods
+results_a <- list()
+results_b <- list()
+
+# Loop through each unique model_run
+for (run in unique(st_spring_CV$model_run)) {
+  # Filter the data for the current model_run
+  data_subset <- st_spring_CV %>% filter(model_run == run)
+  
+  # Calculate the MSE for method A
+  mse_result_a <- get_MSE(data_subset$gold_obs, data_subset$cvpreds)
+  results_a[[run]] <- mse_result_a
+  
+  # Calculate the MSE for method B
+  mse_result_b <- get_MSE(data_subset$log_avg, data_subset$cvpreds)
+  results_b[[run]] <- mse_result_b
+}
+
+# Convert the lists to a data frame with separate columns for each method
+st_spring_MSE <- data.frame(
+  model_run = unique(st_spring_CV$model_run),
+  RMSE_a = sapply(results_a, `[`, 1),
+  MSE.R2_a = sapply(results_a, `[`, 2),
+  reg.R2_a = sapply(results_a, `[`, 3),
+  RMSE_b = sapply(results_b, `[`, 1),
+  MSE.R2_b = sapply(results_b, `[`, 2),
+  reg.R2_b = sapply(results_b, `[`, 3)
+)
+
+#pivot longer for plotting
+st_spring_MSE_long <- st_spring_MSE %>%
+  pivot_longer(
+    cols = c(RMSE_a, MSE.R2_a,reg.R2_a, RMSE_b, MSE.R2_b, reg.R2_b),
+    names_to = c("metric", "method"),
+    names_sep = "_",
+    values_to = "value"
+  ) 
+
+#Plotting (replicate figure 1 in blanco paper)
+# get range for plot
+r <- st_spring_CV %>% dplyr::select(gold_preds, cvpreds) %>% range()
+
+
+st_spring_scatter <-ggplot(data = st_spring_CV, aes(x = gold_preds, y = cvpreds, color = as.factor(model_run))) +
+    geom_point(shape = "o", alpha = 0.7, show.legend = FALSE) +
+    lims(x= r, y = r) +
+    coord_fixed() +
+    geom_smooth(method = 'lm', se = F, alpha = 0.5, show.legend = FALSE) +
+    geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
+    labs(title = "Spring Campaign \nvs Gold Predictions",
+         caption = "1:1 line is dashed") +
+    theme_bw() +
+  theme(plot.caption = element_text(hjust = 0)
+  )
+
+st_spring_scatter
+
+
+#This needs some aesthetic adjustments: choose between dots or lines, pick a color scale that's helpful, get rid of the funky legend, but it's cool!!
+    #looks a lot like the balanced predictions from the Blanco paper. 
+
+#replicate blanco figure 3
+st_spring_boxplot <- ggplot(st_spring_MSE_long, aes(x = method, y = value, color = method)) +
+  geom_boxplot() +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "MSE.R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  facet_wrap(~metric) +
+  labs(title = "Spring Comparison") +
+  theme_bw() +
+  theme(
+    plot.caption = element_text(hjust = 0)
+  )
+
+st_spring_boxplot
+
+```
+
+Figure 5 compares the cross-validated gold standard log(NOx) concentration predictions against the cross-validated short-term log(NOx) concentration predictions for 30 simulated monitoring campaigns in each season and in the temporally-balanced short-term dataset.The predictions made using the short-term temporally-balanced dataset show strong agreement with the 1:1 line. In contrast, the predictions made in each season all have slopes similar to that shown in the 1:1 line but are offset in their intercepts. The short-term campaigns conducted in the summer and spring consistently under-predicted the gold standard annual average log(NOx) concentrations, whereas the short-term campaigns in the fall and winter consistently over-predicted gold standard annual average log(NOx) concentrations. 
+
+```{r, echo = F, include = T, fig.height = 7, fig.width = 7, warning = F, message = F}
+
+#trying to make a better plot
+
+#add a season column to each one
+st_spring_CV <- st_spring_CV %>% mutate(season = "Spring")
+st_summer_CV <- st_summer_CV %>% mutate(season = "Summer")
+st_fall_CV <- st_fall_CV %>% mutate(season = "Fall")
+st_winter_CV <- st_winter_CV %>% mutate(season = "Winter")
+st_balanced_CV <- st_balanced_CV %>% mutate(season = "Balanced")
+
+#bind the df into one
+st_all_CV <- rbind(st_balanced_CV, st_spring_CV, st_summer_CV, st_fall_CV, st_winter_CV)
+
+#factor to control the order
+st_all_CV <- st_all_CV %>%
+  mutate(season = factor(season, levels = c("Spring", 
+                                            "Summer", 
+                                            "Fall", 
+                                            "Winter", 
+                                            "Balanced")))
+
+
+all_scatter <-ggplot(data = st_all_CV, aes(x = gold_preds, y = cvpreds, color = as.factor(model_run))) +
+    #geom_point(shape = "o", alpha = 0.7, show.legend = FALSE) + #commented out the points to make the plot a little cleaner. 
+    lims(x= r, y = r) +
+    geom_smooth(method = 'lm', se = F, alpha = 0.4, show.legend = FALSE, linewidth = 0.3) +
+    facet_wrap(~season, scales = "free") + 
+    geom_abline(linetype = "dashed", slope = 1, intercept = 0, color = "darkgray") +
+    labs(title = "Fig. 5: Best fit lines of cross-validated short-term predictions for 30 campaigns\nvs. gold standard predictions for ln(NOx)", 
+         subtitle = "Statewide",
+         x = "Gold standard predicted ln(NOx) (ln(ppb))",
+         y = "Campaign Predicted ln(NOx) (ln(ppb))",
+         caption = "1:1 line is dashed") +
+    theme_bw()
+
+all_scatter
+
+```
+
+Figure 5: Plots comparing the cross-validated log(NOx) predictions between the gold standard long-term dataset and the short-term datasets, including the temporally-balanced dataset and the season-specific datasets. The 1:1 line is denoted with a dashed line. Within each plot, each colored line represents results from one of the 30 simulations run using the randomly generated dataset.
+
+The prediction performance of the model using each underlying short-term dataset is described in Table 2. The MSE-based $R^2$, regression-based $R^2$, and RMSE for each prediction model is further compared in Figure 6. 
+
+
+```{r table of prediction stats, echo = F, include = T}
+#averages the rmse and r squared across all 30 repeats of the random sampling for all campaigns
+
+campaigns <- c("Summer", "Fall", "Winter", "Spring", "Balanced")
+RMSE <- c(mean(st_summer_MSE$RMSE_a), mean(st_fall_MSE$RMSE_a), mean(st_winter_MSE$RMSE_a), mean(st_spring_MSE$RMSE_a), mean(st_balanced_MSE$RMSE_a)) %>% round(digits = 3)
+MSE_R2 <- c(mean(st_summer_MSE$MSE.R2_a), mean(st_fall_MSE$MSE.R2_a), mean(st_winter_MSE$MSE.R2_a), mean(st_spring_MSE$MSE.R2_a), mean(st_balanced_MSE$MSE.R2_a)) %>% round(digits = 3)
+Reg_R2 <- c(mean(st_summer_MSE$reg.R2_a), mean(st_fall_MSE$reg.R2_a), mean(st_winter_MSE$reg.R2_a), mean(st_spring_MSE$reg.R2_a), mean(st_balanced_MSE$reg.R2_a)) %>% round(digits = 3)
+
+kable(rbind(campaigns, RMSE, MSE_R2, Reg_R2),
+      digits = 3,
+      caption = "Table 2: Performance Statistics of Seasonal and Balanced Sampling Campaigns - Method A") %>% kable_styling()
+
+```
+Table 2: The MSE-based $R^2$, regression-based $R^2$ and RMSE for cross-validated predictions generated using short-term datasets, including season-specific datasets and a temporally-balanced dataset. 
+
+```{r, echo = F, include = T, fig.height = 7, fig.width = 7}
+
+#bind the MSE df together for a combined boxplot
+#add a season column to each one
+st_spring_MSE_long <- st_spring_MSE_long %>% mutate(season = "Spring")
+st_summer_MSE_long <- st_summer_MSE_long %>% mutate(season = "Summer")
+st_fall_MSE_long <- st_fall_MSE_long %>% mutate(season = "Fall")
+st_winter_MSE_long <- st_winter_MSE_long %>% mutate(season = "Winter")
+st_balanced_MSE_long <- st_balanced_MSE_long %>% mutate(season = "Balanced")
+
+st_all_MSE_long <- rbind(st_spring_MSE_long, st_summer_MSE_long, st_fall_MSE_long, st_winter_MSE_long, st_balanced_MSE_long)
+
+#factor to control the order
+st_all_MSE_long <- st_all_MSE_long %>%
+  mutate(season = factor(season, levels = c("Spring", 
+                                            "Summer", 
+                                            "Fall", 
+                                            "Winter", 
+                                            "Balanced")))
+
+#replicate blanco figure 3
+st_all_boxplot <- ggplot(st_all_MSE_long, aes(x = season, y = value, color = season)) +
+  geom_boxplot() +
+  geom_hline(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(yintercept = value, linetype = "dotted"), show.legend = T) +
+  geom_hline(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "MSE.R2"), aes(yintercept = value, linetype = "dashed"), show.legend = T) +
+  geom_hline(data = data.frame(method = c("a", "b"), value = gold_MSE[[3]], metric = "reg.R2"), aes(yintercept = value, linetype = "dotdash"), show.legend = T) +
+  facet_grid(metric~method, scales = "free") +
+  labs(title = "Figure 6: Statewide RMSE and R2 Comparison",
+       caption = "Method A = Short-term campaign predictions compared to gold-standard obs\nMethod B = Short-term campaign predictions compared to same campaign observations\nHorizontal lines show the gold-standard performance", 
+       x = "Short-term Campaign",
+       y = "Value",
+       color = "Season") +
+  scale_linetype_manual(name='',
+                      labels = c("Gold standard RMSE", "Gold Standard MSE-R2", "Gold Standard Reg. R2"), 
+                      values=c("dotted", "dashed", "dotdash")) +
+  theme_bw() +
+  theme(
+    plot.caption = element_text(hjust = 0),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank()# Remove x-axis text labels
+  )
+
+st_all_boxplot
+
+
+
+```
+Figure 6: Boxplots showing the distribution of predictive performance statistics, including MSE-based $R^2$, RMSE, and regression-based $R^2$, across models using short-term datasets. Short-term datasets used included season-specific datasets (i.e. summer, spring, fall, and winter) and a temporally-balanced dataset. Each short-term dataset included 28 measurements and was simulated 30 times, as described in the methods. Note that Method A represents the short-term campaign predictions as compared to the gold standard observations, whereas Method B represents the short-term campaign predictions as compared to the observations within the same campaign. The dotted horizontal line shows the gold-standard prediction performance. 
+
+As shown Figure 6, the short-term balanced campaign is the only short-term campaign with a prediction performance reasonably comparable to that of the gold standard predictions. The agreement between the gold standard and the short term seasonal campaigns was very low, with MSE-based R-squared values near or equal to zero. However, notably, the regression-based $R^2$ summarized in both Table 2 and Figure 6, shows comparable performance across all cohort term campaigns in comparison with the gold standard. The improved regression-based $R^2$ compared to the MSE-based $R^2$ reinforces that there is a reasonably well-captured correlation between the model covariates and the log(NOx) concentrations in the season-specific datasets, but that the average estimates are biased or shifted away from the "true" gold standard values. 
+
+**LA-County Sensitivity Analysis**
+
+Table 3 describes the Los Angeles County-Specific distributions of NOx concentrations within each short-term (season-specific and temporally balanced) dataset and across the long-term gold standard dataset. The LA-specific data generally follow the same trends as the statewide data, with spring and summer seasons showing lower average NOx concentrations and lower variability. Compared to the statewide datasets, the standard deviations for LA-specific campaigns were similar, however the average NOx concentrations were slightly higher in LA county than the statewide dataset.  
+
+
+``` {r LA strat, echo = F, include = F}
+#----------create LA-specific dataset---------------
+
+la <-left_join(nox_only, mercer_cov, by = "native_id") %>% filter(County == "Los Angeles")
+
+#head(la)
+
+# fixed this so that it is more similar to the other df and takes a lot less time than using all the ca covarites. 
+
+
+```
+
+
+```{r long term gold standard la dataset, echo = F, include = F}
+
+#Gold Standard Data for LA
+long_term_gold_la <- annual_avg(la)
+
+
+```
+
+
+
+
+
+```{r short term LA dataset, echo = F, include = F}
+#----------generate short-term LA dataset---------------
+
+#random_sample() (data, size, seed)
+# Initialize the short-term balanced data frame
+st_la <- data.frame()
+
+n_reps <- 30  # number of random df simulations to run
+
+for (i in 1:n_reps) {
+  seed <- i * 4  # generating a different seed for each simulation
+  sampled_data <- random_sample(la, 28, seed)
+  la_avg_data <- annual_avg(sampled_data)
+  
+  # Add seed and rep_number columns
+  la_avg_data$seed <- seed
+  la_avg_data$rep_number <- i
+  
+  # Append to st summer df
+  st_la <- rbind(st_la, la_avg_data)
+}
+balanced_LA<- ggplot(st_la, aes(x = native_id, y = log_avg)) +
+  geom_boxplot()
+
+```
+
+
+```{r summarize LA short term dataset, include = F, echo = F}
+#quick summary of long-term and short-term LA datasets
+
+#summary stats for st_la
+st_la_sum <- sum_stats(st_la) 
+
+#summary stats for lt_gold_sum_la
+lt_gold_sum_la <- sum_stats(long_term_gold_la) 
+
+
+#combined table short and long term LA (balanced datasets)
+
+names_la <- c("short-term balanced", "long-term balanced")
+#kable(cbind(names_la , rbind(st_la_sum, lt_gold_sum_la)), digits = 2,
+#      caption = " Short- and Long-Term Balanced Sampling Campaigns - NOx Summaries (Los Angeles) ") %>%
+#  kable_styling()
+
+# no need to have these all throughut the paper - AG
+
+```
+
+```{r la.convariates, include = F, echo = F}
+#--------------------------Common Model on LA datasets------------------#
+
+#adding the covariates to do some predictions
+st_la<-  left_join(st_la,mercer_cov, by = "native_id")
+
+long_term_gold_la <- left_join(long_term_gold_la,mercer_cov, by = "native_id")
+
+```
+
+
+```{r, , include = F, echo = F}
+#running a regression model using common model covariates and LA data sets
+
+# in-sample predictions and fit summary
+summary(lm_st_la <- lm(frml, data = st_la)) #short term balanced data set
+
+summary(lm_gold_la <- lm(frml, data = long_term_gold_la)) #short term balanced data set
+
+```
+
+
+
+
+```{r LOO cross validation groups, include = F, echo = F}
+# cross-validation groups that can be used for all the data- leave-one-out to avoid too small of groups
+
+CV_grp_la <- rep(1:12, length.out = nrow(long_term_gold_la)) %>% 
+  sample(replace = FALSE)
+
+# now append it to the cal_nox_clean data frame
+long_term_gold_la <- mutate(long_term_gold_la, CV_grp_la = CV_grp_la)
+
+
+#doing gold cv within LA dataset for long term gold standard model
+gold_CV_la <- do_CV(long_term_gold_la, id = "native_id", group = "CV_grp_la", formula = frml)
+
+gold_MSE_la <- get_MSE(gold_CV_la$log_avg, gold_CV_la$cvpreds)
+
+
+# now make groups for short term data sets
+CV_grp_st_la <- rep(1:360, length.out = nrow(st_la)) %>% 
+  sample(replace = FALSE)
+
+
+
+
+```
+
+
+
+
+```{r la short-term balanced versus gold standard, include = F, echo = F}
+#------------LAshort-term balanced versus gold standard-------------
+
+#need to group the st_la data by "campaign" before doing regression
+
+#apply the save CV groups as used in the gold standard model
+st_la <- st_la %>% #group_by(rep_number) %>% #abbie had to remove this to have the leave one out groups append. 
+  mutate(CV_grp_st_la = CV_grp_st_la) %>% 
+  ungroup()
+
+#in sample-predictions
+fitted_models = st_la %>% group_by(rep_number) %>% 
+  do(model = lm(frml, data = .))
+
+#cross-validated predictions treating each sample "campaign" separately
+st_la_CV <- st_la %>% group_by(rep_number) %>%
+  do(model = do_CV(data = ., id = "native_id", group = "CV_grp_st_la", formula = frml))
+#produces a df for each result
+
+#next step is to restructure the result back into a single long_df
+
+st_la_CV <- st_la_CV %>% rename(model_run = rep_number)
+
+st_la_CV <- st_la_CV %>%
+  unnest(cols = c(model))
+
+#---compare st_la with gold la--------
+
+#appending the predictions from the balanced short term campaign to the st_la_CV df for comparison
+gold_preds_la <- gold_CV_la %>%
+  dplyr::select("native_id", "cvpreds") %>% rename(gold_preds_la = cvpreds)  
+st_la_CV <- left_join(st_la_CV, gold_preds_la, by = "native_id" ) 
+
+
+#calculating the RMSE and R2 two ways
+  #a) comparing the campaign predictions to the observations from the gold standard 
+  #b) comparing the predictions from each campaign to the observations from that campaign
+
+#need to append the observations from the balanced short term campaign to do method a
+
+gold_obs_la <- gold_CV_la %>%
+  dplyr::select("native_id", "log_avg") %>% rename(gold_obs_la = log_avg)
+st_la_CV <- left_join(st_la_CV, gold_obs_la, by = "native_id" )
+
+# Initialize empty lists to store the results for both methods
+results_a <- list()
+results_b <- list()
+
+# Loop through each unique model_run
+for (run in unique(st_la_CV$model_run)) {
+  # Filter the data for the current model_run
+  data_subset <- st_la_CV %>% filter(model_run == run)
+  
+  # Calculate the MSE for method A
+  mse_result_a <- get_MSE(data_subset$gold_obs_la, data_subset$cvpreds)
+  results_a[[run]] <- mse_result_a
+  
+  # Calculate the MSE for method B
+  mse_result_b <- get_MSE(data_subset$log_avg, data_subset$cvpreds)
+  results_b[[run]] <- mse_result_b
+}
+
+# Convert the lists to a data frame with separate columns for each method
+st_la_MSE <- data.frame(
+  model_run = unique(st_la_CV$model_run),
+  RMSE_a = sapply(results_a, `[`, 1),
+  MSE.R2_a = sapply(results_a, `[`, 2),
+  reg.R2_a = sapply(results_a, `[`, 3),
+  RMSE_b = sapply(results_b, `[`, 1),
+  MSE.R2_b = sapply(results_b, `[`, 2),
+  reg.R2_b = sapply(results_b, `[`, 3)
+)
+
+#pivot longer for plotting
+st_la_MSE_long <- st_la_MSE %>%
+  pivot_longer(
+    cols = c(RMSE_a, MSE.R2_a,reg.R2_a, RMSE_b, MSE.R2_b, reg.R2_b),
+    names_to = c("metric", "method"),
+    names_sep = "_",
+    values_to = "value"
+  ) 
+
+#Plotting (replicate figure 1 in blanco paper)
+# get range for plot
+r <- st_la_CV %>% dplyr::select(gold_preds_la, cvpreds) %>% range()
+
+
+balanced_scatter_la<-ggplot(data = st_la_CV, aes(x = gold_preds_la, y = cvpreds, color = as.factor(model_run))) +
+    geom_point(shape = "o", alpha = 0.7, show.legend = FALSE) +
+    lims(x= r, y = r) +
+    coord_fixed() +
+    geom_smooth(method = 'lm', se = F, alpha = 0.5, show.legend = FALSE) +
+    geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
+    labs(title = "Short term Balanced \nvs Gold Standard Predictions", 
+         caption = "1:1 line is dashed") +
+    theme_bw()
+
+#replicate blanco figure 3
+balanced_boxplot_la<- ggplot(st_la_MSE_long, aes(x = method, y = value, color = method)) +
+  geom_boxplot() +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE[[2]], metric = "MSE.R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  facet_wrap(~metric) +
+  labs(title = "Balanced Comparison") +
+  theme_bw()
+
+#NOTE: can someone please confirm that I got the captions right here? -ck Looks OK. We need to update the GOLD mse to just la though. Can do this is the final plot. 
+
+```
+
+
+
+
+``` {r seasonal strat}
+#----------create season-specific strata---------------
+summer_la <- la[la$season == "Summer",]
+
+fall_la <- la[la$season == "Fall",]
+
+winter_la <- la[la$season == "Winter",] 
+
+spring_la <- la[la$season == "Spring",]
+
+
+
+```
+
+
+```{r seasonal datasets}
+
+
+#random_sample() (data, size, seed)
+#----------summer_la----------------------------------------------
+# Initialize the short-term balanced data frame
+st_summer_la <- data.frame()
+
+n_reps <- 30  # number of random df simulations to run
+
+for (i in 1:n_reps) {
+  seed <- i * 4  # generating a different seed for each simulation
+  sampled_data <- random_sample(summer_la, 28, seed)
+  summer_la_avg_data <- annual_avg(sampled_data)
+  
+  # Add seed and rep_number columns
+  summer_la_avg_data$seed <- seed
+  summer_la_avg_data$rep_number <- i
+  
+  # Append to st summer_la df
+  st_summer_la <- rbind(st_summer_la, summer_la_avg_data)
+}
+summer_LA<- ggplot(st_summer_la, aes(x = native_id, y = log_avg)) +
+  geom_boxplot() +
+  ggtitle("Summer") +
+  labs(x = "monitors",
+       y = "ln (NOx (ppb))") +
+  theme(axis.text.x = element_blank(),
+    axis.ticks.x = element_blank())
+
+#----------fall_la----------------------------------------------
+# Initialize the short-term balanced data frame
+st_fall_la <- data.frame()
+
+n_reps <- 30  # number of random df simulations to run
+
+for (i in 1:n_reps) {
+  seed <- i * 4  # generating a different seed for each simulation
+  sampled_data <- random_sample(fall_la, 28, seed)
+  fall_la_avg_data <- annual_avg(sampled_data)
+  
+  # Add seed and rep_number columns
+  fall_la_avg_data$seed <- seed
+  fall_la_avg_data$rep_number <- i
+  
+  # Append to st fall_la df
+  st_fall_la <- rbind(st_fall_la, fall_la_avg_data)
+}
+fall_LA<-ggplot(st_fall_la, aes(x = native_id, y = log_avg)) +
+  geom_boxplot() +
+  ggtitle("Fall") +
+  labs(x = "monitors",
+       y = "ln (NOx (ppb))") +
+  theme(axis.text.x = element_blank(),
+    axis.ticks.x = element_blank())
+
+#------------winter_la--------------------------------------------
+st_winter_la <- data.frame()
+
+n_reps <- 30  # number of random df simulations to run
+
+for (i in 1:n_reps) {
+  seed <- i * 4  # generating a different seed for each simulation
+  sampled_data <- random_sample(winter_la, 28, seed)
+  winter_la_avg_data <- annual_avg(sampled_data)
+  
+  # Add seed and rep_number columns
+  winter_la_avg_data$seed <- seed
+  winter_la_avg_data$rep_number <- i
+  
+  # Append to st winter_la df
+  st_winter_la <- rbind(st_winter_la, winter_la_avg_data)
+}
+winter_LA<-ggplot(st_winter_la, aes(x = native_id, y = log_avg)) +
+  geom_boxplot() +
+  ggtitle("Winter") +
+  labs(x = "monitors",
+       y = "ln (NOx (ppb))") +
+  theme(axis.text.x = element_blank(),
+    axis.ticks.x = element_blank())
+
+#------------spring_la--------------------------------------------
+st_spring_la <- data.frame()
+
+n_reps <- 30  # number of random df simulations to run
+
+for (i in 1:n_reps) {
+  seed <- i * 4  # generating a different seed for each simulation
+  sampled_data <- random_sample(spring_la, 28, seed)
+  spring_la_avg_data <- annual_avg(sampled_data)
+  
+  # Add seed and rep_number columns
+  spring_la_avg_data$seed <- seed
+  spring_la_avg_data$rep_number <- i
+  
+  # Append to st spring_la df
+  st_spring_la <- rbind(st_spring_la, spring_la_avg_data)
+}
+
+spring_LA<-ggplot(st_spring_la, aes(x = native_id, y = log_avg)) +
+  geom_boxplot() +
+  ggtitle("Spring") +
+  labs(x = "monitors",
+       y = "ln (NOx (ppb))") +
+  theme(axis.text.x = element_blank(),
+    axis.ticks.x = element_blank())
+
+
+
+```
+
+```{r, summary stat, echo = F, include = T}
+#summary stats for LA
+
+st_summer_la_sum <- sum_stats(st_summer_la) 
+
+#st_summer_la_sum
+
+st_fall_la_sum <- sum_stats(st_fall_la) 
+#st_fall_la_sum 
+
+st_winter_la_sum <- sum_stats(st_winter_la)
+#st_winter_la_sum 
+
+st_spring_la_sum <- sum_stats(st_spring_la) 
+#st_spring_la_sum
+
+
+
+Datasets <- c("Spring","Summer", "Fall", "Winter", "Balanced", "Gold-standard")
+kable(cbind(Datasets , rbind(st_spring_la_sum, st_summer_la_sum, st_fall_la_sum, st_winter_la_sum, st_la_sum, lt_gold_sum_la)), digits = 2,
+      caption = " Table 3: Sampling Campaign NOx (ppb) Summaries for Los Angeles County") %>%
+  kable_styling()
+
+
+```
+Table 3: Summary statistics describing the distribution of NOx concentrations (ppb) when the analysis was restricted to 12 monitors within Los Angeles County. Data are summarized separately for each short-term season-restricted dataset and for the short- and long-term temporall-balanced datasets. 
+
+```{r season.convariates}
+#--------------------------Common Model on Seasonal Data sets------------------#
+#adding the covariates to the gold standard data to do some predictions
+st_summer_la <-  left_join(st_summer_la,mercer_cov, by = "native_id" )
+st_fall_la <-  left_join(st_fall_la,mercer_cov, by = "native_id" )
+st_winter_la <-  left_join(st_winter_la,mercer_cov, by = "native_id" )
+st_spring_la <-  left_join(st_spring_la,mercer_cov, by = "native_id" )
+
+
+```
+
+
+
+```{r, include = FALSE}
+
+# in-sample predictions and fit summary
+summary(lm_st_summer_la <- lm(frml, data = st_summer_la))
+summary(lm_st_fall_la <- lm(frml, data = st_fall_la))
+summary(lm_st_winter_la <- lm(frml, data = st_winter_la))
+summary(lm_st_spring_la <- lm(frml, data = st_spring_la)) 
+
+
+```
+
+
+```{r summer vs gold}
+#------------seasonal comparison with gold standard in LA county-------------
+
+#-----------------------------------SUMMER--------------------------------------
+#need to group the st_summer data by "campaign" before doing regression
+
+#apply the save CV groups as used in the gold standard model
+sst_summer_la <- st_summer_la %>%
+  mutate(CV_grp_st_la = CV_grp_st_la) %>% ungroup()
+
+#in sample-predictions
+fitted_models = sst_summer_la %>% group_by(rep_number) %>% do(model = lm(frml, data = .))
+
+#cross-validated predictions treating each sample "campaign" separately
+st_summer_CV_la <- sst_summer_la %>% group_by(rep_number) %>% do(model = do_CV(data = ., id = "native_id", group = "CV_grp_st_la", formula = frml))
+#produces a df for each result
+
+#next step is to restructure the result back into a single long_df
+
+st_summer_CV_la <- st_summer_CV_la %>% rename(model_run = rep_number) #change column name so there isn't a conflict when I unnest it
+
+st_summer_CV_la <- st_summer_CV_la %>%
+  unnest(cols = c(model))
+
+#---compare st_summer with gold-----------------------------------------#
+#appending the predictions from the balanced short term campaign to the st_summer_CV df for comparison
+gold_preds_la <- gold_CV_la %>%
+  dplyr::select("native_id", "cvpreds") %>% rename(gold_preds_la = cvpreds)  #select "model run" as well as native_id
+st_summer_CV_la <- left_join(st_summer_CV_la, gold_preds_la, by = "native_id" ) 
+
+
+#calculating the RMSE and R2 two ways
+  #a) comparing the campaign predictions to the observations from the gold standard 
+  #b) comparing the predictions from each campaign to the observations from that campaign
+
+#need to append the observations from the balanced short term campaign to do method a
+
+gold_obs_la <- gold_CV_la %>%
+  dplyr::select("native_id", "log_avg") %>% rename(gold_obs_la = log_avg)
+st_summer_CV_la <- left_join(st_summer_CV_la, gold_obs_la, by = "native_id" ) 
+# Initialize empty lists to store the results for both methods
+results_a <- list()
+results_b <- list()
+
+# Loop through each unique model_run
+for (run in unique(st_summer_CV_la$model_run)) {
+  # Filter the data for the current model_run
+  data_subset <- st_summer_CV_la %>% filter(model_run == run)
+  
+  # Calculate the MSE for method A
+  mse_result_a <- get_MSE(data_subset$gold_obs_la, data_subset$cvpreds)
+  results_a[[run]] <- mse_result_a
+  
+  # Calculate the MSE for method B
+  mse_result_b <- get_MSE(data_subset$log_avg, data_subset$cvpreds)
+  results_b[[run]] <- mse_result_b
+}
+
+# Convert the lists to a data frame with separate columns for each method
+st_summer_MSE_la <- data.frame(
+  model_run = unique(st_summer_CV_la$model_run),
+  RMSE_a = sapply(results_a, `[`, 1),
+  MSE.R2_a = sapply(results_a, `[`, 2),
+  reg.R2_a = sapply(results_a, `[`, 3),
+  RMSE_b = sapply(results_b, `[`, 1),
+  MSE.R2_b = sapply(results_b, `[`, 2),
+  reg.R2_b = sapply(results_b, `[`, 3)
+)
+
+#pivot longer for plotting
+st_summer_MSE_la_long <- st_summer_MSE_la %>%
+  pivot_longer(
+    cols = c(RMSE_a, MSE.R2_a,reg.R2_a, RMSE_b, MSE.R2_b, reg.R2_b),
+    names_to = c("metric", "method"),
+    names_sep = "_",
+    values_to = "value"
+  ) 
+
+#Plotting (replicate figure 1 in blanco paper)
+# get range for plot
+r <- st_summer_CV_la %>% dplyr::select(gold_preds_la, cvpreds) %>% range()
+
+
+summer_scatter_la<-ggplot(data = st_summer_CV_la, aes(x = gold_preds_la, y = cvpreds, color = as.factor(model_run))) +
+    geom_point(shape = "o", alpha = 0.7, show.legend = FALSE) +
+    lims(x= r, y = r) +
+    coord_fixed() +
+    geom_smooth(method = 'lm', se = F, alpha = 0.5, show.legend = FALSE) +
+    geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
+    labs(title = "Summer Campaign \nvsGold Standard Predictions", 
+         caption = "1:1 line is dashed") +
+    theme_bw()
+
+
+#This needs some aesthetic adjustments: choose between dots or lines, pick a color scale that's helpful, get rid of the funky legend, but it's cool!!
+    #looks a lot like the balanced predictions from the Blanco paper. 
+
+#replicate blanco figure 3
+summer_boxplot_la<- ggplot(st_summer_MSE_la_long, aes(x = method, y = value, color = method)) +
+  geom_boxplot() +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[2]], metric = "MSE.R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  facet_wrap(~metric) +
+  labs(title = "Summer Comparison") +
+  theme_bw()
+
+
+  
+
+
+```
+
+
+```{r}
+#------------seasonal comparison with gold standard in LA county-------------
+
+#-----------------------------------FALL--------------------------------------
+#need to group the st_summer data by "campaign" before doing regression
+
+#apply the save CV groups as used in the gold standard model
+sst_fall_la <- st_fall_la %>%
+  mutate(CV_grp_st_la = CV_grp_st_la) %>% ungroup()
+
+#in sample-predictions
+fitted_models = sst_fall_la %>% group_by(rep_number) %>% do(model = lm(frml, data = .))
+
+#cross-validated predictions treating each sample "campaign" separately
+st_fall_CV_la <- sst_fall_la %>% group_by(rep_number) %>% do(model = do_CV(data = ., id = "native_id", group = "CV_grp_st_la", formula = frml))
+#produces a df for each result
+
+#next step is to restructure the result back into a single long_df
+
+st_fall_CV_la <- st_fall_CV_la %>% rename(model_run = rep_number) #change column name so there isn't a conflict when I unnest it
+
+st_fall_CV_la <- st_fall_CV_la %>%
+  unnest(cols = c(model))
+
+#---compare st_summer with gold-----------------------------------------#
+#appending the predictions from the balanced short term campaign to the st_summer_CV df for comparison
+gold_preds_la <- gold_CV_la %>%
+  dplyr::select("native_id", "cvpreds") %>% rename(gold_preds_la = cvpreds)  #select "model run" as well as native_id
+st_fall_CV_la <- left_join(st_fall_CV_la, gold_preds_la, by = "native_id" ) 
+
+
+#calculating the RMSE and R2 two ways
+  #a) comparing the campaign predictions to the observations from the gold standard 
+  #b) comparing the predictions from each campaign to the observations from that campaign
+
+#need to append the observations from the balanced short term campaign to do method a
+
+gold_obs_la <- gold_CV_la %>%
+  dplyr::select("native_id", "log_avg") %>% rename(gold_obs_la = log_avg)
+st_fall_CV_la <- left_join(st_fall_CV_la, gold_obs_la, by = "native_id" ) 
+# Initialize empty lists to store the results for both methods
+results_a <- list()
+results_b <- list()
+
+# Loop through each unique model_run
+for (run in unique(st_fall_CV_la$model_run)) {
+  # Filter the data for the current model_run
+  data_subset <- st_fall_CV_la %>% filter(model_run == run)
+  
+  # Calculate the MSE for method A
+  mse_result_a <- get_MSE(data_subset$gold_obs_la, data_subset$cvpreds)
+  results_a[[run]] <- mse_result_a
+  
+  # Calculate the MSE for method B
+  mse_result_b <- get_MSE(data_subset$log_avg, data_subset$cvpreds)
+  results_b[[run]] <- mse_result_b
+}
+
+# Convert the lists to a data frame with separate columns for each method
+st_fall_MSE_la <- data.frame(
+  model_run = unique(st_fall_CV_la$model_run),
+  RMSE_a = sapply(results_a, `[`, 1),
+  MSE.R2_a = sapply(results_a, `[`, 2),
+  reg.R2_a = sapply(results_a, `[`, 3),
+  RMSE_b = sapply(results_b, `[`, 1),
+  MSE.R2_b = sapply(results_b, `[`, 2),
+  reg.R2_b = sapply(results_b, `[`, 3)
+)
+
+#pivot longer for plotting
+st_fall_MSE_la_long <- st_fall_MSE_la %>%
+  pivot_longer(
+    cols = c(RMSE_a, MSE.R2_a,reg.R2_a, RMSE_b, MSE.R2_b, reg.R2_b),
+    names_to = c("metric", "method"),
+    names_sep = "_",
+    values_to = "value"
+  ) 
+
+#Plotting (replicate figure 1 in blanco paper)
+# get range for plot
+r <- st_fall_CV_la %>% dplyr::select(gold_preds_la, cvpreds) %>% range()
+
+
+fall_scatter_la<-ggplot(data = st_fall_CV_la, aes(x = gold_preds_la, y = cvpreds, color = as.factor(model_run))) +
+    geom_point(shape = "o", alpha = 0.7, show.legend = FALSE) +
+    lims(x= r, y = r) +
+    coord_fixed() +
+    geom_smooth(method = 'lm', se = F, alpha = 0.5, show.legend = FALSE) +
+    geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
+    labs(title = "Fall Campaign \nvs Gold Standard Predictions", 
+         caption = "1:1 line is dashed") +
+    theme_bw()
+
+
+#This needs some aesthetic adjustments: choose between dots or lines, pick a color scale that's helpful, get rid of the funky legend, but it's cool!!
+    #looks a lot like the balanced predictions from the Blanco paper. 
+
+#replicate blanco figure 3
+fall_boxplot_la<- ggplot(st_fall_MSE_la_long, aes(x = method, y = value, color = method)) +
+  geom_boxplot() +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[2]], metric = "MSE.R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  facet_wrap(~metric) +
+  labs(title = "Fall Comparison") +
+  theme_bw()
+
+
+```
+
+
+
+```{r}
+
+#------------seasonal comparison with gold standard in LA county-------------
+
+#-----------------------------------WINTER--------------------------------------
+#need to group the st_summer data by "campaign" before doing regression
+
+#apply the save CV groups as used in the gold standard model
+sst_winter_la <- st_winter_la %>%
+  mutate(CV_grp_st_la = CV_grp_st_la) %>% ungroup()
+
+#in sample-predictions
+fitted_models = sst_winter_la %>% group_by(rep_number) %>% do(model = lm(frml, data = .))
+
+#cross-validated predictions treating each sample "campaign" separately
+st_winter_CV_la <- sst_winter_la %>% group_by(rep_number) %>% do(model = do_CV(data = ., id = "native_id", group = "CV_grp_st_la", formula = frml))
+#produces a df for each result
+
+#next step is to restructure the result back into a single long_df
+
+st_winter_CV_la <- st_winter_CV_la %>% rename(model_run = rep_number) #change column name so there isn't a conflict when I unnest it
+
+st_winter_CV_la <- st_winter_CV_la %>%
+  unnest(cols = c(model))
+
+#---compare st_summer with gold-----------------------------------------#
+#appending the predictions from the balanced short term campaign to the st_summer_CV df for comparison
+gold_preds_la <- gold_CV_la %>%
+  dplyr::select("native_id", "cvpreds") %>% rename(gold_preds_la = cvpreds)  #select "model run" as well as native_id
+st_winter_CV_la <- left_join(st_winter_CV_la, gold_preds_la, by = "native_id" ) 
+
+
+#calculating the RMSE and R2 two ways
+  #a) comparing the campaign predictions to the observations from the gold standard 
+  #b) comparing the predictions from each campaign to the observations from that campaign
+
+#need to append the observations from the balanced short term campaign to do method a
+
+gold_obs_la <- gold_CV_la %>%
+  dplyr::select("native_id", "log_avg") %>% rename(gold_obs_la = log_avg)
+st_winter_CV_la <- left_join(st_winter_CV_la, gold_obs_la, by = "native_id" ) 
+# Initialize empty lists to store the results for both methods
+results_a <- list()
+results_b <- list()
+
+# Loop through each unique model_run
+for (run in unique(st_winter_CV_la$model_run)) {
+  # Filter the data for the current model_run
+  data_subset <- st_winter_CV_la %>% filter(model_run == run)
+  
+  # Calculate the MSE for method A
+  mse_result_a <- get_MSE(data_subset$gold_obs_la, data_subset$cvpreds)
+  results_a[[run]] <- mse_result_a
+  
+  # Calculate the MSE for method B
+  mse_result_b <- get_MSE(data_subset$log_avg, data_subset$cvpreds)
+  results_b[[run]] <- mse_result_b
+}
+
+# Convert the lists to a data frame with separate columns for each method
+st_winter_MSE_la <- data.frame(
+  model_run = unique(st_winter_CV_la$model_run),
+  RMSE_a = sapply(results_a, `[`, 1),
+  MSE.R2_a = sapply(results_a, `[`, 2),
+  reg.R2_a = sapply(results_a, `[`, 3),
+  RMSE_b = sapply(results_b, `[`, 1),
+  MSE.R2_b = sapply(results_b, `[`, 2),
+  reg.R2_b = sapply(results_b, `[`, 3)
+)
+
+#pivot longer for plotting
+st_winter_MSE_la_long <- st_winter_MSE_la %>%
+  pivot_longer(
+    cols = c(RMSE_a, MSE.R2_a,reg.R2_a, RMSE_b, MSE.R2_b, reg.R2_b),
+    names_to = c("metric", "method"),
+    names_sep = "_",
+    values_to = "value"
+  ) 
+
+#Plotting (replicate figure 1 in blanco paper)
+# get range for plot
+r <- st_winter_CV_la %>% dplyr::select(gold_preds_la, cvpreds) %>% range()
+
+
+winter_scatter_la<- ggplot(data = st_winter_CV_la, aes(x = gold_preds_la, y = cvpreds, color = as.factor(model_run))) +
+    geom_point(shape = "o", alpha = 0.7, show.legend = FALSE) +
+    lims(x= r, y = r) +
+    coord_fixed() +
+    geom_smooth(method = 'lm', se = F, alpha = 0.5, show.legend = FALSE) +
+    geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
+    labs(title = "Winter Campaign \nvs Gold Standard Predictions", 
+         caption = "1:1 line is dashed") +
+    theme_bw()
+
+
+#This needs some aesthetic adjustments: choose between dots or lines, pick a color scale that's helpful, get rid of the funky legend, but it's cool!!
+    #looks a lot like the balanced predictions from the Blanco paper. 
+
+#replicate blanco figure 3
+winter_boxplot_la<- ggplot(st_winter_MSE_la_long, aes(x = method, y = value, color = method)) +
+  geom_boxplot() +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[2]], metric = "MSE.R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  facet_wrap(~metric) +
+  labs(title = "Winter Comparison") +
+  theme_bw()
+
+
+```
+
+
+
+
+```{r}
+#------------seasonal comparison with gold standard in LA county-------------
+
+#-----------------------------------SPRING--------------------------------------
+#need to group the st_summer data by "campaign" before doing regression
+
+#apply the save CV groups as used in the gold standard model
+sst_spring_la <- st_spring_la %>%
+  mutate(CV_grp_st_la = CV_grp_st_la) %>% ungroup()
+
+#in sample-predictions
+fitted_models = sst_spring_la %>% group_by(rep_number) %>% do(model = lm(frml, data = .))
+
+#cross-validated predictions treating each sample "campaign" separately
+st_spring_CV_la <- sst_spring_la %>% group_by(rep_number) %>% do(model = do_CV(data = ., id = "native_id", group = "CV_grp_st_la", formula = frml))
+#produces a df for each result
+
+#next step is to restructure the result back into a single long_df
+
+st_spring_CV_la <- st_spring_CV_la %>% rename(model_run = rep_number) #change column name so there isn't a conflict when I unnest it
+
+st_spring_CV_la <- st_spring_CV_la %>%
+  unnest(cols = c(model))
+
+#---compare st_summer with gold-----------------------------------------#
+#appending the predictions from the balanced short term campaign to the st_summer_CV df for comparison
+gold_preds_la <- gold_CV_la %>%
+  dplyr::select("native_id", "cvpreds") %>% rename(gold_preds_la = cvpreds)  #select "model run" as well as native_id
+st_spring_CV_la <- left_join(st_spring_CV_la, gold_preds_la, by = "native_id" ) 
+
+
+#calculating the RMSE and R2 two ways
+  #a) comparing the campaign predictions to the observations from the gold standard 
+  #b) comparing the predictions from each campaign to the observations from that campaign
+
+#need to append the observations from the balanced short term campaign to do method a
+
+gold_obs_la <- gold_CV_la %>%
+  dplyr::select("native_id", "log_avg") %>% rename(gold_obs_la = log_avg)
+st_spring_CV_la <- left_join(st_spring_CV_la, gold_obs_la, by = "native_id" ) 
+# Initialize empty lists to store the results for both methods
+results_a <- list()
+results_b <- list()
+
+# Loop through each unique model_run
+for (run in unique(st_spring_CV_la$model_run)) {
+  # Filter the data for the current model_run
+  data_subset <- st_spring_CV_la %>% filter(model_run == run)
+  
+  # Calculate the MSE for method A
+  mse_result_a <- get_MSE(data_subset$gold_obs_la, data_subset$cvpreds)
+  results_a[[run]] <- mse_result_a
+  
+  # Calculate the MSE for method B
+  mse_result_b <- get_MSE(data_subset$log_avg, data_subset$cvpreds)
+  results_b[[run]] <- mse_result_b
+}
+
+# Convert the lists to a data frame with separate columns for each method
+st_spring_MSE_la <- data.frame(
+  model_run = unique(st_spring_CV_la$model_run),
+  RMSE_a = sapply(results_a, `[`, 1),
+  MSE.R2_a = sapply(results_a, `[`, 2),
+  reg.R2_a = sapply(results_a, `[`, 3),
+  RMSE_b = sapply(results_b, `[`, 1),
+  MSE.R2_b = sapply(results_b, `[`, 2),
+  reg.R2_b = sapply(results_b, `[`, 3)
+)
+
+#pivot longer for plotting
+st_spring_MSE_la_long <- st_spring_MSE_la %>%
+  pivot_longer(
+    cols = c(RMSE_a, MSE.R2_a,reg.R2_a, RMSE_b, MSE.R2_b, reg.R2_b),
+    names_to = c("metric", "method"),
+    names_sep = "_",
+    values_to = "value"
+  ) 
+
+#Plotting (replicate figure 1 in blanco paper)
+# get range for plot
+r <- st_spring_CV_la %>% dplyr::select(gold_preds_la, cvpreds) %>% range()
+
+
+spring_scatter_la<-ggplot(data = st_spring_MSE_la_long, aes(x = gold_preds_la, y = cvpreds, color = as.factor(model_run))) +
+    geom_point(shape = "o", alpha = 0.7, show.legend = FALSE) +
+    lims(x= r, y = r) +
+    coord_fixed() +
+    geom_smooth(method = 'lm', se = F, alpha = 0.5, show.legend = FALSE) +
+    geom_abline(slope = 1, intercept = 0, color = "darkgray", linetype = "dashed") +
+    labs(title = "Spring Campaign \nvs Gold Standard Predictions",
+         caption = "1:1 line is dashed") +
+    theme_bw()
+
+
+#This needs some aesthetic adjustments: choose between dots or lines, pick a color scale that's helpful, get rid of the funky legend, but it's cool!!
+    #looks a lot like the balanced predictions from the Blanco paper. 
+
+#replicate blanco figure 3
+spring_boxplot_la<-ggplot(st_spring_MSE_la_long, aes(x = method, y = value, color = method)) +
+  geom_boxplot() +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[1]], metric = "RMSE"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  geom_point(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[2]], metric = "MSE.R2"), aes(x = method, y = value, color = method), size = 3, shape = 5) +
+  facet_wrap(~metric) +
+  labs(title = "Spring Comparison") +
+  theme_bw()
+```
+
+Figure 7 compares the cross-validated predictions between the short-term season-specific monitoring campaigns and the gold standard predictions within Los Angeles. Compared to the statewide campaigns, there is larger variation in the slopes between each simulation (n = 30) for the LA county campaigns. The slopes are not consistent across model runs and not consistent between campaigns, unlike the statewide trends we saw. However, spring and summer still seem to under-predict log(NOx) concentrations, whereas fall and winter campaigns still seem to over-predict log(NOx) concentrations, on average. The balanced campaign appears the most in agreement with the gold standard predictions, however with much more variability.
+
+
+```{r, echo = F, include = T, fig.height = 7, fig.width = 7, warning = F, message = F}
+#LA-county scatter predictions
+#trying to make a better plot
+
+#add a season column to each one
+st_spring_CV_la <- st_spring_CV_la %>% mutate(season = "Spring")
+st_summer_CV_la <- st_summer_CV_la %>% mutate(season = "Summer")
+st_fall_CV_la <- st_fall_CV_la %>% mutate(season = "Fall")
+st_winter_CV_la <- st_winter_CV_la %>% mutate(season = "Winter")
+st_la_CV <- st_la_CV %>% mutate(season = "Balanced")
+
+#bind the df into one
+st_all_CV_la <- rbind(st_la_CV, st_spring_CV_la, st_summer_CV_la, st_fall_CV_la, st_winter_CV_la)
+
+#factor to control the order
+st_all_CV_la <- st_all_CV_la %>%
+  mutate(season = factor(season, levels = c("Spring", 
+                                            "Summer", 
+                                            "Fall", 
+                                            "Winter", 
+                                            "Balanced")))
+
+
+all_scatter_la <-ggplot(data = st_all_CV_la, aes(x = gold_preds_la, y = cvpreds, color = as.factor(model_run))) +
+    #geom_point(shape = "o", alpha = 0.7, show.legend = FALSE) + #commented out the points to make the plot a little cleaner. 
+    lims(x= r, y = r) +
+    geom_smooth(method = 'lm', se = F, alpha = 0.4, show.legend = FALSE, linewidth = 0.3) +
+    facet_wrap(~season, scales = "free") + 
+    geom_abline(linetype = "dashed", slope = 1, intercept = 0, color = "darkgray") +
+    labs(title = "Fig. 7: Best fit lines of cross-validated short-term predictions for 30 campaigns\nvs. gold standard predictions for ln(NOx)", 
+         subtitle = "Restricted to LA County",
+         x = "Gold standard predicted ln(NOx) (ln(ppb))",
+         y = "Campaign Predicted ln(NOx) (ln(ppb))",
+         caption = "1:1 line is dashed") +
+    theme_bw()
+
+all_scatter_la
+
+#definitely a more heterogeneity in slope here (one difference is LOO CV)
+
+```
+Figure 7: Comparison of gold standard cross-validated predictions with cross-validated predictions for 30 monitoring campaigns using short-term temporally-balanced or season-specific datasets. Each colored line represents a distinct monitoring campaign (n=30 in total), which each contains 28 randomly sampled measurements. NOx concentrations are presented on the natural log scale (log-ppb). The 1:1 line is represented by the dashed line. These results have more heterogeneity in slope of the best fit line between different campaigns from the same data set than in the state-wide data. This may stem from sampling variability and the greater measurement variability in the Los Angeles monitors as well as the use of LOO cross validation rather than 10-fold.  
+ 
+Figure 8 shows the $R^2$ (MSE-based and regression-based) and RMSE for two methods: comparing campaign predictions against gold standard predictions (Method A) and comparing campaign predictions against campaign observations (Method B). We see that the MSE-based $R^2$ is very poor for all the seasonal campaigns and even the balanced campaign, both in comparison with gold standard predictions and seasonal observations. 
+
+However, the regression-based $R^2$ statistics are more similar between campaigns and show decent agreement with the gold standard and seasonal observations (~ 0.4). The RMSE for Method A is a similar trend to the statewide campaigns, with RMSE statistics for the spring and summer models markedly higher than the RMSE for the balanced campaigns. 
+```{r, echo = F, include = T, fig.height = 7, fig.width = 7}
+
+#bind the MSE df together for a combined boxplot
+#add a season column to each one
+st_spring_MSE_la_long <- st_spring_MSE_la_long %>% mutate(season = "Spring")
+st_summer_MSE_la_long <- st_summer_MSE_la_long %>% mutate(season = "Summer")
+st_fall_MSE_la_long <- st_fall_MSE_la_long %>% mutate(season = "Fall")
+st_winter_MSE_la_long <- st_winter_MSE_la_long %>% mutate(season = "Winter")
+st_la_MSE_long <- st_la_MSE_long %>% mutate(season = "Balanced")
+
+st_all_MSE_la_long <- rbind(st_spring_MSE_la_long, st_summer_MSE_la_long, st_fall_MSE_la_long, st_winter_MSE_la_long, st_la_MSE_long)
+
+#factor to control the order
+st_all_MSE_la_long <- st_all_MSE_la_long %>%
+  mutate(season = factor(season, levels = c("Spring", 
+                                            "Summer", 
+                                            "Fall", 
+                                            "Winter", 
+                                            "Balanced")))
+
+#replicate blanco figure 3
+st_all_boxplot_la <- ggplot(st_all_MSE_la_long, aes(x = season, y = value, color = season)) +
+  geom_boxplot() +
+  geom_hline(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[1]], metric = "RMSE"), aes(yintercept = value, linetype = "dotted"), show.legend = T) +
+  geom_hline(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[2]], metric = "MSE.R2"), aes(yintercept = value, linetype = "dashed"), show.legend = T) +
+  geom_hline(data = data.frame(method = c("a", "b"), value = gold_MSE_la[[3]], metric = "reg.R2"), aes(yintercept = value, linetype = "dotdash"), show.legend = T) +
+  facet_grid(metric~method, scales = "free") +
+  labs(title = "Figure 8: RMSE and R2 Comparison - Los Angeles County",
+       caption = "Method A = Short-term campaign predictions compared to gold-standard obs\nMethod B = Short-term campaign predictions compared to same campaign observations\nHorizontal lines show the gold-standard performance", 
+       x = "Short-term Campaign",
+       y = "Value",
+       color = "Season") +
+  scale_linetype_manual(name='',
+                      labels = c("Gold standard RMSE", "Gold Standard MSE-R2", "Gold Standard Reg. R2"), 
+                      values=c("dotted", "dashed", "dotdash")) +
+  theme_bw() +
+  theme(
+    plot.caption = element_text(hjust = 0),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank()# Remove x-axis text labels
+  )
+
+st_all_boxplot_la
+
+
+
+```
+Figure 8: Box plots comparing the MSE-based $R^2$, regression-based $R^2$, and RMSE for short-term season-specific and temporally-balanced datasets within Los Angeles County. Method A represents the short-term campaign predictions as compared to the gold standard observations, whereas Method B represents the short-term campaign predictions as compared to observations within the same campaign. The dotted horizontal line shows the performance of the model using the gold standard dataset.
+
+
+
+
+```{r prediction.maps, echo = F, include = F}
+
+#this part is just a little messy because I'm working in a seperate file. Will be able to do it more cleanly in original doc, but I want to keep the same coord system I've already got working here. 
+
+#add the season name back into each seasonal CV df
+
+st_spring_CV_la <- st_spring_CV_la %>% mutate(season = "Spring")
+st_summer_CV_la <- st_summer_CV_la %>% mutate(season = "Summer")
+st_fall_CV_la <- st_fall_CV_la %>% mutate(season = "Fall")
+st_winter_CV_la <- st_winter_CV_la %>% mutate(season = "Winter")
+st_la_CV <- st_la_CV %>% mutate(season = "Balanced")
+gold_CV_la <- gold_CV_la %>% mutate(season = "Gold")
+
+#bind the st_ df together
+la_all_campaign <- rbind(st_la_CV, st_spring_CV_la, st_summer_CV_la, st_fall_CV_la, st_winter_CV_la)
+
+
+
+#generate and average value per across model runs for the st campaigns and remove unncessary columns
+la_all_campaign <- la_all_campaign %>% group_by(native_id, season) %>%
+  mutate(
+    avg_conc = mean(annual_avg),
+    log_conc =log(annual_avg),
+    cvpred = mean(cvpreds)
+  ) %>%
+  ungroup() %>%
+  distinct(native_id, season, .keep_all = TRUE) %>% dplyr::select(-model_run, -annual_avg, -log_avg, -seed, -rep_number, -gold_preds_la, -gold_obs_la, -cvpreds, -CV_grp_st_la)
+
+#rename and reorder columns from gold so it matches the st. 
+gold <- gold_CV_la %>% rename(avg_conc = annual_avg, log_conc = log_avg, cvpred = cvpreds) %>% dplyr::select(-CV_grp_la)
+# Reorder df2 to match the column order of df1
+gold <- gold[, colnames(la_all_campaign)]
+
+# Check the result
+head(gold)
+head(la_all_campaign)
+
+#add the gold to the df
+la_all_campaign <- rbind(la_all_campaign, gold)
+
+labert_only <- geom %>% dplyr::select(native_id, lambert_x, lambert_y)
+
+#join to the geometry from the the sf
+la_all_campaign_sf <- left_join(la_all_campaign, labert_only, by = "native_id")
+la_all_campaign_sf <- st_as_sf(la_all_campaign_sf, coords=c('lambert_x','lambert_y'), crs=lambert_proj) %>% 
+  dplyr::select(-geometry.x, -geometry.y)
+
+#leaving in lambert (m) for kriging
+
+```
+
+```{r setup.grid, echo = F, include = F}
+#need to change some variable names so that they match our model covariates 
+la_grid <- la_grid %>% rename(pop_s05000 = Pop_5000, m_to_coast = D2C, m_to_a1 = D2A1) 
+
+#need to transform covars the same as mercer (or untransform mercer)
+
+#attempting to untransform based on the descriptions of the functional variables in Mercer
+la_grid$pop_s05000 <- la_grid$pop_s05000 * 100000 #pop was 1/100000
+la_grid$m_to_coast <- la_grid$m_to_coast * 100000 #dist. in m was 1/100000
+la_grid$m_to_a1 <- 10^(la_grid$m_to_a1) #value was log10 transformed
+
+
+
+# Download the land polygon data as an sf multipolygon
+# the CRS for this is in lat/long degrees
+land <- ne_download(scale = "large", type = "land", category = "physical", returnclass = "sf")
+
+# Crop the land area to the bounding box of the LA grid to reduce processing time
+# have to convert the la_grid to the same degrees as LA
+land <- suppressWarnings(st_crop(land, st_bbox(la_grid)))  
+
+# Visualize cropped land area (optional)
+ggplot(land) + geom_sf()
+
+# Filter la_grid to keep only points that intersect with land
+la_grid <- la_grid[st_within(la_grid, land) %>% lengths() > 0,]
+
+# Visualize grid land locations (zoom in)
+ggplot(la_grid) + geom_sf(size=0.001)
+
+# ---- LA Map Setup ----
+# Define a bounding box (min & max X and Y) with a 10,000m buffer around `la_grid`
+map_bbox <- la_grid %>%
+  # convert from degrees to meters
+  st_transform(crs = lambert_proj) %>%
+  # add a buffer around the area for visualization purposes
+  st_buffer(dist = 1000) %>%
+  # convert back to original CRS
+  st_transform(crs = latlong_proj) %>%
+  # take the min/max X/Y
+  st_bbox()
+
+map_bbox
+
+# Base map setup with ggplot2 and ggspatial using OSM tiles
+g <- ggplot() +
+  ggspatial::annotation_map_tile(type = "osm", zoom = 10) +
+  labs(title = "LA Grid with Map") +
+  theme_minimal()
+
+# # alternative background map with the maptiles package
+# tiles <- maptiles::get_tiles(x = st_bbox(la_grid), provider = "OpenStreetMap")
+# g <- ggplot() +
+#   # Add basemap tiles as background
+#   layer_spatial(tiles)
+
+# Plot background map and the LA grid (zoom in)
+g + 
+  geom_sf(data = la_grid, size=0.001)
+
+
+# Add NOx data with additional map elements
+
+testing_sf <- annual_sf %>% filter(County == "Los Angeles") %>% st_drop_geometry()
+testing_sf <- st_as_sf(testing_sf, coords=c('lambert_x','lambert_y'), crs=lambert_proj)
+testing_sf <- st_transform(testing_sf, crs = latlong_proj)
+
+class(testing_sf)
+
+g + 
+  geom_sf(data = testing_sf, aes(color = annual_avg)) + 
+  scale_color_viridis_c() +  # Color-friendly scale
+  theme_void() +  # Clean layout for map aesthetics
+  theme(
+    panel.border = element_rect(color = "black", fill = NA, size = 1)
+  ) + 
+  ggspatial::annotation_scale(location = "bl", width_hint = 0.3, unit_category = "imperial") +  # Scale in miles
+  ggspatial::annotation_north_arrow(location = "tr", which_north = "true") +  # North arrow
+  labs(title = "Map of Los Angeles with the Seasonal Data",
+       col="NOx (ppb)"
+       )
+
+#looking at monitors that fit on the grid
+
+g + geom_sf(data = la_grid, size=0.001) +
+  geom_sf(data = testing_sf, color = "green")
+
+#9 of the 12 monitors fit on the grid. 3 of the LA monitors are out of bounds.
+
+#just want to check if there are any other that might fit on the map in the rest of socal
+
+testing2_sf <- annual_sf %>% filter(County %in% counties) %>% st_drop_geometry()
+testing2_sf <- st_as_sf(testing2_sf, coords=c('lambert_x','lambert_y'), crs=lambert_proj)
+testing2_sf <- st_transform(testing2_sf, crs = latlong_proj)
+
+g + geom_sf(data = la_grid, size=0.001) +
+  geom_sf(data = testing2_sf, color = "green")
+
+#There are more than 9 monitors on the grid
+#looks like there are 13 fully on the grid and just on the edge. 
+
+#Finding those monitors
+
+gridstrict_bbox <- st_bbox(la_grid)
+grid_monitors <- st_crop(testing2_sf, gridstrict_bbox)
+#9 in LA county, 3 in orange co, and 1 in san bernardino co. 
+
+
+#will test just with the gold - can replicate later with others if we think it's worthwhile. If it looks better it won't be that much to add the other seasons depending on what we want to do
+
+gold_la_monitors <- right_join(long_term_gold, grid_monitors,  by = "native_id") %>% dplyr::select(-annual_avg.y, - County.y, - geometry.x) %>% rename(geometry = geometry.y, avg_conc = annual_avg.x, log_conc = log_avg, County = County.x)
+
+st_crs(gold_la_monitors) 
+
+gold_la_monitors <- st_as_sf(gold_la_monitors, crs = latlong_proj)
+
+#df of just monitors to add as points
+monitors_df <- ca_covariates %>% dplyr::select(native_id, latitude, longitude) %>%
+  st_drop_geometry()
+
+ 
+```
+
+
+```{r def.mapping.functions, echo = F, include = F}
+#---this section tests out maping predictions using lm and then defintes functions to make it easy to do repeatedly for the different data sets. ---#
+
+#--------- MAIN USE------------#
+#   map_data(model)  => function that takes an lm model and returns a df that can be mapped
+#   plot_map(data)  => function that takes the output from map_data() and then makes a map
+
+
+#include = F because there are some test maps in the this chunk that don't need to be rendered. 
+
+#trying regular prediction mapping
+
+#fit the model
+#lm_gold_standard <- lm(frml, data = long_term_gold)) #commented out because we already have the model
+
+la_grid <-st_transform(la_grid, crs = latlong_proj) #change to lat long proj
+
+#predict for new data
+la_grid_gold_pred <- la_grid %>% mutate(preds = predict(lm_gold_standard, la_grid))
+
+la_grid_gold_pred_df <- as.data.frame(st_coordinates(la_grid_gold_pred))
+la_grid_gold_pred_df$lnNOx <- la_grid_gold_pred$preds 
+la_grid_gold_pred_df$NOx <- exp(la_grid_gold_pred$preds)
+
+#function to make pretting the data easy
+map_data <- function(model) { #specify the lm model to use for predicting on la_grid
+  pred_data <- la_grid %>% mutate(preds = predict(model, la_grid)) # generate predictions
+  pred_data_df <- as.data.frame(st_coordinates(pred_data)) #convert to data frame for plotting
+  pred_data_df$lnNOx <- pred_data$preds #add the predictions (ln scale)
+  pred_data_df$NOx <- exp(pred_data$preds) #convert pred to native scale
+  
+  return(pred_data_df) #return a df wtih X, Y, lnNOx and NOx
+}
+
+#test the function
+
+test_df <- map_data(lm_gold_standard) #yay!!
+
+gold_predict <- g + 
+  # Set map extent and CRS (bounding box error otherwise results in no background map) 
+  coord_sf(xlim = c(map_bbox["xmin"], map_bbox["xmax"]), 
+           ylim = c(map_bbox["ymin"], map_bbox["ymax"]), 
+           crs = 4326) +  
+  geom_tile(data = test_df, aes(x = X, y = Y, fill = lnNOx), 
+            alpha=0.2,
+            width = 0.01, height = 0.01 # Adjust width and height as needed
+            ) +  
+  geom_point(data = monitors_df, aes(x = longitude, y = latitude), size = 2, shape = 18, color = "black") + #add the monitors as points just to see. 
+  # color friendly color scale
+  scale_fill_viridis_c(option = "plasma") + 
+  labs(title = " Map of Los Angeles with Predictions - Gold Standard",
+       col="ln(NOx(ppb))",
+       caption = "Diamonds indicate monitor locations",
+       x = "",
+       y = ""
+       ) +
+  theme_minimal()
+
+gold_predict
+
+#function that will plot the map using prepared data from the map_data() function
+#requires a bounding box be already set called map_bbox
+#plots predictions on the native scale
+plot_map <- function(data) { #specify the data to use for the map
+  
+  g <- ggplot() +
+  ggspatial::annotation_map_tile(type = "osm", zoom = 10) +
+  labs(title = "LA Grid with Map") +
+  theme_minimal()
+  
+  plot <- g + # Set map extent and CRS (bounding box error otherwise results in no background map) 
+  coord_sf(xlim = c(map_bbox["xmin"], map_bbox["xmax"]), 
+           ylim = c(map_bbox["ymin"], map_bbox["ymax"]), 
+           crs = 4326) +  
+  geom_tile(data = data, aes(x = X, y = Y, fill = NOx), #plot on native scale
+            alpha=0.2,
+            width = 0.01, height = 0.01 # Adjust width and height as needed
+            ) +  
+  geom_point(data = monitors_df, aes(x = longitude, y = latitude), size = 2, shape = 18, color = "black") + #add the monitors as points just to see. 
+  # color friendly color scale
+  scale_fill_viridis_c(option = "plasma") + 
+  labs(title = "Map of Los Angeles with Predicted NOx",
+       fill ="NOx (ppb)",
+       caption = "Diamonds indicate monitor locations",
+       x = "",
+       y = ""
+       ) +
+  theme_minimal() +
+    theme(panel.border = element_rect(color = "black", fill = NA, size = 1))
+  
+  return(plot) 
+}
+
+test_map <- plot_map(test_df)
+
+test_map + labs(title = "Map of Los Angeles with Predictions - Gold")
+
+```
+
+
+```{r generate.maps, echo = F, include = F}
+
+#testing using full state models
+
+gold_map <- plot_map(map_data(lm_gold_standard))
+balanced_map <- plot_map(map_data(lm_st_balanced))
+spring_map <- plot_map(map_data(lm_st_spring))
+summer_map <- plot_map(map_data(lm_st_summer))
+fall_map <- plot_map(map_data(lm_st_fall))
+winter_map <- plot_map(map_data(lm_st_winter))
+
+gold_map + labs(title = "Figure 9: Map of Los Angeles with Predictions - Gold")
+balanced_map + labs(title = "Figure 10: Map of Los Angeles with Predictions - Balanced")
+spring_map + labs(title = "Figure 11: Map of Los Angeles with Predictions - Spring")
+summer_map + labs(title = "Figure 12: Map of Los Angeles with Predictions - Summer")
+fall_map + labs(title = "Figure 13: Map of Los Angeles with Predictions - Fall")
+winter_map + labs(title = "Figure 14: Map of Los Angeles with Predictions - Winter")
+
+#They all look pretty much the same and aren't interesting. The LA specific ones are much more interesting!
+
+
+```
+
+
+```{r, fig.height = 7, fig.width = 7, echo = F, include = T}
+
+#trying one more thing to see if it makes the color ramps easier to compare
+
+#generate df only and add the season variable 
+la_gold_map_df <- map_data(lm_gold_la) %>% mutate(season = "Gold")
+la_balanced_map_df <- map_data(lm_st_la) %>% mutate(season = "Balanced")
+la_spring_map_df <- map_data(lm_st_spring_la) %>% mutate(season = "Spring")
+la_summer_map_df <- map_data(lm_st_summer_la) %>% mutate(season = "Summer")
+la_fall_map_df <- map_data(lm_st_fall_la) %>% mutate(season = "Fall")
+la_winter_map_df <- map_data(lm_st_winter_la) %>% mutate(season = "Winter")
+
+#bind into one df
+la_all_map_df <- rbind(la_gold_map_df,
+                       la_balanced_map_df,
+                       la_spring_map_df,
+                       la_summer_map_df,
+                       la_fall_map_df,
+                       la_winter_map_df
+                       )
+
+#create factor variable to control the order in faceting
+
+la_all_map_df <- la_all_map_df %>%
+  mutate(season = factor(season, levels = c("Spring", 
+                                            "Summer", 
+                                            "Fall", 
+                                            "Winter", 
+                                            "Balanced", 
+                                            "Gold")))
+
+#make the map using faceting
+
+nox_map <- g + # Set map extent and CRS (bounding box error otherwise results in no background map) 
+  coord_sf(xlim = c(map_bbox["xmin"], map_bbox["xmax"]), 
+           ylim = c(map_bbox["ymin"], map_bbox["ymax"]), 
+           crs = 4326) +  
+  geom_tile(data = la_all_map_df, aes(x = X, y = Y, fill = NOx), #plot on native scale
+            alpha=0.2,
+            width = 0.01, height = 0.01 # Adjust width and height as needed
+            ) +  
+  #geom_point(data = monitors_df, aes(x = longitude, y = latitude), size = 2, shape = 18, color = "black") + #add the monitors as points just to see. 
+  # color friendly color scale
+  scale_fill_viridis_c(option = "plasma") + 
+  facet_wrap(~season) + 
+  labs(title = "Figure 9: Map of Los Angeles with Predicted NOx by Season",
+       fill ="NOx (ppb)",
+       caption = "",
+       x = "",
+       y = ""
+       ) +
+  theme_void() +
+    theme(panel.border = element_rect(color = "black", fill = NA, size = 1))
+
+#nox_map
+
+#plotting on the same scale squashes variability, because the color ramp isn't long enough. 
+
+#trying the same on ln scale to see if it enhances variability while keeping the scale continuous
+
+lnnox_map <- g + # Set map extent and CRS (bounding box error otherwise results in no background map) 
+  coord_sf(xlim = c(map_bbox["xmin"], map_bbox["xmax"]), 
+           ylim = c(map_bbox["ymin"], map_bbox["ymax"]), 
+           crs = 4326) +  
+  geom_tile(data = la_all_map_df, aes(x = X, y = Y, fill = lnNOx), #plot on native scale
+            alpha=0.2,
+            width = 0.01, height = 0.01 # Adjust width and height as needed
+            ) +  
+  #geom_point(data = monitors_df, aes(x = longitude, y = latitude), size = 2, shape = 18, color = "black") + #add the monitors as points just to see. 
+  # color friendly color scale
+  scale_fill_viridis_c(option = "plasma") + 
+  facet_wrap(~season, nrow = 3) +
+  labs(title = "Fig. 9: Map of Los Angeles with Predicted ln(NOx) by Season",
+       fill ="ln (NOx (ppb))",
+       caption = "",
+       x = "",
+       y = ""
+       ) +
+  theme_void() +
+    theme(panel.border = element_rect(color = "black", fill = NA, size = 1))
+
+lnnox_map #like this one a lot. They do look cool on the native scale, but I think this is the best way to show them together and still get the variation without the confusion of different color ramps. 
+
+#this is better and helpful for seeing relative comparison, but I really like th distinctnes on the native scale when the scales aren't set. But is it misleading to have different color scales?
+
+```
+
+
+Figure 9 shows the gridded prediction for each fitted model. We see that the balanced short-term predictions are closest to the gold-standard, as expected. Maps are plotted on the natural log scale in-order to maintain enough variability for visualization on a single color-ramp. Individual plots for each model on the native scale are available in the appendix (Figures A4.1 – A4.6), and really emphasize the distinct seasonal predictions seen here on the natural log scale. Predictions are highest in winter lowest in summer (this is most evident on the native scale maps in appendix). Spring and fall are in between with spring being more like summer and fall more similar to winter. Fall is the most like the balanced and gold-standard predictions. This result is somewhat surprising based on Figure 7, where the winter campaigns appeared to have the most similarity to the balanced campaign.  
+
+One notable difference in this predictions is that figure 7 uses LOO cross-validation to predict at monitor locations (i.e. using 11 monitors to predict at the location of the 12th), and is repeated over 30 simulated campaigns in which different random samples are collected, whereas the maps use the fitted model to predict at new locations on the grid (no need to leave one out), and is not campaign based.  Differences may result from differences in covariates at grid points compared to at monitor locations.
+
+Lower predicted ln(NOx) concentrations highlight the influence of major roadways, as seen in the summer facer (see appendix Figure A4.4 for very clear example). In Figure 9, at higher predicted concentrations, we see a flare around downtown Los Angeles that is not visible at lower predicted values. To understand patterns systematic differences in predicted values that differ from the gold-standard predictions, gold-standard predicted values are subtracted from the predicted values of each short-term model and the results are plotted in figure 10. 
+
+```{r, echo = F, include = T}
+
+#curious about differences - plots a map that subtracts the differences
+
+#calculate the difference in ln nox predictions between gold standard and each season
+
+#calculate gold standard - seasonal
+la_balanced_map_df$diff_lnnox <- la_gold_map_df$lnNOx - la_balanced_map_df$lnNOx
+la_spring_map_df$diff_lnnox  <- la_gold_map_df$lnNOx - la_spring_map_df$lnNOx
+la_summer_map_df$diff_lnnox  <- la_gold_map_df$lnNOx - la_summer_map_df$lnNOx
+la_fall_map_df$diff_lnnox  <- la_gold_map_df$lnNOx - la_fall_map_df$lnNOx
+la_winter_map_df$diff_lnnox  <- la_gold_map_df$lnNOx - la_winter_map_df$lnNOx
+
+#bind into one df
+la_all_lndiff_df <- rbind(
+                       la_balanced_map_df,
+                       la_spring_map_df,
+                       la_summer_map_df,
+                       la_fall_map_df,
+                       la_winter_map_df
+                       )
+
+#redo factor variable
+la_all_lndiff_df <- la_all_lndiff_df %>%
+  mutate(season = factor(season, levels = c("Spring", 
+                                            "Summer", 
+                                            "Fall", 
+                                            "Winter", 
+                                            "Balanced" 
+                                            )))
+
+difference_map <- g + # Set map extent and CRS (bounding box error otherwise results in no background map) 
+  coord_sf(xlim = c(map_bbox["xmin"], map_bbox["xmax"]), 
+           ylim = c(map_bbox["ymin"], map_bbox["ymax"]), 
+           crs = 4326) +  
+  geom_tile(data = la_all_lndiff_df, aes(x = X, y = Y, fill = -diff_lnnox), # neg sign, because it makes more sense for the high values to be red on the map (positive)
+            alpha=0.2,
+            width = 0.01, height = 0.01 # Adjust width and height as needed
+            ) +  
+  #geom_point(data = monitors_df, aes(x = longitude, y = latitude), size = 2, shape = 18, color = "black") + #add the monitors as points just to see. 
+  # color friendly color scale
+  #scale_fill_viridis_c(option = "turbo", end = 0.8) + 
+  scale_fill_gradient2(low="blue", mid="white", high="red", limits = c(-1.6, 0.94)) +
+  facet_wrap(~season, nrow = 3) +
+  labs(title = "Fig 10: Difference inPredicted ln(NOx) by Season",
+       subtitle = "Campaign predicted ln(NOx) - Gold-standard predicted ln(NOx)",
+       fill ="ln (NOx (ppb))",
+       caption = "",
+       x = "",
+       y = ""
+       ) +
+  theme_void() +
+    theme(panel.border = element_rect(color = "black", fill = NA, size = 1))
+
+difference_map
+
+
+
+```
+
+Based on Figure 10, the balanced model has no discernable difference from the gold-standard on the natural log scale. The magnitude of over-prediction in winter and fall is generally less than the magnitude of under prediction in spring and summer.  Interestingly, we see roughly the same pattern of prediction error between the seasons, where the areas that are most over predicted in winter are the most under predicted in summer. These blotches with the greatest magnitude of prediction error correspond to the flares or area of high log NOx observed in the fall and winter campaigns. These patterns do not appear to have relationships to roadways or distance from the coast, so we hypothesize that population density may be driving these prediction differences. Figure 11 provides a population density map of Los Angeles to investigate whether this variable is related to the trend in prediction error we see in Figure 10 and Figure 9. 
+
+```{r, echo = F, include = T}
+
+#maps that explore the relationship wtih population
+
+
+#bind back to LA grid to look a covariate relationships
+
+la_all_lndiff_sf <- st_as_sf(la_all_lndiff_df, coords = c("X", "Y"), crs = latlong_proj) 
+la_all_lndiff_sf <- st_join(la_all_lndiff_sf, la_grid)
+
+a1 <- ggplot(la_all_lndiff_sf, aes(x = m_to_a1, y = -diff_lnnox, color = season)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "lm", color = "black", linewidth = 0.5, se = F) +
+  facet_wrap(~season) +
+  labs(title = "Distance to A1 vs Prediction Differences",
+       subtitle = "Los Angeles",
+       x = "Distance to A1 (m)",
+       y = "Prediction Difference (ln(NOx(ppb))") +
+  theme_bw()
+
+pop <- ggplot(la_all_lndiff_sf, aes(x = pop_s05000/1000, y = -diff_lnnox, color = season)) +
+  geom_point(alpha = 0.3, size = 0.8) +
+  geom_smooth(method = "lm", color = "black", linewidth = 0.5, se = F) +
+  facet_wrap(~season) +
+  labs(title = "Fig. 12: Population in 5000m buffer vs Prediction Differences",
+       subtitle = "Los Angeles",
+       x = "Population in 5k buffer/1000",
+       y = "Prediction Difference (ln(NOx(ppb))",
+       caption = "Population scaled by 1/1000 to display on axis better") +
+  theme_bw() +
+  guides(color = "none")
+
+coast <- ggplot(la_all_lndiff_sf, aes(x = m_to_coast, y = -diff_lnnox, color = season)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "lm", color = "black", linewidth = 0.5, se = F) +
+  facet_wrap(~season) +
+  labs(title = "Distance to Coast vs Prediction Differences",
+       subtitle = "for Los Angeles Grid Coordinates",
+       x = "Distance to Coast (m)",
+       y = "Prediction Difference (ln(NOx(ppb))") +
+  theme_bw()
+
+
+#pop
+#a1
+#coast
+
+#also want to see if I can map population
+
+#make sure la_grid is on latlong
+la_grid <- st_transform(la_grid, crs = latlong_proj)
+# Extract coordinates
+coords <- st_coordinates(la_grid)
+# Convert to data frame and add coordinates
+la_grid_df <- la_grid %>%
+  st_drop_geometry() %>%
+  mutate(X = coords[, "X"], Y = coords[, "Y"])
+
+population_la <- g + # Set map extent and CRS (bounding box error otherwise results in no background map) 
+  coord_sf(xlim = c(map_bbox["xmin"], map_bbox["xmax"]), 
+           ylim = c(map_bbox["ymin"], map_bbox["ymax"]), 
+           crs = 4326) +  
+  geom_tile(data = la_grid_df, aes(x = X, y = Y, fill = pop_s05000/1000), #plot population
+            alpha=0.2,
+            width = 0.01, height = 0.01 # Adjust width and height as needed
+            ) +  
+  #geom_point(data = monitors_df, aes(x = longitude, y = latitude), size = 2, shape = 18, color = "black") + #add the monitors as points just to see. 
+  # color friendly color scale
+  scale_fill_viridis_c(option = "rocket") + 
+  labs(title = "Fig 11: Los Angeles Population Density",
+       subtitle = "Using 5k buffer radius for each grid point",
+       fill = "Population/1000",
+       caption = "",
+       x = "",
+       y = ""
+       ) +
+  theme_minimal() +
+    theme(panel.border = element_rect(color = "black", fill = NA, size = 1))
+  
+population_la #display the map
+
+pop #display the scatter plots
+
+```
+The heat map of population density plotted on the Los Angeles grid in Figure 11 closely resembles the prediction differences pattern seen in Figure 10 (population is scaled by 1/1000 for a cleaner scale). 
+ 
+ 
+Figure 12 plots the prediction differences against population in the 5k buffer, and we observe that there is almost no slope to the best fit line for the balanced model and a very modest slope for fall. Spring and summer have steep negative slopes and winter has a steep positive slope. We see in Figure 12 that for the winter model, higher population density appears associated with a larger over-prediction by the winter model compared to the gold standard model. The opposite is true for the summer model: a greater population density appears associated with a larger under-prediction of the summer model. 
+
+# Discussion and Conclusion
+
+**Statewide Short-Term Dataset Performance**
+
+Our short-term, temporally-balanced dataset produced stronger predictions than any of the season-specific datasets, as indicated by its lower RMSE and higher MSE-based $R^2$ values. On average, the NOx concentrations predicted by the temporally-balanced short-term dataset were 0.47 log-ppb away from the “true” concentrations represented by the gold standard dataset, which was a lower prediction error than what was observed in any of the season-specific datasets. When compared against the cross-validated gold-standard dataset, the short-term temporally-balanced dataset performed well with just modest reductions in MSE-based $R^2$ (0.32 vs. 0.34) and increases in RMSE (0.47 vs. 0.46 log-ppb).
+
+In season-specific datasets, the MSE-based $R^2$ suggested a high degree of bias or prediction error in the short-term annual average estimates when compared against the gold standard concentrations. The short-term monitoring campaigns using only summer or spring data consistently under-estimated the gold standard annual average concentrations, whereas short-term campaigns using only winter or fall data consistently over-estimated the gold standard annual average concentrations. Interestingly, although the MSE-based $R^2$ indicated a poor prediction performance for all season-specific datasets, the regression-based $R^2$ estimates for season-specific datasets suggested that a moderate amount of the variability (~30%) in gold standard NOx concentrations were captured by the models using short-term, season-specific datasets. Indeed, the plots with best fit lines comparing the short-term predictions with the gold standard predictions showed deviations from the 1:1 line for all seasonal models, though notably the estimated slope remained reasonably constant across models for season-specific and short-term balanced estimates. Taken together, these data infer that the short-term, season-specific datasets produce similar trends (i.e. slopes) as the gold standard dataset but are biased in their annual average estimates due to mismatches in their intercepts. 
+
+Overall, our data suggest that a seasonally-balanced monitoring campaign will predict annual NOx concentrations with improved accuracy compared to a monitoring campaign with data collected in just one season. These results are consistent with prior data demonstrating that NOx concentrations are typically highest in the winter and lowest in the summer and spring (Lange et al. 2022; EPA 2023). They are also consistent with the findings of Blanco et al. (2023), who reported that a temporally-balanced sampling design was important in accurately predicting annual average NOx concentrations during mobile monitoring campaigns.
+
+Notably, all model predictions, including those using the cross-validated gold standard predictions, had reasonably low MSE-based $R^2$ values, indicating a somewhat poor predictive performance. The poor predictive performance could be related to the large distance over which the monitors were scattereed, as well as the limited variability in annual average concentrations. It could also be related to our model selection strategy, which is discussed in greater detail in subsequent sections. Importantly, Blanco et al. (2023) reported improved coefficients of determination compared to the present analysis, though the values were still somewhat low and tended to hover around approximately 0.35 to 0.45. In Blanco et al. (2023), authors included hundreds of geographic covariates in their model related to land-use, road proximity, and population density. The inclusion of a robust set of geographic covariates likely contributed to the improved performance of models in Blanco et al. (2023) versus the present analysis, though low coefficients of determination in both analyses suggest that the increased number of geographic covariates alone do not fully capture the variability in NOx concentrations. It is possible that other temporal or spatial factors uncaptured by the covariates in either analysis are additionally contributing to the observed variability in NOx concentrations.
+
+Notably, the purpose of the analysis was not to select an ideal model for predicting NOx across the state of California, but to assess the performance of short-term campaigns in predicting long-term annual average NOx concentrations; we therefore were not limited by sub-par prediction performances, as we were still able to contrast performance parameters between various short- and long-term datasets. In a true monitoring campaign for epidemiology studies, additional considerations should be paid to model selection so that exposure can be more properly characterized.
+
+**Los Angeles County Short-Term Dataset Performance** 
+
+Similar trends were observed for our Los Angeles-specific analysis when compared to the statewide analyses. Season-specific datasets continued to under- or over-predict NOx concentrations, with just a small portion of the variability in gold standard NOx concentrations described by the models with season-specific data. Notably, the Los Angeles analyses included annual aggregate estimates from just 12 monitors. The decreased sample size in this analysis increased the variability of the data compared to the statewide analysis. Additionally, our use of just 12 monitors to represent concentrations across all of Los Angeles county was likely not adequate in capturing the true spatial variability in the data. Los Angeles county has a population of more than 9.5 million people across a vast geographic area (U.S. Census 2023), therefore more complex pollution heterogeneity is expected than what could reasonably be captured by 12 monitors. 
+
+**Model Selection** 
+
+We used forward stepwise regression to select model covariates from among the seven used by Mercer et al. (2011) in their common model describing all seasons. We chose to use stepwise regression to select covariates from among the common model covariates rather than incorporating all seven used by Mercer et al. (2011) due to the limited data available in our LA county-specific analysis, which included just 12 monitors. The Mercer et al. (2011) common model covariates were used because of their efficacy in predicting seasonal NOx concentrations in California, as determined through a robust selection process that determined which covariates performed well across all seasons. Although the Mercer et al. (2011) covariates performed reasonably well in the Mercer et al. (2011) analysis, similar covariates in our model explained just small proportion of the variability in NOx predictions, as demonstrated by our small-to-moderate coefficients of determination generated for cross-validated predictions across all seasons. It is likely that some of the covariates not selected for inclusion into our model may have explained a greater portion of the variability in NOx concentrations; this is particularly important to consider, given that our primary analysis focused on the entire state of California, whereas the Mercer et al. (2011) analysis evaluated only Los Angeles. The geographic differences, including potential differences in spatial correlation, could therefore contribute to the varied performance of the covariates across analyses. 
+
+Our use of forward selection stepwise regression for covariate selection was beneficial in providing information on the bias-variance-tradeoff as covariates were systematically incorporated into the model and assessed. Through this process, we were able to objectively select three of the seven Mercer et al. (2011) covariates based on their contributions to model accuracy and variability. Although forward selection was a reasonable choice for model selection based on our goal (i.e. narrowing down covariates from those in the Mercer et al. common model) and the statistical tools available to us, it is possible that another covariate selection method would have provided a stronger prediction model in the present analysis. For example, in Blanco et al. (2023), authors used partial least squares (PLS) regression models to summarize hundreds of geographic covariates, rather than a priori selecting a handful of covariates based on previous findings published in the literature. The use of PLS across hundreds of covariates enhanced the ability of the model to capture variability in NOx concentrations and likely accounted for their improved prediction performance when compared against the present analysis. 
+
+**Comparison of Findings to Literature** 
+
+Blanco et al (2023) analyzed their short-term campaigns versus a gold standard using partial least squares (PLS), and had similar but slightly better results than our short term balanced and gold standard models. Blanco et al’s (2023) gold standard model had a MSE-based R squared of 0.46 and a RMSE of 7.2 ppb. The balanced, short-term model had the best R squared and RMSE out of all of the short-term campaigns, as well (Blanco et al. 2023). Although our gold standard model did not perform quite as well as the Blanco et al. (2023) PLS gold standard model, we believe our results support the same conclusions with the same data. 
+
+
+**Strengths and Limitations** 
+
+A limitation of our analysis is that our dataset was not spatially rich, therefore we were limited in where we could predict and which counties we could evaluate in our subanalyses. We did not have enough sensors in counties other than LA county to compare predictions. The low numbers of sensors in our LA county models could have limited our sensitivity analysis, and may have limited our confidence in the comparison between the LA county short term balanced model and the LA county gold standard model. Our Gold standard model in Los Angeles had just 12 data points for annual aggregate concentration, so it may be misleading to consider its predictions the most well-founded predictions compared to the short term balanced model. 
+
+Additionally, when creating our season-specific datasets, we created seasonal strata by dividing the weeks of the year into four segments based on their numerical order, each with 13 weeks. Though this provided us with a well-balanced and unbiased division of the dataset, there was no distinct scientific or meteorological significance to these cutpoints. In future analyses, we may consider defining season using specific calendrical definitions, looking at cutpoints based on temperature or precipation changes, or based on social behaviors and patterns (e.g. defining summer as when school is out). Although our definition of season was based solely on an even division of the data in temporal order, we feel confident that seasonal trends were reasonably well captured in our data subsets because our data generally followed the seasonal NOx trends observed in prior published data (i.e. lower summer concentrations and higher winter concentrations). 
+
+Finally, as noted earlier, our model selection method was not complex; we simply used the previously selected model from Mercer et al (2011) paired with forward, stepwise model selection to further reduce the number of covariates included in our final common model. The subset of our land use covariates to the eight reflecting the Mercer et al (2011) common model may have erroneously eliminated covariates that would have explained more of the variation between monitor locations. A more in-depth model selection approach may have found a better fit to the models.
+
+Although we use a very limited model, this analysis provides insight into ways in which short-term monitoring may still be valuable for epidemiological work. For example, temporal restrictions resulted in a biased intercept (the sample mean differs from the true mean (gold-standard data annual average), the slope was minimally biased and close to that of the gold-standard model. This resulted in consistent over or under prediction. Further more, this prediction error had a spatial structure closely associated with population density (Investigated in Figures 9 - 12). One advantage of this study is that we were able to simulate multiple campaigns, where as in real world studies only a single campaign would generally be available. Furthermore we had access to temporally continuous data, albeit with limited spatial coverage, on which to base our gold standard. Such data to construct a gold-standard may not be available in all situations. The tradeoff between spatial and temporal coverage challenges exposure prediction for epidemiological work. This work shows that limitations in temporal coverage may systematically mis-predict exposure in a way that could potentially be accounted or corrected if the only feasible sampling method was as short-term campaign. We tested a limited number of covariates and a single model. More work is needed to dig into the relationship between short-term sampling campaigns and way to maximize their utility for estimating long-term exposure to NOx. 
+
+**Broader Implications and Future Research** 
+
+Our findings are important in informing the sampling design for future monitoring campaigns. Our results suggest that future monitoring campaigns must include sampling balanced across all seasons, rather than overrepresenting or restricting to sampling within a single season. This finding provides important insight for future investigators, who will need to incorporate sampling over the course of a year rather than within a more constrained timeframe. Additionally, our findings are valuable in reaffirming that a temporally-balanced dataset can adequately predict long-term annual averages; this reinforces prior findings that suppoted the use of short-term mobile monitoring campaigns to characterize gold standard concentration measurements.
+
+We recommend future research that compares the short-term monitoring campaigns across counties in California. This analysis would be an interesting next step to further compare how the short term balanced and seasonal datasets perform when restricted to different geographic regions in California; this could be especially relevant for counties that have lower annual variability in meteorological parameters. However, a different data set may be necessary for this analysis, as the present dataset was limited in the total number of county-specific sensors outside of Los Angeles. Future research will also explore further explore the drivers of poor performance in reduced-sampling campaigns and potential and their potential for use when other options are infeasible. 
+
+**Conclusion** 
+
+Overall, our findings re-iterate the findings of Blanco et al, 2023, whose methods inspired many of our analysis steps. We see seasonal variability in NOx concentrations at the statewide and LA county level, which leads to the importance of a sampling campaign which samples throughout all seasons. Both at the statewide and LA county level, we see reduced performance of our sampling campaign design when it was restricted to only one season. Our balanced short term sampling campaign performed comparably to our gold-standard model on a statewide and county level, confirming that a sampling campaign can collect a smaller number of samples on which to predict NOx concentrations, so long as the sampling design is temporally balanced. However, if only temporally restricted sampling is possible, understanding the drivers of the model's poor performance may allow for useful inference from less than ideal sampling. 
+
+
+# Author Contribution Statement
+
+**Core Contributions** 
+
+Analysis: 
+
+*Callan:* Met with professors at office hours to discuss analytical approach; attended all group meetings to discuss analytical approach; drafted first iteration of day-of-week  vs. weekday/weekend predictions with cross-validation and ANOVA (not incorporated: later revised plan); conducted sensitivity analysis for Los Angeles county, including creation of short- and long-term temporally balanced datasets specific to Los Angeles, summarizing short- and long-term temporally balanced datasets within LA, generating LA-specific NOx predictions and taking the first pass at cross-validation, including making a new cross-validation group; calculated R2 and RMSE values for LA-specific NOx predictions
+
+*Katie:* Met with professors at office hours and attended all group meetings. Performed data cleaning and CA NOx monitor inclusion criteria validation. Wrote functions for random campaign sampling, data aggregation, and summary statistics. Wrote template code for iterating CV function across campaigns and extracting the performance statistics. Coded figures for RMSE/R2 box plots, campaign best-fit lines, grid predictions, and all maps. 
+
+*Abbie:* Met with professors at office hours and attended all group meetings. Set up the Github Project and Repository for the project; Implemented the forward stepwise selection of our model terms. Created the statewide seasonal data sets and models, including the comparisons with the gold standard data sets; created the LA county seasonal data sets and models, including the comparisons with the gold standard data sets; adjustment of our cross validation method for LA county, implementing a leave-one-out method instead of a 10 fold method. Added the regression-based R squared to functions and plots. 
+
+Writing: 
+
+*Callan:* Drafted and revised analysis plans (3 in total); wrote and revised methods section; wrote and revised introduction section; wrote portions of results section; wrote portions of discussion section
+
+*Katie:* Added to the results, methods, and discussion, especially the portion about maps. Proof reading and editing for consistent interpretation between writing and code output. 
+
+
+*Abbie:* Added to the results, especially with regards to the model selection and selection of model covariates, and seasonal models. Added to the discussion section with overall conclusions, limitations, future research suggestions, and current literature. Contibuted to editing of plots and graphs. Review of citations. Writing and organization of the appendix.
+
+
+# Works Cited 
+
+Blanco, M. N., Gassett, A., Gould, T., Doubleday, A., Slager, D. L., Austin, E., ... & Sheppard, L. (2022). Characterization of annual average traffic-related air pollution concentrations in the Greater Seattle Area from a year-long mobile monitoring campaign. Environmental science & technology, 56(16), 11460-11472.
+
+Blanco, M.N., Doubleday, A., Austin, E., Julian D. Marshall, Edmund Seto, Timothy V., Larson & Lianne Sheppard  Design and evaluation of short-term monitoring campaigns for long-term air pollution exposure assessment. J Expo Sci Environ Epidemiol 33, 465–473 (2023). https://doi.org/10.1038/s41370-022-00470-5.
+
+Colorado Department of Public Health & Environment. 2024. Air toxics: monitoring. https://cdphe.colorado.gov/air-toxics/monitoring#:~:text=Mobile%20monitoring%20can%20capture%20%E2%80%9Cspatial,wind%20compared%20to%20stationary%20monitoring Accessed 12/3/2024.
+
+Environmental Protection Agency. 2023. Overview of Nitrogen Dioxide (NO2) Air Quality in the United States. https://www.epa.gov/system/files/documents/2023-06/NO2_2022.pdf 
+
+Lange, K., Richter, A., & Burrows, J. P. (2022). Variability of nitrogen oxide emission fluxes and lifetimes estimated from Sentinel-5P TROPOMI observations. Atmospheric Chemistry and Physics, 22(4), 2745-2767.
+
+Mercer, L. D., Szpiro, A. A., Sheppard, L., Lindström, J., Adar, S. D., Allen, R. W., ... & Kaufman, J. D. (2011). Comparing universal kriging and land-use regression for predicting concentrations of gaseous oxides of nitrogen (NOx) for the Multi-Ethnic Study of Atherosclerosis and Air Pollution (MESA Air). Atmospheric Environment, 45(26), 4412-4420.
+https://pmc.ncbi.nlm.nih.gov/articles/PMC3146303/pdf/nihms299256.pdf
+
+United States Census. 2023. QuickFacts Los Angeles County, California. https://www.census.gov/quickfacts/fact/table/losangelescountycalifornia,losangelescitycalifornia,CA/PST045223 Accessed 11/30/2024.
+
+
+## Appendix 
+
+**Data Cleaning and Processing**
+
+Sensors Kept in the Data after applying selection Criteria from Blanco et al (2023).
+```{r, echo = FALSE}
+kable(sensor_summary,
+      col.names = c("Sensor ID", "Count", "Percent of Year with Data", "Percent of Data Positive", "Maximum Data Gap (days)"),
+      digits = 2,
+      caption = "Table 1.0: Summary of Sensor Data for SEnsors Meeting Selection Criteria") %>% kable_styling()
+
+```
+Table A1.0 in the appendix provides the data details for each sensor included in the data set based on criteria outlines in the methods section and Blanco, et al. (2023). In this table you can see the data gaps (in days) that were allowed to stay in the data set, and what percent of the year we have data for, for each sensor. 
+
+
+
+
+```{r, echo = F, include = T}
+
+#Kinda crazy how much variability there is using unrestricted random samples
+#We can choose which type of plot we like best - AG
+
+# Abbie commented these histograms and used ggplot to re-make them so aesthetics could be added
+
+#with(st_balanced, hist(annual_avg, breaks = 30, col = "blue", xlab = "NOx ppm" ))  
+#with(st_balanced, hist(log_avg, breaks = 30, col = "seagreen", xlab = "log(NOx ppm)" ))
+
+#with(long_term_gold, hist(annual_avg, breaks = 20, col = "blue", xlab = "NOx ppm" ))
+#with(long_term_gold, hist(log_avg, breaks = 20, col = "seagreen", xlab = "log(NOx ppm)" ))
+
+native <- long_term_gold %>%
+ggplot(aes(annual_avg)) +
+  geom_histogram(aes(y = ..density..), bins = 30, color = "lightblue", fill = "lightblue", alpha = 0.8) +
+  geom_density(color = "purple") +
+  labs(title = " Figure A1.0: Distribution of Annual Average NOx Concentrations",
+       subtitle = "Native Scale",
+       x = "Concentration on native scale (ppb)",
+       y = "density"
+       )
+
+log <- long_term_gold %>%
+ggplot(aes(log_avg)) +
+  geom_histogram(aes(y = ..density..), bins = 30, color = "lightblue", fill = "lightblue", alpha = 0.8) +
+  geom_density(color = "purple") +
+  labs(title = "",
+       subtitle = "Natural-Log Transformed Scale",
+       x = "Concentration on natural log (ppb) scale",
+       y = "density"
+       )
+
+native + log
+#makes much more sense to work with the data on the log scale
+
+#Should this whole chunk go to the appendix?
+
+```
+
+The histograms in Appendix Figure A1.0 support our conclusion to log-transform our data before modeling with it. We see a rather obvious right tail on our native-scale NOx data, in what appears to be a log-normal distribution. The distribution becomes much more normal after log transformation (Right).
+
+
+**Statewide Campaign Analysis**
+
+```{r gold.standard.variability, warning = FALSE, echo = F}
+#graphing the distribution of annual averages
+
+
+balanced<- ggplot(st_balanced, aes(x = native_id, y = log_avg)) +
+  geom_boxplot() +
+  ggtitle("Balanced") +
+  labs(x = "monitors",
+       y = "ln (NOx (ppb))") +
+  theme(axis.text.x = element_blank(),
+    axis.ticks.x = element_blank())
+
+gold<- ggplot(long_term_gold, aes(x = native_id, y = log_avg)) +
+  geom_point() +
+  ggtitle("Gold Standard") +
+  labs(x = "monitors",
+       y = "ln (NOx (ppb))") +
+  theme(axis.text.x = element_blank(),
+    axis.ticks.x = element_blank())
+
+
+grid.arrange(gold, balanced, summer_state_var, fall_state_var, winter_state_var, spring_state_var,
+             top = "Figure A2.0: Variability Within Statewide Short term and Gold Standard Datasets")
+
+
+
+```
+The boxplots in Appendix Figure A2.0 show the variability in the data from all of the statewide data sets: gold standard, short term balanced, summer, fall, winter, and spring data sets. Box plots are used for each of the short-term datasets to show the campaign variability.  We can see from these plots that some data sets, like the Spring data set, have less variation within each sensor. Comparing Winter and spring data sets, the Winter data set has more variability between sensors as well. 
+
+
+**LA County Data Analysis**
+
+
+```{r, variability across LA county seasonal data sets}
+
+Balanced_LA<-ggplot(st_la, aes(x = native_id, y = log_avg)) +
+  geom_boxplot() +
+  ggtitle("Balanced") +
+  labs(x = "monitors",
+       y = "ln (NOx (ppb))") +
+  theme(axis.text.x = element_blank(),
+    axis.ticks.x = element_blank())
+
+Gold_Standard_LA<-ggplot(long_term_gold_la, aes(x = native_id, y = log_avg)) +
+  geom_point() +
+  ggtitle("Gold Standard") +
+  labs(x = "monitors",
+       y = "ln (NOx (ppb))") +
+  theme(axis.text.x = element_blank(),
+    axis.ticks.x = element_blank())
+
+LA_title <- "Figure A3.0: Variability in LA County Short Term Seasonal Data sets"
+grid.arrange(top = LA_title, grobs = list(summer_LA, fall_LA, winter_LA, spring_LA, Balanced_LA , Gold_Standard_LA))
+
+
+
+
+```
+
+The plots in Appendix Figure A3.0 show the variability in the data from the LA county data sets. These data sets have 12 instead of the statewide 69 monitors.
+
+
+
+```{r maps.la.model, echo = F, include = T}
+#repeat using the LA specific models
+
+la_gold_map <- plot_map(map_data(lm_gold_la))
+la_balanced_map <- plot_map(map_data(lm_st_la))
+la_spring_map <- plot_map(map_data(lm_st_spring_la))
+la_summer_map <- plot_map(map_data(lm_st_summer_la))
+la_fall_map <- plot_map(map_data(lm_st_fall_la))
+la_winter_map <- plot_map(map_data(lm_st_winter_la))
+
+la_gold_map + labs(title = "Fig. A4.1: Map of Los Angeles with NOx Predictions - Gold Standard")
+la_balanced_map + labs(title = "Fig. A4.2: Map of Los Angeles with NOx Predictions - Balanced ")
+la_spring_map + labs(title = "Fig. A4.3: Map of Los Angeles with NOx Predictions - Spring")
+la_summer_map + labs(title = "Fig. A4.4: Map of Los Angeles with NOx Predictions - Summer")
+la_fall_map + labs(title = "Fig. A4.5: Map of Los Angeles with NOx Predictions - Fall")
+la_winter_map + labs(title = "Fig. A4.6:Map of Los Angeles with NOx Predictions - Winter")
+
+
+#so interesting!
+
+#I think the faceted plots with ln nox are better for the results, but these might go in the appendix, because they are just cool and really show what is going on. 
+```
+Figures A4.1-4.6 show NOx prediction is Los Angeles on the native scale. They should be interpreted carefully, because the color ramp displays a different range of values for each map (e.x. summer has a lot of yellow, but the color ramp maxes out just above 12 ppb, while winter color ramp goes to 160 ppb). While the color ramps are a limitation, the maps very clearly show the spatial differences in seasonal predictions discussed above. The large range of values (<4 ppb to >160 ppb) prevents graphing all seasons on the native scale using the same color ramp, because it squashes the variability. The natural log scale presented in the main text is helpful for shrinking the range to what can be plotted on a single color ramp, but the native scale maps are more interpretable for potential human exposure and the use of "free" color ramps emphasizes variability within each season. 
+
