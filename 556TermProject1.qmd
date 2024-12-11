@@ -73,6 +73,7 @@ For each of the short-term datasets, we computed the expected value of MSE-based
 
 In our sensitivity analysis, we repeated our analyses with geographically restricted data from a single county to limit the impact of geospatial variability, as NOx concentration measurements likely have strong spatial correlation at the county-level based on shared land-use, policy, and urbanicity within counties. Los Angeles County was selected as the county of interest for our analysis based on its high population density (U.S. Census 2023) and because of its high proportion of sensors included in the underlying California NOx dataset. Because there were fewer sensors in Los Angeles County relative to the statewide dataset, 10-fold cross validation was not possible in this sensitivity analysis. Instead, we used leave-one-out cross validation to validate Los Angeles-specific NOx predictions.
 
+We had access to a geospatial grid of the Los Angeles area with covariates from the Mercer et al. common model. As part of the sensitivity analysis, after fitting our LUR model for each of the LA datasets, the model was used to predict out-of-sample at new locations on the grid and the predictions were then plotted on a map. To visualize systematic prediction differences between models, the gridded predictions from the gold-standard were subtracted from the predictions of each of the short-term gridded predictions, and the differences were plotted to visualize differences in model performance across locations. 
 
 
 # Results
@@ -831,8 +832,6 @@ summary(lm_gold_standard <- lm(frml, data = long_term_gold))
 
 The predicted versus observed log-NOx concentrations for the cross-validated gold standard dataset are shown in Figure 4. The best-fit line showed noticeable deviations from the 1:1 line, with an attenuated slope approximately half as steep as the 1:1 line. The MSE-based $R^2$ was 0.335 and the cross-validated predictions were, on average, approximately 0.464 log-ppb away from the 'true' observed concentrations. 
 
-The somewhat poor predictive performance of our gold standard model is likely related to the large distances over which the monitors are scatted and as well as limited variability in annual average concentrations. However, the purpose of the analysis was not to select and ideal model for predicting NOx across the state of California, but to assess the performance of short-term campagins in predicting long-term annual averages. We will compare our statewide balanced and seasonal campaigns against the observations from this model and compare their performance statistics relative to these performance statistics. In a true monitoring campaign for epidemiology studies, more time would be spent on model selection, but in this analysis we are more interested in commparitive between campaigns that overall model performance. 
-
 
 ```{r, echo = F, include = T}
 
@@ -871,8 +870,11 @@ ggplot(data = gold_CV, aes(log_avg, cvpreds)) +
 
 #model we have selected doesn't give the greatest predictions, but that might be fine. We changing the covariates in the model above won't necessitate changing any of the other code. 
 ```
-Figure 4.0 shows the results from our cross validation of our gold standard data set and our common model. Using annual averages to predict across all sensors. The model's MSE-based $R^2$ is 0.335, using data from across the state of California. Our model does not perform exceedingly well. This is likely due to large distances over which the monitors are scatted and as well as limited variability in annual average concentrations. However, the purpose of the analysis is not to select and ideal model for predicting NOx across the state of California, but to assess the performance of short-term campagins in predicting long-term annual averages. We will compare our statewide balanced and seasonal campaigns against the observations from this model and compare their performance statistics relative to these performance statistics. In a true monitoring campaign for epidemiology studies, more time would be spent on model selection, but in this analysis we are more interested in commparitive between campaigns that overall model performance. 
-     
+Figure 4: Scatter plot of predicted versus observed log-NOx concentrations (log-ppb) with 1:1 (blue) and best fit (red) lines, with the corresponding RMSE (0.464 log-ppb) and MSE-based R^2 (0.335).
+
+**NOTE: Abbie: I moved comments about the prediction performance and why we think it was not good to the discussion section**
+
+
 
 
 ```{r st_balanced, echo = F, include = F}
@@ -1161,6 +1163,8 @@ spring_state_var<- ggplot(st_spring, aes(x = native_id, y = log_avg)) +
 
 **Short-Term, Temporally-Restricted Datasets** 
 
+Table 1 descriptively summarizes NOx concentrations for each dataset used in our analysis, including the short-term seasonal datasets, the short-term temporally-balanced dataset, and the long-term gold standard datset. The annual average NOx concentrations in the fall and winter had standard deviations nearly twice those observed in the summer and spring; this was consistent with the wider range of NOx concentrations observed at monitors during the fall and winter seasons. The mean and median NOx concentrations are noticeably different across seasons, though there is strong agreement in the central tendencies of the short-term balanced and long-term gold standard datasets. 
+ 
 
 ```{r, results='hide',include=FALSE,echo=FALSE}
 #summary statistics
@@ -1218,7 +1222,7 @@ kable(cbind(Datasets , rbind(st_summer_sum, st_fall_sum, st_winter_sum, st_sprin
   kable_styling()
 
 ```
-Table 2.0 summarizes the spread and range of the data randomly sampled for each data set in our statewide analysis and the gold standard dataset. The Fall and Winter data sets have nearly double the variation as Spring and Summer data sets. As we would expect, the balanced data set has variability in the middle between these four seasonal data sets. As we would expect, the balanced and gold standard data sets have a standard deviation in the middle of our seasonal data sets. 
+Table 1: Descriptive statistics summarizing the central tendencies and variability of NOx concentrations (ppb) across seasons and within the short- and long-term temporally-balanced datasets. 
 
 
 ```{r season.convariates2, echo = F, include = F}
@@ -1725,8 +1729,7 @@ st_spring_boxplot
 
 ```
 
-
-
+Figure 5 compares the cross-validated gold standard log(NOx) concentration predictions against the cross-validated short-term log(NOx) concentration predictions for 30 simulated monitoring campaigns in each season and in the temporally-balanced short-term dataset.The predictions made using the short-term temporally-balanced dataset show strong agreement with the 1:1 line. In contrast, the predictions made in each season all have slopes similar to that shown in the 1:1 line but are offset in their intercepts. The short-term campaigns conducted in the summer and spring consistently under-predicted the gold standard annual average log(NOx) concentrations, whereas the short-term campaigns in the fall and winter consistently over-predicted gold standard annual average log(NOx) concentrations. 
 
 ```{r, echo = F, include = T, fig.height = 7, fig.width = 7, warning = F, message = F}
 
@@ -1768,14 +1771,10 @@ all_scatter
 
 ```
 
+Figure 5: Plots comparing the cross-validated log(NOx) predictions between the gold standard long-term dataset and the short-term datasets, including the temporally-balanced dataset and the season-specific datasets. The 1:1 line is denoted with a dashed line. Within each plot, each colored line represents results from one of the 30 simulations run using the randomly generated dataset.
 
-The Figure 5 compares the performance of the common model on the seasonal and balanced short term data sets, and compares the predicted ln(NOx) concentrations with the gold standard predictions. This figure shows the performance of each of the 30 campaigns within each short-term sampling design. The balanced design performs well. Summer and spring consistently under-predict (predict lower values than the gold standard), and fall and winter over-predict compared to the gold standard. The slopes across all campaigns and within all campaigns, are similar.  
+The prediction performance of the model using each underlying short-term dataset is described in Table 2. The MSE-based R^2, regression-based R^2, and RMSE for each prediction model is further compared in Figure 6. 
 
-
-The balanced model and data set performed the most similar to the gold standard model and data set, with no clear over- or under- predictions of NOx and a comparable R squared and RMSE. 
-
-
-#tabulate RMSE and R sqaured for all campaigns:
 
 ```{r table of prediction stats, echo = F, include = T}
 #averages the rmse and r squared across all 30 repeats of the random sampling for all campaigns
@@ -1787,10 +1786,10 @@ Reg_R2 <- c(mean(st_summer_MSE$reg.R2_a), mean(st_fall_MSE$reg.R2_a), mean(st_wi
 
 kable(rbind(campaigns, RMSE, MSE_R2, Reg_R2),
       digits = 3,
-      caption = "Table 2.0: Performance Statistics of Seasonal and Balanced Sampling Campaigns - Method A") %>% kable_styling()
+      caption = "Table 2: Performance Statistics of Seasonal and Balanced Sampling Campaigns - Method A") %>% kable_styling()
 
 ```
-
+Table 2: The MSE-based R^2, regression-based R^2 and RMSE for cross-validated predictions generated using short-term datasets, including season-specific datasets and a temporally-balanced dataset. 
 
 ```{r, echo = F, include = T, fig.height = 7, fig.width = 7}
 
@@ -1839,15 +1838,13 @@ st_all_boxplot
 
 
 ```
+Figure 6: Boxplots showing the distribution of predictive performance statistics, including MSE-based R^2, RMSE, and regression-based R^2, across models using short-term datasets. Short-term datasets used included season-specific datasets (i.e. summer, spring, fall, and winter) and a temporally-balanced dataset. Each short-term dataset included 28 measurements and was simulated 30 times, as described in the methods. Note that Method A represents the short-term campaign predictions as compared to the gold standard observations, whereas Method B represents the short-term campaign predictions as compared to the observations within the same campaign. The dotted horizontal line shows the gold-standard prediction performance. 
 
-In Table 2.0 and Figure 6, the Balanced campaign is the only short term campaign with a reasonable MSE-based R squared and reasonable performance in comparison with the gold standard (Method a in figure 6 compares to Gold standard). This means the agreement between the gold standard and the short term seasonal campaigns is very low, with MSE-based R-squared values near or equal to zero. However, the regression-based R squared summarized in both table 2.0 and figure 6, shows comparable performance across all cohort term campaigns in comparison with the gold standard. 
-
-We see in figure 6 the RMSE gets drastically better with the balanced campaign, with the short term spring campaign having the highest RMSE, both in comparison with the gold standard (method a) and with cross validated statistics in method b. 
+As shown Figure 6, the short-term balanced campaign is the only short-term campaign with a prediction performance reasonably comparable to that of the gold standard predictions. The agreement between the gold standard and the short term seasonal campaigns was very low, with MSE-based R-squared values near or equal to zero. However, notably, the regression-based R^2 summarized in both Table 2 and Figure 6, shows comparable performance across all cohort term campaigns in comparison with the gold standard. The improved regression-based R^2 compared to the MSE-based R^2 reinforces that there is a reasonably well-captured correlation between the model covariates and the log(NOx) concentrations in the season-specific datasets, but that the average estimates are biased or shifted away from the "true" gold standard values. 
 
 **LA-County Sensitivity Analysis**
 
-We restricted our models to 12 sensors in LA county to see how different their performance was when we look at a more specific geographic area within California. 
-
+Table 3 describes the Los Angeles County-Specific distributions of NOx concentrations within each short-term (season-specific and temporally balanced) dataset and across the long-term gold standard dataset. The LA-specific data generally follow the same trends as the statewide data, with spring and summer seasons showing lower average NOx concentrations and lower variability. Compared to the statewide datasets, the standard deviations for LA-specific campaigns were similar, however the average NOx concentrations were slightly higher in LA county than the statewide dataset.  
 
 
 ``` {r LA strat, echo = F, include = F}
@@ -2224,12 +2221,12 @@ st_spring_la_sum <- sum_stats(st_spring_la)
 
 Datasets <- c("Spring","Summer", "Fall", "Winter", "Balanced", "Gold-standard")
 kable(cbind(Datasets , rbind(st_spring_la_sum, st_summer_la_sum, st_fall_la_sum, st_winter_la_sum, st_la_sum, lt_gold_sum_la)), digits = 2,
-      caption = " Table 3.0: Sampling Campaign NOx (ppb) Summaries for Los Angeles County") %>%
+      caption = " Table 3: Sampling Campaign NOx (ppb) Summaries for Los Angeles County") %>%
   kable_styling()
 
 
 ```
-Table 3.0 provides summary statistics about the spread of the data in the restricted, LA county data sets. The variability in the data follows the same trends as the statewide data, with spring and summer seasons seeing overall lower NOx concentrations and lower variability. The balanced and gold-standard data sets also lie in the  middle of the range in variability and overall average NOx concentrations. Compared to the statewide data sets, the standard deviations for all campaigns are similar, however the average NOx concentrations are slightly higher in LA county than the statewide data set. 
+Table 3: Summary statistics describing the distribution of NOx concentrations (ppb) when the analysis was restricted to 12 monitors within Los Angeles County. Data are summarized separately for each short-term season-restricted dataset and for the short- and long-term temporall-balanced datasets. 
 
 ```{r season.convariates}
 #--------------------------Common Model on Seasonal Data sets------------------#
@@ -2254,9 +2251,6 @@ summary(lm_st_spring_la <- lm(frml, data = st_spring_la))
 
 
 ```
-
-
-
 
 
 ```{r summer vs gold}
@@ -2703,8 +2697,7 @@ spring_boxplot_la<-ggplot(st_spring_MSE_la_long, aes(x = method, y = value, colo
   theme_bw()
 ```
 
-
-
+Figure 7 compares the cross-validated predictions between the short-term season-specific monitoring campaigns and the gold standard predictions within Los Angeles. Compared to the statewide campaigns, there is larger variation in the slopes between each simulation (n = 30) for the LA county campaigns. The slopes are not consistent across model runs and not consistent between campaigns, unlike the statewide trends we saw. However, spring and summer still seem to under-predict log(NOx) concentrations, whereas fall and winter campaigns still seem to over-predict log(NOx) concentrations, on average. The balanced campaign appears the most in agreement with the gold standard predictions, however with much more variability.
 
 
 ```{r, echo = F, include = T, fig.height = 7, fig.width = 7, warning = F, message = F}
@@ -2748,9 +2741,11 @@ all_scatter_la
 #definitely a more heterogeneity in slope here (one difference is LOO CV)
 
 ```
+Figure 7: Comparison of gold standard cross-validated predictions with cross-validated predictions for 30 monitoring campaigns using short-term temporally-balanced or season-specific datasets. Each colored line represents a distinct monitoring campaign (n=30 in total), which each contains 28 randomly sampled measurements. NOx concentrations are presented on the natural log scale (log-ppb). The 1:1 line is represented by the dashed line. 
+ 
+Figure 8 shows the R^2 (MSE-based and regression-based) and RMSE for two methods: comparing campaign predictions against gold standard predictions (Method A) and comparing campaign predictions against campaign observations (Method B). We see that the MSE-based R^2 is very poor for all the seasonal campaigns and even the balanced campaign, both in comparison with gold standard predictions and seasonal observations. 
 
-Figure 7 shows much larger variation in slopes between model runs (n = 30) for the LA county campaigns. The slopes are not consistent across model runs and not consistent between campaigns, unlike the statewide trends we saw. However, spring and summer still seem to under-predict and fall and winter campaigns still seem to over-predict on average. The balanced campaign appears the most in agreement with the gold standard predictions, however with much more variability. 
-
+However, the regression-based R^2 statistics are more similar between campaigns and show decent agreement with the gold standard and seasonal observations (~ 0.4). The RMSE for Method A is a similar trend to the statewide campaigns, with RMSE statistics for the spring and summer models markedly higher than the RMSE for the balanced campaigns. 
 ```{r, echo = F, include = T, fig.height = 7, fig.width = 7}
 
 #bind the MSE df together for a combined boxplot
@@ -2798,11 +2793,10 @@ st_all_boxplot_la
 
 
 ```
+Figure 8: Box plots comparing the MSE-based R^2, regression-based R^2, and RMSE for short-term season-specific and temporally-balanced datasets within Los Angeles County. Method A represents the short-term campaign predictions as compared to the gold standard observations, whereas Method B represents the short-term campaign predictions as compared to observations within the same campaign. The dotted horizontal line shows the performance of the model using the gold standard dataset.
 
 
-Figure 8 shows the R squared (MSE-based and regression-based) and RMSE for two methods: comparing campaign predictions against gold standard predictions (method a) and comparing campaign predictions against campaign observations (method b). We see that the mse-based R squared is very poor for all the seasonal campaigns and even the balanced campaign, both in comparison with gold standard predictions and seasonal observations. 
-
-However, the regression-based r squared statistics are more similar between campaigns and show decent agreement with the gold standard and seasonal observations (~ 0.4). The RMSE for method a is a similar trend to the statewide campaigns, with RMSE statistics for the spring and summer models markedly higher than the RMSE for the balanced campaigns. 
+Figure 9 shows the gridded prediction for each fitted model. We see that the balanced short-term predictions are closest to the gold-standard, as expected. Maps are plotted on the natural log scale in-order to maintain enough variability for visualization on a single color-ramp. Individual plots for each model on the native scale are available in the appendix (Figures AX.1 – AX.6), and really emphasize the distinct seasonal predictions seen here on the natural log scale. Predictions are highest in winter lowest in summer (this is most evident on the native scale maps in appendix). Spring and fall are in between with spring being more like summer and fall more similar to winter. Fall is the most like the balanced and gold-standard predictions. This result is somewhat surprising based on figure X (the rainbow lines for LA campaigns), where the winter campaigns appeared to have the most similarity to the balanced.  One notable difference in this predictions is that figure X uses LOO cross-validation to predict at monitor locations (i.e. using 11 monitors to predict at the location of the 12th), and is repeated over 30 simulated campaigns in which different random samples are collected, whereas the maps use the fitted model to predict at new locations on the grid (no need to leave one out), and is not campaign based.  Differences may result from differences in covariates at grid points compared to at monitor locations. Lower predicted ln(NOx) concentrations highlight the influence of major roadways, as seen in the summer facer (see appendix Figure A1.4 for very clear example). At higher predicted concentrations, we see a flare around downtown Los Angeles that is not visible at lower predicted values. To understand patterns systematic differences in predicted values that differ from the gold-standard predictions, gold-standard predicted values are subtracted from the predicted values of each short-term model and the results are plotted in figure 10. The balanced model has almost no discernable difference from the gold-standard on the natural log scale. The magnitude of over-prediction in winter and fall is generally less than the magnitude of under prediction in spring and summer.  Interestingly, we see roughly the same pattern of prediction error between the seasons, where the areas that are most over predicted in winter are the most under predicted in summer. These blotches with the greatest magnitude of prediction error correspond to the flares or area of high log NOx observed in the fall and winter. These patterns do not appear to have relationships to roadways or distance from the coast, so we hypothesize that population density may be driving these prediction differences. Figure 11 provides a population density map of Los Angeles, which closely resembles the prediction difference pattern seen (population is scaled by 1/1000 for a cleaner scale). Figure 12 plots the prediction differences against population in the 5k buffer, and we observe that there is almost no slope to the best fit line for the balanced model and a very modest slope for fall. Spring and summer have steep negative slopes and winter has a steep positive slope. 
 
 
 ```{r prediction.maps, echo = F, include = F}
@@ -3346,8 +3340,9 @@ In season-specific datasets, the MSE-based R^2 suggested a high degree of bias o
 
 Overall, our data suggest that a seasonally-balanced monitoring campaign will predict annual NOx concentrations with improved accuracy compared to a monitoring campaign with data collected in just one season. These results are consistent with prior data demonstrating that NOx concentrations are typically highest in the winter and lowest in the summer and spring (Lange et al. 2022; EPA 2023). They are also consistent with the findings of Blanco et al. (2022), who reported that a temporally-balanced sampling design was important in accurately predicting annual average NOx concentrations during mobile monitoring campaigns.
 
-Notably, all models, including those using the gold standard dataset, had reasonably low MSE-based R^2 values, indicating that just a small proportion of variability in NOx concentrations were explained by model covariates. This could be related to our model selection strategy, which is discussed in greater detail in subsequent sections. Importantly, Blanco et al. (2022) reported improved coefficients of determination compared to the present analysis, though the values were still somewhat low and tended to hover around approximately 0.35 to 0.45. In Blanco et al. (2022), authors included hundreds of geographic covariates in their model related to land-use, road proximity, and population density. The inclusion of a robust set of geographic covariates likely contributed to the improved performance of models in Blanco et al. (2022) versus the present analysis, though low coefficients of determination in both analyses suggest that the increased number of geographic covariates alone do not fully capture the variability in NOx concentrations. It is possible that other temporal or spatial factors uncaptured by the covariates in either analysis are additionally contributing to the observed variability in NOx concentrations.
- 
+Notably, all model predictions, including those using the cross-validated gold standard predictions, had reasonably low MSE-based R^2 values, indicating a somewhat poor predictive performance. The poor predictive performance could be related to the large distance over which the monitors were scattereed, as well as the limited variability in annual average concentrations. It could also be related to our model selection strategy, which is discussed in greater detail in subsequent sections. Importantly, Blanco et al. (2022) reported improved coefficients of determination compared to the present analysis, though the values were still somewhat low and tended to hover around approximately 0.35 to 0.45. In Blanco et al. (2022), authors included hundreds of geographic covariates in their model related to land-use, road proximity, and population density. The inclusion of a robust set of geographic covariates likely contributed to the improved performance of models in Blanco et al. (2022) versus the present analysis, though low coefficients of determination in both analyses suggest that the increased number of geographic covariates alone do not fully capture the variability in NOx concentrations. It is possible that other temporal or spatial factors uncaptured by the covariates in either analysis are additionally contributing to the observed variability in NOx concentrations.
+
+Notably, the purpose of the analysis was not to select an ideal model for predicting NOx across the state of California, but to assess the performance of short-term campaigns in predicting long-term annual average NOx concentrations; we therefore were not limited by sub-par prediction performances, as we were still able to contrast performance parameters between various short- and long-term datasets. In a true monitoring campaign for epidemiology studies, additional considerations should be paid to model selection so that exposure can be more properly characterized.
 
 **Los Angeles County Short-Term Dataset Performance** 
 
@@ -3368,9 +3363,11 @@ Blanco et al (2023) analyzed their short-term campaigns versus a gold standard u
 
 A limitation of our analysis is that our dataset was not spatially rich, therefore we were limited in where we could predict and which counties we could evaluate in our subanalyses. We did not have enough sensors in counties other than LA county to compare predictions. The low numbers of sensors in our LA county models could have limited our sensitivity analysis, and may have limited our confidence in the comparison between the LA county short term balanced model and the LA county gold standard model. Our Gold standard model in Los Angeles had just 12 data points for annual aggregate concentration, so it may be misleading to consider its predictions the most well-founded predictions compared to the short term balanced model. 
 
-Additionally, as noted earlier, our model selection method was not complex; we simply used the previously selected model from Mercer et al (2011) paired with forward, stepwise model selection to further reduce the number of covariates included in our final common model. The subset of our land use covariates to the eight reflecting the Mercer et al (2011) common model may have erroneously eliminated covariates that would have explained more of the variation between monitor locations. A more in-depth model selection approach may have found a better fit to the models.
+Additionally, when creating our season-specific datasets, we created seasonal strata by dividing the weeks of the year into four segments based on their numerical order, each with 13 weeks. Though this provided us with a well-balanced and unbiased division of the dataset, there was no distinct scientific or meteorological significance to these cutpoints. In future analyses, we may consider defining season using specific calendrical definitions, looking at cutpoints based on temperature or precipation changes, or based on social behaviors and patterns (e.g. defining summer as when school is out). Although our definition of season was based solely on an even division of the data in temporal order, we feel confident that seasonal trends were reasonably well captured in our data subsets because our data generally followed the seasonal NOx trends observed in prior published data (i.e. lower summer concentrations and higher winter concentrations). 
 
-Finally, when creating our season-specific datasets, we created seasonal strata by dividing the weeks of the year into four segments based on their numerical order, each with 13 weeks. Though this provided us with a well-balanced and unbiased division of the dataset, there was no distinct scientific or meteorological significance to these cutpoints. In future analyses, we may consider defining season using specific calendrical definitions, looking at cutpoints based on temperature or precipation changes, or based on social behaviors and patterns (e.g. defining summer as when school is out). Although our definition of season was based solely on an even division of the data in temporal order, we feel confident that seasonal trends were reasonably well captured in our data subsets because our data generally followed the seasonal NOx trends observed in prior published data (i.e. lower summer concentrations and higher winter concentrations). 
+Finally, as noted earlier, our model selection method was not complex; we simply used the previously selected model from Mercer et al (2011) paired with forward, stepwise model selection to further reduce the number of covariates included in our final common model. The subset of our land use covariates to the eight reflecting the Mercer et al (2011) common model may have erroneously eliminated covariates that would have explained more of the variation between monitor locations. A more in-depth model selection approach may have found a better fit to the models.
+
+Although we use a very limited model, this analysis provides insight into ways in which short-term monitoring may still be valuable for epidemiological work. For example, temporal restrictions resulted in a biased intercept (the sample mean differs from the true mean (gold-standard data annual average), the slope was minimally biased and close to that of the gold-standard model. This resulted in consistent over or under prediction. Further more, this prediction error had a spatial structure closely associated with population density. One advantage of this study is that we were able to simulate multiple campaigns, where as in real world studies only a single campaign would generally be available. Furthermore we had access to temporally continuous data, albeit with limited spatial coverage, on which to base our gold standard. Such data to construct a gold-standard may not be available in all situations. The tradeoff between spatial and temporal coverage challenges exposure prediction for epidemiological work. This work shows that limitations in temporal coverage may systematically mis-predict exposure in a way that could potentially be accounted or corrected if the only feasible sampling method was as short-term campaign. We tested a limited number of covariates and a single model. More work is needed to dig into the relationship between short-term sampling campaigns and way to maximize their utility for estimating long-term exposure to NOx. 
 
 **Broader Implications and Future Research** 
 
