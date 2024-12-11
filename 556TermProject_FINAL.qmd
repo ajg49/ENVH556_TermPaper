@@ -872,10 +872,6 @@ ggplot(data = gold_CV, aes(log_avg, cvpreds)) +
 ```
 Figure 4: Scatter plot of predicted versus observed log-NOx concentrations (log-ppb) with 1:1 (blue) and best fit (red) lines, with the corresponding RMSE (0.464 log-ppb) and MSE-based $R^2$ (0.335).
 
-**NOTE: Abbie: I moved comments about the prediction performance and why we think it was not good to the discussion section**
-
-
-
 
 ```{r st_balanced, echo = F, include = F}
 
@@ -3206,13 +3202,13 @@ lnnox_map #like this one a lot. They do look cool on the native scale, but I thi
 #this is better and helpful for seeing relative comparison, but I really like th distinctnes on the native scale when the scales aren't set. But is it misleading to have different color scales?
 
 ```
-
+Figure 9: Map of Los Angeles showing predicted log(NOx) concentrations according to the underlying dataset modeled. Datasets incorporated included the short-term season-specific datasets, the short-term temporally-balanced dataset, and the long-term gold standard dataset. Log(NOx) concentrations are represented through color, as indicated by the legend. Purple areas have lower average log(NOx) concentrations, whereas yellow areas represent areas with higher average log(NOx) concentrations.
 
 Figure 9 shows the gridded prediction for each fitted model. We see that the balanced short-term predictions are closest to the gold-standard, as expected. Maps are plotted on the natural log scale in-order to maintain enough variability for visualization on a single color-ramp. Individual plots for each model on the native scale are available in the appendix (Figures A4.1 – A4.6), and really emphasize the distinct seasonal predictions seen here on the natural log scale. Predictions are highest in winter lowest in summer (this is most evident on the native scale maps in appendix). Spring and fall are in between with spring being more like summer and fall more similar to winter. Fall is the most like the balanced and gold-standard predictions. This result is somewhat surprising based on Figure 7, where the winter campaigns appeared to have the most similarity to the balanced campaign.  
 
 One notable difference in this predictions is that figure 7 uses LOO cross-validation to predict at monitor locations (i.e. using 11 monitors to predict at the location of the 12th), and is repeated over 30 simulated campaigns in which different random samples are collected, whereas the maps use the fitted model to predict at new locations on the grid (no need to leave one out), and is not campaign based.  Differences may result from differences in covariates at grid points compared to at monitor locations.
 
-Lower predicted ln(NOx) concentrations highlight the influence of major roadways, as seen in the summer facer (see appendix Figure A4.4 for very clear example). In Figure 9, at higher predicted concentrations, we see a flare around downtown Los Angeles that is not visible at lower predicted values. To understand patterns systematic differences in predicted values that differ from the gold-standard predictions, gold-standard predicted values are subtracted from the predicted values of each short-term model and the results are plotted in figure 10. 
+Lower predicted ln(NOx) concentrations highlight the influence of major roadways, as seen in the summer facet (see appendix Figure A4.4 for very clear example). In Figure 9, at higher predicted concentrations, we see a flare around downtown Los Angeles that is not visible at lower predicted values. To understand patterns systematic differences in predicted values that differ from the gold-standard predictions, gold-standard predicted values are subtracted from the predicted values of each short-term model and the results are plotted in figure 10. 
 
 ```{r, echo = F, include = T}
 
@@ -3273,8 +3269,9 @@ difference_map
 
 
 ```
+Figure 10: Difference in predicted log(NOx) concentrations according to season in Los Angeles when comparing the short-term campaign predictions against those from the gold standard dataset. 
 
-Based on Figure 10, the balanced model has no discernable difference from the gold-standard on the natural log scale. The magnitude of over-prediction in winter and fall is generally less than the magnitude of under prediction in spring and summer.  Interestingly, we see roughly the same pattern of prediction error between the seasons, where the areas that are most over predicted in winter are the most under predicted in summer. These blotches with the greatest magnitude of prediction error correspond to the flares or area of high log NOx observed in the fall and winter campaigns. These patterns do not appear to have relationships to roadways or distance from the coast, so we hypothesize that population density may be driving these prediction differences. Figure 11 provides a population density map of Los Angeles to investigate whether this variable is related to the trend in prediction error we see in Figure 10 and Figure 9. 
+Based on Figure 10, the balanced model has no discernible difference from the gold-standard on the natural log scale. The magnitude of over-prediction in winter and fall is generally less than the magnitude of under prediction in spring and summer.  Interestingly, we see roughly the same pattern of prediction error between the seasons, where the areas that are most over predicted in winter are the most under predicted in summer. These blotches with the greatest magnitude of prediction error correspond to the flares or area of high log NOx observed in the fall and winter campaigns. These patterns do not appear to have relationships to roadways or distance from the coast, so we hypothesize that population density may be driving these prediction differences. Figure 11 provides a population density map of Los Angeles to investigate whether this variable is related to the trend in prediction error we see in Figure 10 and Figure 9. 
 
 ```{r, echo = F, include = T}
 
@@ -3356,14 +3353,22 @@ population_la <- g + # Set map extent and CRS (bounding box error otherwise resu
     theme(panel.border = element_rect(color = "black", fill = NA, size = 1))
   
 population_la #display the map
+```
+Figure 11: Population density map for Los Angeles. Note that the lighter regions indicate areas of higher population density, as indicated by the legend. 
 
+The heat map of population density plotted on the Los Angeles grid in Figure 11 closely resembles the prediction differences pattern seen in Figure 10 (population is scaled by 1/1000 for a cleaner scale). 
+
+Figure 12 plots the prediction differences against population in the 5k buffer, and we observe that there is almost no slope to the best fit line for the balanced model and a very modest slope for fall. Spring and summer have steep negative slopes and winter has a steep positive slope. We see in Figure 12 that for the winter model, higher population density appears associated with a larger over-prediction by the winter model compared to the gold standard model. The opposite is true for the summer model: a greater population density appears associated with a larger under-prediction of the summer model. 
+
+```{r fig 12}
+
+#plot figure 12
 pop #display the scatter plots
 
 ```
-The heat map of population density plotted on the Los Angeles grid in Figure 11 closely resembles the prediction differences pattern seen in Figure 10 (population is scaled by 1/1000 for a cleaner scale). 
- 
- 
-Figure 12 plots the prediction differences against population in the 5k buffer, and we observe that there is almost no slope to the best fit line for the balanced model and a very modest slope for fall. Spring and summer have steep negative slopes and winter has a steep positive slope. We see in Figure 12 that for the winter model, higher population density appears associated with a larger over-prediction by the winter model compared to the gold standard model. The opposite is true for the summer model: a greater population density appears associated with a larger under-prediction of the summer model. 
+Figure 12: Difference in log(NOx) prediction (log-ppb) as a function of population within a 5,000m buffer according to the underlying short-term dataset used. Note that population was scaled by 1/1000 to enhance axis readability. 
+
+
 
 # Discussion and Conclusion
 
