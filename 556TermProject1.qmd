@@ -1079,9 +1079,8 @@ for (i in 1:n_reps) {
   st_summer <- rbind(st_summer, summer_avg_data)
 }
 summer_state_var<-ggplot(st_summer, aes(x = native_id, y = log_avg)) +
-  geom_boxplot()+
-  ggtitle("Figure 5.0: Summer Short Term Sensor Log-transformed Annual Averages \n30 sets of 28 samples per sensor")
-
+  geom_boxplot() +
+  ggtitle("Summer")
 
 #----------fall----------------------------------------------
 # Initialize the short-term balanced data frame
@@ -1102,8 +1101,8 @@ for (i in 1:n_reps) {
   st_fall <- rbind(st_fall, fall_avg_data)
 }
 fall_state_var<-ggplot(st_fall, aes(x = native_id, y = log_avg)) +
-  geom_boxplot()+
-  ggtitle("Fall Short Term Sensor Log-transformed Annual Averages \n30 sets of 28 samples per sensor")
+  geom_boxplot() +
+  ggtitle("Fall")
 
 #------------Winter--------------------------------------------
 st_winter <- data.frame()
@@ -1123,9 +1122,8 @@ for (i in 1:n_reps) {
   st_winter <- rbind(st_winter, winter_avg_data)
 }
 winter_state_var<-ggplot(st_winter, aes(x = native_id, y = log_avg)) +
-  geom_boxplot()+
-  ggtitle("Winter Short Term Sensor Log-transformed Annual Averages \n30 sets of 28 samples per sensor")
-
+  geom_boxplot() +
+  ggtitle("Winter")
 
 #------------Spring--------------------------------------------
 st_spring <- data.frame()
@@ -1146,9 +1144,8 @@ for (i in 1:n_reps) {
 }
 
 spring_state_var<- ggplot(st_spring, aes(x = native_id, y = log_avg)) +
-  geom_boxplot()+
-  ggtitle("Spring Short Term Sensor Log-transformed Annual Averages \n30 sets of 28 samples per sensor")
-
+  geom_boxplot() +
+  ggtitle("Spring")
 
 # this should be the same length as the st_balanced dataframe
 #True - AG
@@ -1894,8 +1891,7 @@ for (i in 1:n_reps) {
   st_la <- rbind(st_la, la_avg_data)
 }
 balanced_LA<- ggplot(st_la, aes(x = native_id, y = log_avg)) +
-  geom_boxplot()+
-  ggtitle("Figure 8.0:Los Angeles County Short Term Sensor Log-transformed Annual Averages \n30 sets of 28 samples per sensor")
+  geom_boxplot()
 
 ```
 
@@ -2124,9 +2120,8 @@ for (i in 1:n_reps) {
   st_summer_la <- rbind(st_summer_la, summer_la_avg_data)
 }
 summer_LA<- ggplot(st_summer_la, aes(x = native_id, y = log_avg)) +
-  geom_boxplot()+
-  ggtitle("Figure X: summer_la Short Term Sensor Log-transformed Annual Averages \n30 sets of 28 samples per sensor")
-
+  geom_boxplot() +
+  ggtitle("Summer")
 
 #----------fall_la----------------------------------------------
 # Initialize the short-term balanced data frame
@@ -2147,8 +2142,8 @@ for (i in 1:n_reps) {
   st_fall_la <- rbind(st_fall_la, fall_la_avg_data)
 }
 fall_LA<-ggplot(st_fall_la, aes(x = native_id, y = log_avg)) +
-  geom_boxplot()+
-  ggtitle("Figure X: fall_la Short Term Sensor Log-transformed Annual Averages \n30 sets of 28 samples per sensor")
+  geom_boxplot() +
+  ggtitle("Fall")
 
 #------------winter_la--------------------------------------------
 st_winter_la <- data.frame()
@@ -2168,9 +2163,8 @@ for (i in 1:n_reps) {
   st_winter_la <- rbind(st_winter_la, winter_la_avg_data)
 }
 winter_LA<-ggplot(st_winter_la, aes(x = native_id, y = log_avg)) +
-  geom_boxplot()+
-  ggtitle("Figure X: winter_la Short Term Sensor Log-transformed Annual Averages \n30 sets of 28 samples per sensor")
-
+  geom_boxplot() +
+  ggtitle("Winter")
 
 #------------spring_la--------------------------------------------
 st_spring_la <- data.frame()
@@ -2191,11 +2185,8 @@ for (i in 1:n_reps) {
 }
 
 spring_LA<-ggplot(st_spring_la, aes(x = native_id, y = log_avg)) +
-  geom_boxplot()+
-  ggtitle("Figure X:spring_la Short Term Sensor Log-transformed Annual Averages \n30 sets of 28 samples per sensor")
-
-
-
+  geom_boxplot() +
+  ggtitle("Spring")
 
 
 
@@ -2796,7 +2787,6 @@ st_all_boxplot_la
 Figure 8: Box plots comparing the MSE-based R^2, regression-based R^2, and RMSE for short-term season-specific and temporally-balanced datasets within Los Angeles County. Method A represents the short-term campaign predictions as compared to the gold standard observations, whereas Method B represents the short-term campaign predictions as compared to observations within the same campaign. The dotted horizontal line shows the performance of the model using the gold standard dataset.
 
 
-Figure 9 shows the gridded prediction for each fitted model. We see that the balanced short-term predictions are closest to the gold-standard, as expected. Maps are plotted on the natural log scale in-order to maintain enough variability for visualization on a single color-ramp. Individual plots for each model on the native scale are available in the appendix (Figures AX.1 – AX.6), and really emphasize the distinct seasonal predictions seen here on the natural log scale. Predictions are highest in winter lowest in summer (this is most evident on the native scale maps in appendix). Spring and fall are in between with spring being more like summer and fall more similar to winter. Fall is the most like the balanced and gold-standard predictions. This result is somewhat surprising based on figure X (the rainbow lines for LA campaigns), where the winter campaigns appeared to have the most similarity to the balanced.  One notable difference in this predictions is that figure X uses LOO cross-validation to predict at monitor locations (i.e. using 11 monitors to predict at the location of the 12th), and is repeated over 30 simulated campaigns in which different random samples are collected, whereas the maps use the fitted model to predict at new locations on the grid (no need to leave one out), and is not campaign based.  Differences may result from differences in covariates at grid points compared to at monitor locations. Lower predicted ln(NOx) concentrations highlight the influence of major roadways, as seen in the summer facer (see appendix Figure A1.4 for very clear example). At higher predicted concentrations, we see a flare around downtown Los Angeles that is not visible at lower predicted values. To understand patterns systematic differences in predicted values that differ from the gold-standard predictions, gold-standard predicted values are subtracted from the predicted values of each short-term model and the results are plotted in figure 10. The balanced model has almost no discernable difference from the gold-standard on the natural log scale. The magnitude of over-prediction in winter and fall is generally less than the magnitude of under prediction in spring and summer.  Interestingly, we see roughly the same pattern of prediction error between the seasons, where the areas that are most over predicted in winter are the most under predicted in summer. These blotches with the greatest magnitude of prediction error correspond to the flares or area of high log NOx observed in the fall and winter. These patterns do not appear to have relationships to roadways or distance from the coast, so we hypothesize that population density may be driving these prediction differences. Figure 11 provides a population density map of Los Angeles, which closely resembles the prediction difference pattern seen (population is scaled by 1/1000 for a cleaner scale). Figure 12 plots the prediction differences against population in the 5k buffer, and we observe that there is almost no slope to the best fit line for the balanced model and a very modest slope for fall. Spring and summer have steep negative slopes and winter has a steep positive slope. 
 
 
 ```{r prediction.maps, echo = F, include = F}
@@ -3185,6 +3175,13 @@ lnnox_map #like this one a lot. They do look cool on the native scale, but I thi
 
 ```
 
+
+Figure 9 shows the gridded prediction for each fitted model. We see that the balanced short-term predictions are closest to the gold-standard, as expected. Maps are plotted on the natural log scale in-order to maintain enough variability for visualization on a single color-ramp. Individual plots for each model on the native scale are available in the appendix (Figures AX.1 – AX.6), and really emphasize the distinct seasonal predictions seen here on the natural log scale. Predictions are highest in winter lowest in summer (this is most evident on the native scale maps in appendix). Spring and fall are in between with spring being more like summer and fall more similar to winter. Fall is the most like the balanced and gold-standard predictions. This result is somewhat surprising based on Figure 7, where the winter campaigns appeared to have the most similarity to the balanced campaign.  
+
+One notable difference in this predictions is that figure 7 uses LOO cross-validation to predict at monitor locations (i.e. using 11 monitors to predict at the location of the 12th), and is repeated over 30 simulated campaigns in which different random samples are collected, whereas the maps use the fitted model to predict at new locations on the grid (no need to leave one out), and is not campaign based.  Differences may result from differences in covariates at grid points compared to at monitor locations.
+
+Lower predicted ln(NOx) concentrations highlight the influence of major roadways, as seen in the summer facer (see appendix Figure A1.4 for very clear example). In Figure 9, at higher predicted concentrations, we see a flare around downtown Los Angeles that is not visible at lower predicted values. To understand patterns systematic differences in predicted values that differ from the gold-standard predictions, gold-standard predicted values are subtracted from the predicted values of each short-term model and the results are plotted in figure 10. 
+
 ```{r, echo = F, include = T}
 
 #curious about differences - plots a map that subtracts the differences
@@ -3244,6 +3241,8 @@ difference_map
 
 
 ```
+
+Based on Figure 10, the balanced model has no discernable difference from the gold-standard on the natural log scale. The magnitude of over-prediction in winter and fall is generally less than the magnitude of under prediction in spring and summer.  Interestingly, we see roughly the same pattern of prediction error between the seasons, where the areas that are most over predicted in winter are the most under predicted in summer. These blotches with the greatest magnitude of prediction error correspond to the flares or area of high log NOx observed in the fall and winter campaigns. These patterns do not appear to have relationships to roadways or distance from the coast, so we hypothesize that population density may be driving these prediction differences. Figure 11 provides a population density map of Los Angeles to investigate whether this variable is related to the trend in prediction error we see in Figure 10 and Figure 9. 
 
 ```{r, echo = F, include = T}
 
@@ -3329,6 +3328,10 @@ population_la #display the map
 pop #display the scatter plots
 
 ```
+The heat map of population density plotted on the Los Angeles grid in Figure 11 closely resembles the prediction differences pattern seen in Figure 10 (population is scaled by 1/1000 for a cleaner scale). 
+ 
+ 
+Figure 12 plots the prediction differences against population in the 5k buffer, and we observe that there is almost no slope to the best fit line for the balanced model and a very modest slope for fall. Spring and summer have steep negative slopes and winter has a steep positive slope. We see in Figure 12 that for the winter model, higher population density appears associated with a larger over-prediction by the winter model compared to the gold standard model. The opposite is true for the summer model: a greater population density appears associated with a larger under-prediction of the summer model. 
 
 # Discussion and Conclusion
 
@@ -3338,9 +3341,9 @@ Our short-term, temporally-balanced dataset produced stronger predictions than a
 
 In season-specific datasets, the MSE-based R^2 suggested a high degree of bias or prediction error in the short-term annual average estimates when compared against the gold standard concentrations. The short-term monitoring campaigns using only summer or spring data consistently under-estimated the gold standard annual average concentrations, whereas short-term campaigns using only winter or fall data consistently over-estimated the gold standard annual average concentrations. Interestingly, although the MSE-based R^2 indicated a poor prediction performance for all season-specific datasets, the regression-based R^2 estimates for season-specific datasets suggested that a moderate amount of the variability (~30%) in gold standard NOx concentrations were captured by the models using short-term, season-specific datasets. Indeed, the plots with best fit lines comparing the short-term predictions with the gold standard predictions showed deviations from the 1:1 line for all seasonal models, though notably the estimated slope remained reasonably constant across models for season-specific and short-term balanced estimates. Taken together, these data infer that the short-term, season-specific datasets produce similar trends (i.e. slopes) as the gold standard dataset but are biased in their annual average estimates due to mismatches in their intercepts. 
 
-Overall, our data suggest that a seasonally-balanced monitoring campaign will predict annual NOx concentrations with improved accuracy compared to a monitoring campaign with data collected in just one season. These results are consistent with prior data demonstrating that NOx concentrations are typically highest in the winter and lowest in the summer and spring (Lange et al. 2022; EPA 2023). They are also consistent with the findings of Blanco et al. (2022), who reported that a temporally-balanced sampling design was important in accurately predicting annual average NOx concentrations during mobile monitoring campaigns.
+Overall, our data suggest that a seasonally-balanced monitoring campaign will predict annual NOx concentrations with improved accuracy compared to a monitoring campaign with data collected in just one season. These results are consistent with prior data demonstrating that NOx concentrations are typically highest in the winter and lowest in the summer and spring (Lange et al. 2022; EPA 2023). They are also consistent with the findings of Blanco et al. (2023), who reported that a temporally-balanced sampling design was important in accurately predicting annual average NOx concentrations during mobile monitoring campaigns.
 
-Notably, all model predictions, including those using the cross-validated gold standard predictions, had reasonably low MSE-based R^2 values, indicating a somewhat poor predictive performance. The poor predictive performance could be related to the large distance over which the monitors were scattereed, as well as the limited variability in annual average concentrations. It could also be related to our model selection strategy, which is discussed in greater detail in subsequent sections. Importantly, Blanco et al. (2022) reported improved coefficients of determination compared to the present analysis, though the values were still somewhat low and tended to hover around approximately 0.35 to 0.45. In Blanco et al. (2022), authors included hundreds of geographic covariates in their model related to land-use, road proximity, and population density. The inclusion of a robust set of geographic covariates likely contributed to the improved performance of models in Blanco et al. (2022) versus the present analysis, though low coefficients of determination in both analyses suggest that the increased number of geographic covariates alone do not fully capture the variability in NOx concentrations. It is possible that other temporal or spatial factors uncaptured by the covariates in either analysis are additionally contributing to the observed variability in NOx concentrations.
+Notably, all model predictions, including those using the cross-validated gold standard predictions, had reasonably low MSE-based R^2 values, indicating a somewhat poor predictive performance. The poor predictive performance could be related to the large distance over which the monitors were scattereed, as well as the limited variability in annual average concentrations. It could also be related to our model selection strategy, which is discussed in greater detail in subsequent sections. Importantly, Blanco et al. (2023) reported improved coefficients of determination compared to the present analysis, though the values were still somewhat low and tended to hover around approximately 0.35 to 0.45. In Blanco et al. (2023), authors included hundreds of geographic covariates in their model related to land-use, road proximity, and population density. The inclusion of a robust set of geographic covariates likely contributed to the improved performance of models in Blanco et al. (2023) versus the present analysis, though low coefficients of determination in both analyses suggest that the increased number of geographic covariates alone do not fully capture the variability in NOx concentrations. It is possible that other temporal or spatial factors uncaptured by the covariates in either analysis are additionally contributing to the observed variability in NOx concentrations.
 
 Notably, the purpose of the analysis was not to select an ideal model for predicting NOx across the state of California, but to assess the performance of short-term campaigns in predicting long-term annual average NOx concentrations; we therefore were not limited by sub-par prediction performances, as we were still able to contrast performance parameters between various short- and long-term datasets. In a true monitoring campaign for epidemiology studies, additional considerations should be paid to model selection so that exposure can be more properly characterized.
 
@@ -3367,7 +3370,7 @@ Additionally, when creating our season-specific datasets, we created seasonal st
 
 Finally, as noted earlier, our model selection method was not complex; we simply used the previously selected model from Mercer et al (2011) paired with forward, stepwise model selection to further reduce the number of covariates included in our final common model. The subset of our land use covariates to the eight reflecting the Mercer et al (2011) common model may have erroneously eliminated covariates that would have explained more of the variation between monitor locations. A more in-depth model selection approach may have found a better fit to the models.
 
-Although we use a very limited model, this analysis provides insight into ways in which short-term monitoring may still be valuable for epidemiological work. For example, temporal restrictions resulted in a biased intercept (the sample mean differs from the true mean (gold-standard data annual average), the slope was minimally biased and close to that of the gold-standard model. This resulted in consistent over or under prediction. Further more, this prediction error had a spatial structure closely associated with population density. One advantage of this study is that we were able to simulate multiple campaigns, where as in real world studies only a single campaign would generally be available. Furthermore we had access to temporally continuous data, albeit with limited spatial coverage, on which to base our gold standard. Such data to construct a gold-standard may not be available in all situations. The tradeoff between spatial and temporal coverage challenges exposure prediction for epidemiological work. This work shows that limitations in temporal coverage may systematically mis-predict exposure in a way that could potentially be accounted or corrected if the only feasible sampling method was as short-term campaign. We tested a limited number of covariates and a single model. More work is needed to dig into the relationship between short-term sampling campaigns and way to maximize their utility for estimating long-term exposure to NOx. 
+Although we use a very limited model, this analysis provides insight into ways in which short-term monitoring may still be valuable for epidemiological work. For example, temporal restrictions resulted in a biased intercept (the sample mean differs from the true mean (gold-standard data annual average), the slope was minimally biased and close to that of the gold-standard model. This resulted in consistent over or under prediction. Further more, this prediction error had a spatial structure closely associated with population density (Investigated in Figures 9 - 12). One advantage of this study is that we were able to simulate multiple campaigns, where as in real world studies only a single campaign would generally be available. Furthermore we had access to temporally continuous data, albeit with limited spatial coverage, on which to base our gold standard. Such data to construct a gold-standard may not be available in all situations. The tradeoff between spatial and temporal coverage challenges exposure prediction for epidemiological work. This work shows that limitations in temporal coverage may systematically mis-predict exposure in a way that could potentially be accounted or corrected if the only feasible sampling method was as short-term campaign. We tested a limited number of covariates and a single model. More work is needed to dig into the relationship between short-term sampling campaigns and way to maximize their utility for estimating long-term exposure to NOx. 
 
 **Broader Implications and Future Research** 
 
@@ -3390,7 +3393,7 @@ Analysis:
 
 *Katie:* Met with professors at office hours and attended all group meetings. CA NOx monitor inclusion criteria validation. Wrote functions for random campaign sampling and data aggregation and summary statistics. Wrote template code for iterating CV function across campaigns and extracting the performance statistics. Coded figures for RMSE/R2 box plots, campaign best-fit lines, grid predictions, and all maps. 
 
-*Abbie:* Met with professors at office hours and attended all group meetings. Set up the Github Project and Repository for the project; Implemented the forward stepwise selection of our model terms. Created the statewide seasonal data sets and models, including the comparisons with the gold standard data sets; created the LA county seasonal data sets and models, including the comparisons with the gold standard data sets; adjustment of our cross validation method for LA county, implementing a leave-one-out method instead of a 10 fold method.
+*Abbie:* Met with professors at office hours and attended all group meetings. Set up the Github Project and Repository for the project; Implemented the forward stepwise selection of our model terms. Created the statewide seasonal data sets and models, including the comparisons with the gold standard data sets; created the LA county seasonal data sets and models, including the comparisons with the gold standard data sets; adjustment of our cross validation method for LA county, implementing a leave-one-out method instead of a 10 fold method. Added the regression-based R squared to functions and plots. 
 
 Writing: 
 
@@ -3399,7 +3402,7 @@ Writing:
 *Katie:* Added to the results, methods, and discussion, especially the portion about maps. Proof reading and editing for consistent interpretation between writing and code output. 
 
 
-*Abbie:* Added to the results, especially with regards to the model selection and selection of model covariates, and seasonal models. Added to the discussion section with overall conclusions, limitations, future research suggestions, and current literature. final editing of plots and graphs. Review of citations.
+*Abbie:* Added to the results, especially with regards to the model selection and selection of model covariates, and seasonal models. Added to the discussion section with overall conclusions, limitations, future research suggestions, and current literature. Contibuted to editing of plots and graphs. Review of citations. Writing and organization of the appendix.
 
 
 # Works Cited 
@@ -3420,78 +3423,21 @@ https://pmc.ncbi.nlm.nih.gov/articles/PMC3146303/pdf/nihms299256.pdf
 United States Census. 2023. QuickFacts Los Angeles County, California. https://www.census.gov/quickfacts/fact/table/losangelescountycalifornia,losangelescitycalifornia,CA/PST045223 Accessed 11/30/2024.
 
 
-
 ## Appendix 
 
-#---------------------------Reference Code-------------------------------------#
+**Data Cleaning and Processing**
 
-
-Sensors Kept in the Data after applying selection Criteria from Blanco et al (2022).
+Sensors Kept in the Data after applying selection Criteria from Blanco et al (2023).
 ```{r, echo = FALSE}
 kable(sensor_summary,
       col.names = c("Sensor ID", "Count", "Percent of Year with Data", "Percent of Data Positive", "Maximum Data Gap (days)"),
       digits = 2,
-      caption = "Summary of Sensor Data for SEnsors Meeting Selection Criteria") %>% kable_styling()
+      caption = "Table 1.0: Summary of Sensor Data for SEnsors Meeting Selection Criteria") %>% kable_styling()
 
 ```
-
-Statewide Datasets - Gold Standard, Short term balanced, and seasonals
-```{r}
-#summary statistics
-lt_gold_sum <- long_term_gold %>% summarise(min = min(annual_avg), 
-                                            Q25 = quantile(annual_avg, probs = 0.25), 
-                                            Q50 = quantile(annual_avg, probs = 0.5),
-                                            Q75 = quantile(annual_avg, probs = 0.75),
-                                            max = max(annual_avg),
-                                            mean = mean(annual_avg),
-                                            SD = sd(annual_avg)
-                                            )
-#lt_gold_sum
-      #This matches the number reported in Blanco supplement S5
-
-#summary stats for st_balanced
-st_balanced_sum <- st_balanced %>% summarise(min = min(annual_avg), 
-                                            Q25 = quantile(annual_avg, probs = 0.25), 
-                                            Q50 = quantile(annual_avg, probs = 0.5),
-                                            Q75 = quantile(annual_avg, probs = 0.75),
-                                            max = max(annual_avg),
-                                            mean = mean(annual_avg),
-                                            SD = sd(annual_avg)
-                                            )
-#st_balanced_sum #this would not be expected to match Blanco because we used different seeds
-#summarizing the data from the random samples
-names <- c("Gold Standard (LT)", "ST Balanced")
-
-kable(cbind(names , rbind(lt_gold_sum, st_balanced_sum)), digits = 2,
-      caption = "Table 1.0: Balanced, Long-term & Short-term Sampling Campaign Summaries") %>% kable_styling()
-
-```
-
-```{r gold.standard.variability, warning = FALSE, echo = F}
-#graphing the distribution of annual averages
+Table 1.0 in the appendix provides the data details for each sensor included in the data set based on criteria outlines in the methods section and Blanco, et al. (2023). In this table you can see the data gaps (in days) that were allowed to stay in the data set, and what percent of the year we have data for, for each sensor. 
 
 
-balanced<- ggplot(st_balanced, aes(x = native_id, y = log_avg)) +
-  geom_boxplot()+
-  ggtitle("Figure 1:Short Term Balanced Sensor Log-transformed Annual Averages \n30 sets of 28 samples per sensor") +
-  ylab("ln(NOx) ln(ppb)")
-
-gold<- ggplot(long_term_gold, aes(x = native_id, y = log_avg)) +
-  geom_point()+
-  ggtitle("Gold Standard Sensor Log-transformed Annual Averages \n1 sample per sensor") +
-  ylab("ln(NOx) ln(ppb)")
-
-
-grid.arrange(balanced, gold)
-
-grid.arrange(summer_state_var, fall_state_var, winter_state_var, spring_state_var)
-
-
-
-```
-These plots above show the variability in the data from all of the statewide data sets: gold standard, short term balanced, summer, fall, winter, and spring data sets. 
-
-#Break up the histograms by season, look at NOx distribution by seasons
 
 
 ```{r, echo = F, include = T}
@@ -3511,7 +3457,8 @@ native <- long_term_gold %>%
 ggplot(aes(annual_avg)) +
   geom_histogram(aes(y = ..density..), bins = 30, color = "lightblue", fill = "lightblue", alpha = 0.8) +
   geom_density(color = "purple") +
-  labs(title = " Figure 2.0: Distribution of Annual Average NOx Concentrations",
+  labs(title = " Figure 1.0: Distribution of Annual Average NOx Concentrations",
+       subtitle = "Native Scale",
        x = "Concentration on native scale (ppb)",
        y = "density"
        )
@@ -3521,6 +3468,7 @@ ggplot(aes(log_avg)) +
   geom_histogram(aes(y = ..density..), bins = 30, color = "lightblue", fill = "lightblue", alpha = 0.8) +
   geom_density(color = "purple") +
   labs(title = "",
+       subtitle = "Natural-Log Transformed Scale",
        x = "Concentration on natural log (ppb) scale",
        y = "density"
        )
@@ -3531,116 +3479,58 @@ native + log
 #Should this whole chunk go to the appendix?
 
 ```
-These histograms support our conclusion to log-transform our data before modeling with it. We see a rather obvious right tail on our native-scale NOx data, in what appears to be a log-normal distribution. The distribution becomes much more normal after log transformation (Right).
 
-#obs vs preds for seasonal statewide models
-```{r basic obs vs preds plot, echo = FALSE}
-ggplot( st_balanced_CV, aes(x = log_avg, cvpreds)) +
-  geom_point() +
-  geom_smooth(method = "lm") +
-  ggtitle("observations vs predictions - short term balanced campaign") +
-  xlab("Observed log(NOx) annual averages") +
-  ylab("Predicted log(NOx) annual averages ") +
-  geom_abline(slope = 1.0) 
+The histograms in Appendix Figure 1.0 support our conclusion to log-transform our data before modeling with it. We see a rather obvious right tail on our native-scale NOx data, in what appears to be a log-normal distribution. The distribution becomes much more normal after log transformation (Right).
 
-ggplot( st_summer_CV, aes(x = log_avg, cvpreds)) +
-  geom_point() +
-  geom_smooth(method = "lm") +
-  ggtitle("observations vs predictions - short term Summer campaign") +
-  xlab("Observed log(NOx) seasonal averages") +
-  ylab("Predicted log(NOx) seasonal averages ") +
-  geom_abline(slope = 1.0)
 
-ggplot( st_fall_CV, aes(x = log_avg, cvpreds)) +
-  geom_point() +
-  geom_smooth(method = "lm") +
-  ggtitle("observations vs predictions - short term Fall campaign") +
-  xlab("Observed log(NOx) seasonal averages") +
-  ylab("Predicted log(NOx) seasonal averages ") +
-  geom_abline(slope = 1.0)
+**Statewide Campaign Analysis**
 
-ggplot( st_winter_CV, aes(x = log_avg, cvpreds)) +
-  geom_point() +
-  geom_smooth(method = "lm") +
-  ggtitle("observations vs predictions - short term Winter campaign") +
-  xlab("Observed log(NOx) seasonal averages") +
-  ylab("Predicted log(NOx) seasonal averages ") +
-  geom_abline(slope = 1.0)
+```{r gold.standard.variability, warning = FALSE, echo = F}
+#graphing the distribution of annual averages
 
-ggplot( st_spring_CV, aes(x = log_avg, cvpreds)) +
+
+balanced<- ggplot(st_balanced, aes(x = native_id, y = log_avg)) +
+  geom_boxplot() +
+  ggtitle("Balanced")
+
+gold<- ggplot(long_term_gold, aes(x = native_id, y = log_avg)) +
   geom_point() +
-  geom_smooth(method = "lm") +
-  ggtitle("observations vs predictions - short term Spring campaign") +
-  xlab("Observed log(NOx) seasonal averages") +
-  ylab("Predicted log(NOx) seasonal averages ") +
-  geom_abline(slope = 1.0)
+  ggtitle("Gold Standard")
+
+
+grid.arrange(gold, balanced, summer_state_var, fall_state_var, winter_state_var, spring_state_var,
+             top = "Figure 3.0: Variability Within Statewide Short term and Gold Standard Datasets")
+
+
 
 ```
+The boxplots in Appendix Figure 3.0 show the variability in the data from all of the statewide data sets: gold standard, short term balanced, summer, fall, winter, and spring data sets. We can see from these plots that some data sets, like the Spring data set, have less variation within each sensor. Comparing Winter and spring data sets, the Winter data set has more variability between sensors as well. 
+
+
+**LA County Data Analysis**
 
 
 ```{r, variability across LA county seasonal data sets}
 
-LA_title <- "Variability in LA County Short Term Seasonal Data sets"
-grid.arrange(top = LA_title, grobs = list(summer_LA, fall_LA, winter_LA, spring_LA, balanced_LA ))
-#move to Appendix
-```
+Balanced_LA<-ggplot(st_la, aes(x = native_id, y = log_avg)) +
+  geom_boxplot() +
+  ggtitle("Balanced")
+
+Gold_Standard_LA<-ggplot(long_term_gold_la, aes(x = native_id, y = log_avg)) +
+  geom_point() +
+  ggtitle("Gold Standard")
+
+LA_title <- "Figure 4: Variability in LA County Short Term Seasonal Data sets"
+grid.arrange(top = LA_title, grobs = list(summer_LA, fall_LA, winter_LA, spring_LA, Balanced_LA , Gold_Standard_LA))
 
 
-
-
-```{r, warning = FALSE, echo = F, message = FALSE}
-
-#summary figures - statewide
-
-Title <- "Statewide Short Term Campaign Performances and Comparison with Gold Standard"
-Methods <- " Method A = Campaign Predictions Compared to Gold Standard Obs\n
-       Method B = Campaign Predictions Compared to its Observations\n
-       Square points shows the Gold Standard's performance"
-
-scatter_legend <- "x = Gold Standard predicted ln(NOx) (ln(ppb))
-         \ny = Short Term Campaign Predicted ln(NOx) (ln(ppb))"
-
-grid.arrange(top = Title, bottom = Methods, grobs= list(st_spring_boxplot, st_summer_boxplot, st_fall_boxplot, st_winter_boxplot, st_balanced_boxplot),
-             ncol = 3, nrow = 3,
-             layout_matrix = rbind(c(1,2,3),
-                                   c(4, 5, NA)))
-
-grid.arrange(top = Title, bottom = scatter_legend, grobs = list(st_spring_scatter, st_summer_scatter, st_fall_scatter, st_winter_scatter,
-                                                                st_balanced_scatter), ncol = 3, nrow = 3,
-             layout_matrix = rbind(c(1,2,3),
-                                   c(4, 5, NA)))
-
-#yikes! :)
-
-#Abbie figured out grid.arrange, and made these much nicer plots.
 
 
 ```
 
+The plots in Appendix Figure 4.0 show the variability in the data from the LA county data sets. These data sets have 12 instead of the statewide 69 monitors.
 
 
-```{r, warning = F, message = F, echo = F, include = F}
-#summary figures - LA County
-
-Title <- "LA County Short Term Campaign Performances and Comparison with Gold Standard"
-Methods <- " Method A = Campaign Predictions Compared to Gold Standard Obs\n
-       Method B = Campaign Predictions Compared to its Observations\n
-       Square points shows the Gold Standard's performance"
-
-scatter_legend <- "x = Gold Standard predicted ln(NOx) (ln(ppb))
-         \ny = Short Term Campaign Predicted ln(NOx) (ln(ppb))"
-
-grid.arrange(top = Title, bottom = Methods, grobs= list(st_spring_boxplot, st_summer_boxplot, st_fall_boxplot, st_winter_boxplot, st_balanced_boxplot),
-             ncol = 3, nrow = 3,
-             layout_matrix = rbind(c(1,2,3),
-                                   c(4, 5, NA)))
-
-grid.arrange(top = Title, bottom = scatter_legend, grobs = list(st_spring_scatter, st_summer_scatter, st_fall_scatter, st_winter_scatter,
-                                                                st_balanced_scatter), ncol = 3, nrow = 3,
-             layout_matrix = rbind(c(1,2,3),
-                                   c(4, 5, NA)))
-
-```
 
 ```{r maps.la.model, echo = F, include = T}
 #repeat using the LA specific models
