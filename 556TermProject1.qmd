@@ -1081,7 +1081,7 @@ for (i in 1:n_reps) {
 summer_state_var<-ggplot(st_summer, aes(x = native_id, y = log_avg)) +
   geom_boxplot() +
   ggtitle("Summer") +
-  labs(x = "monitor",
+  labs(x = "monitors",
        y = "ln (NOx (ppb))") +
   theme(axis.text.x = element_blank(),
     axis.ticks.x = element_blank())
@@ -1107,7 +1107,7 @@ for (i in 1:n_reps) {
 fall_state_var<-ggplot(st_fall, aes(x = native_id, y = log_avg)) +
   geom_boxplot() +
   ggtitle("Fall") +
-  labs(x = "monitor",
+  labs(x = "monitors",
        y = "ln (NOx (ppb))") +
   theme(axis.text.x = element_blank(),
     axis.ticks.x = element_blank())
@@ -1132,7 +1132,7 @@ for (i in 1:n_reps) {
 winter_state_var<-ggplot(st_winter, aes(x = native_id, y = log_avg)) +
   geom_boxplot() +
   ggtitle("Winter") +
-  labs(x = "monitor",
+  labs(x = "monitors",
        y = "ln (NOx (ppb))") +
   theme(axis.text.x = element_blank(),
     axis.ticks.x = element_blank())
@@ -1158,7 +1158,7 @@ for (i in 1:n_reps) {
 spring_state_var<- ggplot(st_spring, aes(x = native_id, y = log_avg)) +
   geom_boxplot() +
   ggtitle("Spring") +
-  labs(x = "monitor",
+  labs(x = "monitors",
        y = "ln (NOx (ppb))") +
   theme(axis.text.x = element_blank(),
     axis.ticks.x = element_blank())
@@ -2138,7 +2138,7 @@ for (i in 1:n_reps) {
 summer_LA<- ggplot(st_summer_la, aes(x = native_id, y = log_avg)) +
   geom_boxplot() +
   ggtitle("Summer") +
-  labs(x = "monitor",
+  labs(x = "monitors",
        y = "ln (NOx (ppb))") +
   theme(axis.text.x = element_blank(),
     axis.ticks.x = element_blank())
@@ -2164,7 +2164,7 @@ for (i in 1:n_reps) {
 fall_LA<-ggplot(st_fall_la, aes(x = native_id, y = log_avg)) +
   geom_boxplot() +
   ggtitle("Fall") +
-  labs(x = "monitor",
+  labs(x = "monitors",
        y = "ln (NOx (ppb))") +
   theme(axis.text.x = element_blank(),
     axis.ticks.x = element_blank())
@@ -2189,7 +2189,7 @@ for (i in 1:n_reps) {
 winter_LA<-ggplot(st_winter_la, aes(x = native_id, y = log_avg)) +
   geom_boxplot() +
   ggtitle("Winter") +
-  labs(x = "monitor",
+  labs(x = "monitors",
        y = "ln (NOx (ppb))") +
   theme(axis.text.x = element_blank(),
     axis.ticks.x = element_blank())
@@ -2215,7 +2215,7 @@ for (i in 1:n_reps) {
 spring_LA<-ggplot(st_spring_la, aes(x = native_id, y = log_avg)) +
   geom_boxplot() +
   ggtitle("Spring") +
-  labs(x = "monitor",
+  labs(x = "monitors",
        y = "ln (NOx (ppb))") +
   theme(axis.text.x = element_blank(),
     axis.ticks.x = element_blank())
@@ -3408,11 +3408,11 @@ Although we use a very limited model, this analysis provides insight into ways i
 
 Our findings are important in informing the sampling design for future monitoring campaigns. Our results suggest that future monitoring campaigns must include sampling balanced across all seasons, rather than overrepresenting or restricting to sampling within a single season. This finding provides important insight for future investigators, who will need to incorporate sampling over the course of a year rather than within a more constrained timeframe. Additionally, our findings are valuable in reaffirming that a temporally-balanced dataset can adequately predict long-term annual averages; this reinforces prior findings that suppoted the use of short-term mobile monitoring campaigns to characterize gold standard concentration measurements.
 
-We recommend future research that compares the short-term monitoring campaigns across counties in California. This analysis would be an interesting next step to further compare how the short term balanced and seasonal datasets perform when restricted to different geographic regions in California; this could be especially relevant for counties that have lower annual variability in meteorological parameters. However, a different data set may be necessary for this analysis, as the present dataset was limited in the total number of county-specific sensors outside of Los Angeles.
+We recommend future research that compares the short-term monitoring campaigns across counties in California. This analysis would be an interesting next step to further compare how the short term balanced and seasonal datasets perform when restricted to different geographic regions in California; this could be especially relevant for counties that have lower annual variability in meteorological parameters. However, a different data set may be necessary for this analysis, as the present dataset was limited in the total number of county-specific sensors outside of Los Angeles. Future research will also explore further explore the drivers of poor performance in reduced-sampling campaigns and potential and their potential for use when other options are infeasible. 
 
 **Conclusion** 
 
-Overall, our findings re-iterate the findings of Blanco et al, 2023, whose methods inspired many of our analysis steps. We see seasonal variability in NOx concentrations at the statewide and LA county level, which leads to the importance of a sampling campaign which samples throughout all seasons. Both at the statewide and LA county level, we see reduced performance of our sampling campaign design when it was restricted to only one season. Our balanced short term sampling campaign performed comparably to our gold-standard model on a statewide and county level, confirming that a sampling campaign can collect a smaller number of samples on which to predict NOx concentrations, so long as the sampling design is temporally balanced. 
+Overall, our findings re-iterate the findings of Blanco et al, 2023, whose methods inspired many of our analysis steps. We see seasonal variability in NOx concentrations at the statewide and LA county level, which leads to the importance of a sampling campaign which samples throughout all seasons. Both at the statewide and LA county level, we see reduced performance of our sampling campaign design when it was restricted to only one season. Our balanced short term sampling campaign performed comparably to our gold-standard model on a statewide and county level, confirming that a sampling campaign can collect a smaller number of samples on which to predict NOx concentrations, so long as the sampling design is temporally balanced. However, if only temporally restricted sampling is possible, understanding the drivers of the model's poor performance may allow for useful inference from less than ideal sampling. 
 
 
 # Author Contribution Statement
@@ -3524,7 +3524,7 @@ The histograms in Appendix Figure A1.0 support our conclusion to log-transform o
 balanced<- ggplot(st_balanced, aes(x = native_id, y = log_avg)) +
   geom_boxplot() +
   ggtitle("Balanced") +
-  labs(x = "monitor",
+  labs(x = "monitors",
        y = "ln (NOx (ppb))") +
   theme(axis.text.x = element_blank(),
     axis.ticks.x = element_blank())
@@ -3532,7 +3532,7 @@ balanced<- ggplot(st_balanced, aes(x = native_id, y = log_avg)) +
 gold<- ggplot(long_term_gold, aes(x = native_id, y = log_avg)) +
   geom_point() +
   ggtitle("Gold Standard") +
-  labs(x = "monitor",
+  labs(x = "monitors",
        y = "ln (NOx (ppb))") +
   theme(axis.text.x = element_blank(),
     axis.ticks.x = element_blank())
@@ -3544,7 +3544,7 @@ grid.arrange(gold, balanced, summer_state_var, fall_state_var, winter_state_var,
 
 
 ```
-The boxplots in Appendix Figure A2.0 show the variability in the data from all of the statewide data sets: gold standard, short term balanced, summer, fall, winter, and spring data sets. We can see from these plots that some data sets, like the Spring data set, have less variation within each sensor. Comparing Winter and spring data sets, the Winter data set has more variability between sensors as well. 
+The boxplots in Appendix Figure A2.0 show the variability in the data from all of the statewide data sets: gold standard, short term balanced, summer, fall, winter, and spring data sets. Box plots are used for each of the short-term datasets to show the campaign variability.  We can see from these plots that some data sets, like the Spring data set, have less variation within each sensor. Comparing Winter and spring data sets, the Winter data set has more variability between sensors as well. 
 
 
 **LA County Data Analysis**
@@ -3555,7 +3555,7 @@ The boxplots in Appendix Figure A2.0 show the variability in the data from all o
 Balanced_LA<-ggplot(st_la, aes(x = native_id, y = log_avg)) +
   geom_boxplot() +
   ggtitle("Balanced") +
-  labs(x = "monitor",
+  labs(x = "monitors",
        y = "ln (NOx (ppb))") +
   theme(axis.text.x = element_blank(),
     axis.ticks.x = element_blank())
@@ -3563,7 +3563,7 @@ Balanced_LA<-ggplot(st_la, aes(x = native_id, y = log_avg)) +
 Gold_Standard_LA<-ggplot(long_term_gold_la, aes(x = native_id, y = log_avg)) +
   geom_point() +
   ggtitle("Gold Standard") +
-  labs(x = "monitor",
+  labs(x = "monitors",
        y = "ln (NOx (ppb))") +
   theme(axis.text.x = element_blank(),
     axis.ticks.x = element_blank())
@@ -3602,5 +3602,5 @@ la_winter_map + labs(title = "Fig. A4.6:Map of Los Angeles with NOx Predictions 
 
 #I think the faceted plots with ln nox are better for the results, but these might go in the appendix, because they are just cool and really show what is going on. 
 ```
-Figures A4.1-4.6 show NOx prediction is Los Angeles on the native scale. They should be interpreted carefully, because the color ramp displays a different range of values for each map. While the color ramps are a limitation, the maps very clearly show the spatial differences in seasonal predictions. 
+Figures A4.1-4.6 show NOx prediction is Los Angeles on the native scale. They should be interpreted carefully, because the color ramp displays a different range of values for each map (e.x. summer has a lot of yellow, but the color ramp maxes out just above 12 ppb, while winter color ramp goes to 160 ppb). While the color ramps are a limitation, the maps very clearly show the spatial differences in seasonal predictions discussed above. The large range of values (<4 ppb to >160 ppb) prevents graphing all seasons on the native scale using the same color ramp, because it squashes the variability. The natural log scale presented in the main text is helpful for shrinking the range to what can be plotted on a single color ramp, but the native scale maps are more interpretable for potential human exposure and the use of "free" color ramps emphasizes variability within each season. 
 
