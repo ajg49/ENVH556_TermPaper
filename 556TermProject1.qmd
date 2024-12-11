@@ -2963,7 +2963,6 @@ gridstrict_bbox <- st_bbox(la_grid)
 grid_monitors <- st_crop(testing2_sf, gridstrict_bbox)
 #9 in LA county, 3 in orange co, and 1 in san bernardino co. 
 
-#it would take a little effort, but not that much to do the kriging with these 13 monitors instead of the LA Co 12, which actually ends up only being 9 in the grid. 
 
 #will test just with the gold - can replicate later with others if we think it's worthwhile. If it looks better it won't be that much to add the other seasons depending on what we want to do
 
@@ -3105,33 +3104,6 @@ winter_map + labs(title = "Figure 14: Map of Los Angeles with Predictions - Wint
 ```
 
 
-
-```{r maps.la.model, echo = F, include = F}
-#repeat using the LA specific models
-
-la_gold_map <- plot_map(map_data(lm_gold_la))
-la_balanced_map <- plot_map(map_data(lm_st_la))
-la_spring_map <- plot_map(map_data(lm_st_spring_la))
-la_summer_map <- plot_map(map_data(lm_st_summer_la))
-la_fall_map <- plot_map(map_data(lm_st_fall_la))
-la_winter_map <- plot_map(map_data(lm_st_winter_la))
-
-la_gold_map + labs(title = "Map of Los Angeles with NOx Predictions - Gold Standard")
-la_balanced_map + labs(title = "Map of Los Angeles with NOx Predictions - Balanced ")
-la_spring_map + labs(title = "Map of Los Angeles with NOx Predictions - Spring")
-la_summer_map + labs(title = "Map of Los Angeles with NOx Predictions - Summer")
-la_fall_map + labs(title = "Map of Los Angeles with NOx Predictions - Fall")
-la_winter_map + labs(title = "Map of Los Angeles with NOx Predictions - Winter")
-
-
-#so interesting!
-
-#I think the faceted plots with ln nox are better for the results, but these might go in the appendix, because they are just cool and really show what is going on. 
-```
-The color ramps aren’t the same size. Summer is lower over all, but the differences are really seen along the roads. Winter is the highest (the blue in winter is higher than the yellow in summer), but there is less variation and a peak near downtown.
-Spring and fall are midway in-between with spring being more like summer and fall being more like winter.
-Fall looks the closest to balanced
-
 ```{r, fig.height = 7, fig.width = 7, echo = F, include = T}
 
 #trying one more thing to see if it makes the color ramps easier to compare
@@ -3173,13 +3145,13 @@ nox_map <- g + # Set map extent and CRS (bounding box error otherwise results in
             alpha=0.2,
             width = 0.01, height = 0.01 # Adjust width and height as needed
             ) +  
-  geom_point(data = monitors_df, aes(x = longitude, y = latitude), size = 2, shape = 18, color = "black") + #add the monitors as points just to see. 
+  #geom_point(data = monitors_df, aes(x = longitude, y = latitude), size = 2, shape = 18, color = "black") + #add the monitors as points just to see. 
   # color friendly color scale
   scale_fill_viridis_c(option = "plasma") + 
   facet_wrap(~season) + 
   labs(title = "Figure 9: Map of Los Angeles with Predicted NOx by Season",
        fill ="NOx (ppb)",
-       caption = "Diamonds indicate monitor locations",
+       caption = "",
        x = "",
        y = ""
        ) +
@@ -3200,13 +3172,13 @@ lnnox_map <- g + # Set map extent and CRS (bounding box error otherwise results 
             alpha=0.2,
             width = 0.01, height = 0.01 # Adjust width and height as needed
             ) +  
-  geom_point(data = monitors_df, aes(x = longitude, y = latitude), size = 2, shape = 18, color = "black") + #add the monitors as points just to see. 
+  #geom_point(data = monitors_df, aes(x = longitude, y = latitude), size = 2, shape = 18, color = "black") + #add the monitors as points just to see. 
   # color friendly color scale
   scale_fill_viridis_c(option = "plasma") + 
   facet_wrap(~season, nrow = 3) +
-  labs(title = "Map of Los Angeles with Predicted ln(NOx) by Season",
+  labs(title = "Fig. 9: Map of Los Angeles with Predicted ln(NOx) by Season",
        fill ="ln (NOx (ppb))",
-       caption = "Diamonds indicate monitor locations",
+       caption = "",
        x = "",
        y = ""
        ) +
@@ -3258,15 +3230,15 @@ difference_map <- g + # Set map extent and CRS (bounding box error otherwise res
             alpha=0.2,
             width = 0.01, height = 0.01 # Adjust width and height as needed
             ) +  
-  geom_point(data = monitors_df, aes(x = longitude, y = latitude), size = 2, shape = 18, color = "black") + #add the monitors as points just to see. 
+  #geom_point(data = monitors_df, aes(x = longitude, y = latitude), size = 2, shape = 18, color = "black") + #add the monitors as points just to see. 
   # color friendly color scale
   #scale_fill_viridis_c(option = "turbo", end = 0.8) + 
   scale_fill_gradient2(low="blue", mid="white", high="red", limits = c(-1.6, 0.94)) +
   facet_wrap(~season, nrow = 3) +
-  labs(title = "Map of Los Angeles with Difference inPredicted ln(NOx) by Season",
+  labs(title = "Fig 10: Difference inPredicted ln(NOx) by Season",
        subtitle = "Campaign predicted ln(NOx) - Gold-standard predicted ln(NOx)",
        fill ="ln (NOx (ppb))",
-       caption = "Diamonds indicate monitor locations",
+       caption = "",
        x = "",
        y = ""
        ) +
@@ -3300,14 +3272,14 @@ a1 <- ggplot(la_all_lndiff_sf, aes(x = m_to_a1, y = -diff_lnnox, color = season)
   theme_bw()
 
 pop <- ggplot(la_all_lndiff_sf, aes(x = pop_s05000/1000, y = -diff_lnnox, color = season)) +
-  geom_point(alpha = 0.3) +
+  geom_point(alpha = 0.3, size = 0.8) +
   geom_smooth(method = "lm", color = "black", linewidth = 0.5, se = F) +
   facet_wrap(~season) +
-  labs(title = "Population in 5000m buffer vs Prediction Differences",
+  labs(title = "Fig. 12: Population in 5000m buffer vs Prediction Differences",
        subtitle = "Los Angeles",
        x = "Population in 5k buffer/1000",
        y = "Prediction Difference (ln(NOx(ppb))",
-       caption = "Population scaled by 1/1000 to fit display on axis better") +
+       caption = "Population scaled by 1/1000 to display on axis better") +
   theme_bw() +
   guides(color = "none")
 
@@ -3316,13 +3288,13 @@ coast <- ggplot(la_all_lndiff_sf, aes(x = m_to_coast, y = -diff_lnnox, color = s
   geom_smooth(method = "lm", color = "black", linewidth = 0.5, se = F) +
   facet_wrap(~season) +
   labs(title = "Distance to Coast vs Prediction Differences",
-       subtitle = "Los Angeles",
+       subtitle = "for Los Angeles Grid Coordinates",
        x = "Distance to Coast (m)",
        y = "Prediction Difference (ln(NOx(ppb))") +
   theme_bw()
 
 
-pop
+#pop
 #a1
 #coast
 
@@ -3345,20 +3317,22 @@ population_la <- g + # Set map extent and CRS (bounding box error otherwise resu
             alpha=0.2,
             width = 0.01, height = 0.01 # Adjust width and height as needed
             ) +  
-  geom_point(data = monitors_df, aes(x = longitude, y = latitude), size = 2, shape = 18, color = "black") + #add the monitors as points just to see. 
+  #geom_point(data = monitors_df, aes(x = longitude, y = latitude), size = 2, shape = 18, color = "black") + #add the monitors as points just to see. 
   # color friendly color scale
   scale_fill_viridis_c(option = "rocket") + 
-  labs(title = "Map of Los Angeles Population Density",
+  labs(title = "Fig 11: Los Angeles Population Density",
        subtitle = "Using 5k buffer radius for each grid point",
        fill = "Population/1000",
-       caption = "Diamonds indicate monitor locations",
+       caption = "",
        x = "",
        y = ""
        ) +
   theme_minimal() +
     theme(panel.border = element_rect(color = "black", fill = NA, size = 1))
   
-population_la
+population_la #display the map
+
+pop #display the scatter plots
 
 ```
 
@@ -3417,7 +3391,7 @@ Analysis:
 
 *Callan:* Met with professors at office hours to discuss analytical approach; attended all group meetings to discuss analytical approach; drafted first iteration of day-of-week  vs. weekday/weekend predictions with cross-validation and ANOVA (not incorporated: later revised plan); conducted sensitivity analysis for Los Angeles county, including creation of short- and long-term temporally balanced datasets specific to Los Angeles, summarizing short- and long-term temporally balanced datasets within LA, generating LA-specific NOx predictions and taking the first pass at cross-validation, including making a new cross-validation group; calculated R2 and RMSE values for LA-specific NOx predictions
 
-*Katie:* Met with professors at office hours and attended all group meetings. CA NOx monitor inclusion criteria validation. Wrote functions for random campaign sampling and data aggregation and summary statistics. Wrote template code for iterating CV function across campaigns and extracting the performance statistics. Figure design and all maps. 
+*Katie:* Met with professors at office hours and attended all group meetings. CA NOx monitor inclusion criteria validation. Wrote functions for random campaign sampling and data aggregation and summary statistics. Wrote template code for iterating CV function across campaigns and extracting the performance statistics. Coded figures for RMSE/R2 box plots, campaign best-fit lines, grid predictions, and all maps. 
 
 *Abbie:* Met with professors at office hours and attended all group meetings. Set up the Github Project and Repository for the project; Implemented the forward stepwise selection of our model terms. Created the statewide seasonal data sets and models, including the comparisons with the gold standard data sets; created the LA county seasonal data sets and models, including the comparisons with the gold standard data sets; adjustment of our cross validation method for LA county, implementing a leave-one-out method instead of a 10 fold method.
 
@@ -3671,4 +3645,27 @@ grid.arrange(top = Title, bottom = scatter_legend, grobs = list(st_spring_scatte
 
 ```
 
+```{r maps.la.model, echo = F, include = T}
+#repeat using the LA specific models
+
+la_gold_map <- plot_map(map_data(lm_gold_la))
+la_balanced_map <- plot_map(map_data(lm_st_la))
+la_spring_map <- plot_map(map_data(lm_st_spring_la))
+la_summer_map <- plot_map(map_data(lm_st_summer_la))
+la_fall_map <- plot_map(map_data(lm_st_fall_la))
+la_winter_map <- plot_map(map_data(lm_st_winter_la))
+
+la_gold_map + labs(title = "Fig. A1: Map of Los Angeles with NOx Predictions - Gold Standard")
+la_balanced_map + labs(title = "Fig. A2: Map of Los Angeles with NOx Predictions - Balanced ")
+la_spring_map + labs(title = "Fig. A3: Map of Los Angeles with NOx Predictions - Spring")
+la_summer_map + labs(title = "Fig. A4: Map of Los Angeles with NOx Predictions - Summer")
+la_fall_map + labs(title = "Fig. A5: Map of Los Angeles with NOx Predictions - Fall")
+la_winter_map + labs(title = "Fig. A6:Map of Los Angeles with NOx Predictions - Winter")
+
+
+#so interesting!
+
+#I think the faceted plots with ln nox are better for the results, but these might go in the appendix, because they are just cool and really show what is going on. 
+```
+Figures A1-6 show NOx prediction is Los Angeles on the native scale. They should be interpreted carefully, because the color ramp displays a different range of values for each map. While the color ramps are a limitation, the maps very clearly show the spatial differences in seasonal predictions. 
 
